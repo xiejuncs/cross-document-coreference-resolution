@@ -57,8 +57,16 @@ public class EecbToken {
 	/** Dictionary for all other strings in the corpus */
 	public static StringDictionary OTHERS;
 	
+	public String getLiteral() {
+	    return mLiteral;
+	}
 	
-	
-	
+	public int getByteStart() {
+	    return mByteOffset.start();
+	}
+
+	public int getByteEnd() {
+	    return mByteOffset.end();
+	}
 	
 }

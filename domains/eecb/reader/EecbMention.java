@@ -14,11 +14,13 @@ public class EecbMention extends EecbElement {
 		super(id);
 		this.mExtent = mExtent;
 	}
-	
+
 	public EecbCharSeq getExtent() {return mExtent;}
 	
 	@Override
 	public String toString() {
 		return "EecbMention: [ mExtent = " + mExtent + "]";
 	}
+	
+	
 }

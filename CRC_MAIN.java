@@ -6,13 +6,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Properties;
-import java.util.Vector;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.oregonstate.ie.dcoref.EECBMentionExtractor;
-import edu.oregonstate.ie.dcoref.MentionExtractor;
+import edu.oregonstate.ie.dcoref.EmentionExtractor;
 import edu.oregonstate.util.EECB_Constants;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Constants;
@@ -143,8 +142,6 @@ public class CRC_MAIN {
 	    //
 	    dictionaries = new Dictionaries(props);
 	    semantics = (useSemantics)? new Semantics(dictionaries) : null;
-	    
-	    
 	}
 	
 	private static LexicalizedParser makeParser(Properties props) {
@@ -198,7 +195,7 @@ public class CRC_MAIN {
 	    
 	    // Extract the mention and gold mentions from the EECB 1.0 corpus
 	    // In our case, the props contains the 
-	    MentionExtractor mentionExtractor = null;
+	    EmentionExtractor mentionExtractor = null;
 	    mentionExtractor = new EECBMentionExtractor(parser, corefSystem.dictionaries(), props, corefSystem.semantics());
 	    assert mentionExtractor != null;
 	    if (!EECB_Constants.USE_GOLD_MENTIONS) {
@@ -233,19 +230,16 @@ public class CRC_MAIN {
 	    //
 	    while (true) {
 	    	document = mentionExtractor.nextDoc();
+	    	System.out.println("Enddocument");
 	    	if (document == null) break;
-	    	
 	    	//printDiscourseStructure(document);
 	    	if(corefSystem.doScore()){
 	            document.extractGoldCorefClusters();
 	        }
-	    	
 	    	// run mention detection only
 	        if(Constants.SKIP_COREF) {
 	          continue;
 	        }
-	        
-	        
 	    }
 	    
 	    logger.info("Done: ===================================================");
