@@ -14,9 +14,11 @@ import java.util.List;
  */
 public class EecbEntity extends EecbElement {	
 	private List<EecbEntityMention> mMentions;
+	private String mType;
 	
-	public EecbEntity(String id) {
+	public EecbEntity(String id, String type) {
 		super(id);
+		mType = type;
 		mMentions = new ArrayList<EecbEntityMention>();
 	}
 	

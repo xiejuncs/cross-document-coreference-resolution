@@ -10,13 +10,16 @@ import java.util.List;
  *
  */
 public class EecbEvent {
-	private String corefId;
+	private String Id;
+	
+	private String mType;
 	
 	/** The list of mentions for this event */
 	private List<EecbEventMention> mMentions;
 	
-	public EecbEvent(String corefId) {
-		this.corefId = corefId;
+	public EecbEvent(String Id, String type) {
+		this.Id = Id;
+		this.mType = type;
 		mMentions = new ArrayList<EecbEventMention>();
 	}
 	

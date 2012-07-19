@@ -148,5 +148,4 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		return "EECBMentionExtractor: [ corpusPath : " + corpusPath + ", Length of file pool : " + file.size() +"]"; 
 	}
 	
-	
 }

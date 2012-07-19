@@ -63,7 +63,7 @@ public class EecbReader extends EgenericDataSetReader {
 	 * in one single document
 	 * 
 	 */
-	public Annotation read(String path) throws IOException {
+	public Annotation read(String path) throws Exception {
 		List<CoreMap> allSentences = new ArrayList<CoreMap>();
 		File basePath = new File(path);	
 		assert basePath.exists();  // Assert whether the file name exists 
@@ -139,7 +139,7 @@ public class EecbReader extends EgenericDataSetReader {
 		    
 		    List<EecbEntityMention> entityMentions = eecbDocument.getEntityMentions(sentenceIndex);
 		    List<EecbEventMention> eventMentions = eecbDocument.getEventMentions(sentenceIndex);
-		    
+		    /*
 		    // convert entity mentions
 		    for (EecbEntityMention eecbEntityMention : entityMentions) {
 		    	String corefID = "";
@@ -168,6 +168,7 @@ public class EecbReader extends EgenericDataSetReader {
 		            AnnotationUtils.addEventMention(sentence, convertedMention);
 		        }
 		    }
+		    */
 		    
 		    results.add(sentence);
 		    tokenOffset += tokens.size();
@@ -175,42 +176,4 @@ public class EecbReader extends EgenericDataSetReader {
 		
 		return results;
 	}
-	
-	/**
-	 * Implementaion
-	 * 
-	 * @param eecbEventMention
-	 * @param docId
-	 * @param sentence
-	 * @param entityMap
-	 * @param tokenOffset
-	 * @return
-	 */
-	private EventMention convertEecbEventMention(
-		      EecbEventMention eecbEventMention, String docId,
-		      CoreMap sentence, Map<String, EntityMention> entityMap,
-		      int tokenOffset) {
-		
-	}
-	
-	/**
-	 * Convert an {@link EecbEntityMention} to an {@link EntityMention}
-	 * 
-	 * @param entityMention
-	 * @param docId
-	 * @param sentence
-	 * @param tokenOffset
-	 * @return
-	 */
-	private EntityMention convertEecbEntityMention(EecbEntityMention entityMention, String docId, CoreMap sentence, int tokenOffset) {
-		
-	}
-	
-	
-	private EntityMention convertEecbEntityMention(EecbEntityMention entityMention, String docId, CoreMap sentence, int tokenOffset, String corefID) {
-	    EntityMention converted = convertEecbEntityMention(entityMention, docId, sentence, tokenOffset);
-	    converted.setCorefID(corefID);
-	    return converted;
-	  }
-	
 }
