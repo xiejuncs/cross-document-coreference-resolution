@@ -4,6 +4,15 @@ import java.util.*;
 
 /**
  * Implementation of Beam Search
+ *
+ * This is the breath-first version Beam search. 
+ * <p>
+ * Beam Search initially adds the starting node to the BEAM and the hash 
+ * table. Then, each time through the main loop of the algorithm, Beam 
+ * Search adds all of the nodes connected to the nodes in the 
+ * BEAM to its SET of successor nodes and then adds the B nodes with the 
+ * best heuristic values from the SET to the BEAM and the hash table.
+ *
  */ 
 public class BeamSearch {
 
