@@ -3,6 +3,8 @@ package edu.oregonstate.domains.eecb.reader;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
+
 /**
  * EECB entity. In the EECB corpus, an corefid is used to represent the entity.
  * For example: <ENTITY COREFID="27">People magazine</ENTITY>
@@ -22,10 +24,10 @@ public class EecbEntity extends EecbElement {
 		mMentions = new ArrayList<EecbEntityMention>();
 	}
 	
-	public void addMention(EecbEntityMention m) {
-		mMentions.add(m);
-	}
-	
 	public List<EecbEntityMention> getMentions() {return mMentions;}
 	
+	public void addMention(EecbEntityMention m) { 
+	    mMentions.add(m);
+	    m.setParent(this);
+	  }
 }

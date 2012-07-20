@@ -19,10 +19,9 @@ public class EecbEventMention extends EecbMention {
 	/** anchor text for this event */
 	private EecbCharSeq mAnchor;
 
-	public EecbEventMention(String id, EecbCharSeq extent, EecbCharSeq anchor) {
+	public EecbEventMention(String id, EecbCharSeq extent) {
 		super(id, extent);
 		mRolesToArguments = new HashMap<String, EecbEventMentionArgument>();
-		this.mAnchor = anchor;
 	}
 	
 	@Override

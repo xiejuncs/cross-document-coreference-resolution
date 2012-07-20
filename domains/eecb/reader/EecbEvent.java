@@ -36,4 +36,7 @@ public class EecbEvent {
 		return mMentions.size();
 	}
 	
+	public String getId() {
+		return this.Id;
+	}
 }
