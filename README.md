@@ -1,4 +1,9 @@
 cross-document-coreference-resolution
 =====================================
+README
 
-Design algorithms for cross document coreference resolution
+Jun Xie(xie@eecs.oregonstate.edu)
+
+This is a cross document coreference resolution system written in java.  
+
+
