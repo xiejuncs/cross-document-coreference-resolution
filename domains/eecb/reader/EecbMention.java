@@ -17,10 +17,5 @@ public class EecbMention extends EecbElement {
 
 	public EecbCharSeq getExtent() {return mExtent;}
 	
-	@Override
-	public String toString() {
-		return "EecbMention: [ mExtent = " + mExtent + "]";
-	}
-	
-	
+	public String toXml(int offset) { return ""; }
 }

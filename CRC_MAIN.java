@@ -158,9 +158,9 @@ public class CRC_MAIN {
 	 */
 	public static void main(String[] args) throws Exception {
 		logger.info("Start: ============================================================");
-		args = new String[1];
-		args[0] = GlobalConstantVariables.CONFIG_PATH + "coref.properties";
-		Properties props = StringUtils.argsToProperties(args);
+		Properties props = new Properties();
+		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+		props.put("dcoref.eecb", GlobalConstantVariables.CORPUS_PATH);
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		
 		/** initialize logger */
@@ -230,7 +230,6 @@ public class CRC_MAIN {
 	    //
 	    while (true) {
 	    	document = mentionExtractor.nextDoc();
-	    	System.out.println("Enddocument");
 	    	if (document == null) break;
 	    	//printDiscourseStructure(document);
 	    	if(corefSystem.doScore()){

@@ -16,17 +16,22 @@ public class EecbEventMention extends EecbMention {
 	/** Maps argument role to argument mentions */
 	private Map<String, EecbEventMentionArgument> mRolesToArguments;
 	
-	/** anchor text for this event */
+	/** the parent event */
+	private EecbEvent mParent;
+	
+	/** anchor text for this event, just the phrase annotated by the mentions.txt */
 	private EecbCharSeq mAnchor;
 
-	public EecbEventMention(String id, EecbCharSeq extent) {
+	public EecbEventMention(String id, EecbCharSeq extent, EecbCharSeq anchor) {
 		super(id, extent);
+		this.mAnchor = anchor;
 		mRolesToArguments = new HashMap<String, EecbEventMentionArgument>();
 	}
 	
 	@Override
 	public String toString() {
-		return "EecbEventMention [mAnchor = " + mAnchor + ", mRolesToArguments = " + mRolesToArguments + ", mExtent = " + mExtent +
+		return "EecbEventMention [mAnchor = " + mAnchor + ", mParent=" + mParent + 
+		", mRolesToArguments = " + mRolesToArguments + ", mExtent = " + mExtent +
 		", mId = " + mID + "]";
 	}
 	

@@ -1,8 +1,10 @@
 package edu.oregonstate.ie.dcoref;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
@@ -20,14 +22,25 @@ import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.dcoref.RuleBasedCorefMentionFinder;
 import edu.stanford.nlp.dcoref.Semantics;
+import edu.stanford.nlp.ie.machinereading.structure.EntityMention;
 import edu.stanford.nlp.io.RuntimeIOException;
+import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.BeginIndexAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.IndexAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.UtteranceAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.ValueAnnotation;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.TokenizerAnnotator;
+import edu.stanford.nlp.stats.ClassicCounter;
+import edu.stanford.nlp.stats.Counter;
 import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.trees.tregex.TregexMatcher;
 import edu.stanford.nlp.trees.tregex.TregexPattern;
 import edu.stanford.nlp.util.CoreMap;
@@ -43,6 +56,16 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	protected String[] files;
 	
 	private static Logger logger = CRC_MAIN.logger;
+	
+	private static class EntityComparator implements Comparator<EntityMention> {
+	    public int compare(EntityMention m1, EntityMention m2){
+	      if(m1.getExtentTokenStart() > m2.getExtentTokenStart()) return 1;
+	      else if(m1.getExtentTokenStart() < m2.getExtentTokenStart()) return -1;
+	      else if(m1.getExtentTokenEnd() > m2.getExtentTokenEnd()) return -1;
+	      else if(m1.getExtentTokenEnd() < m2.getExtentTokenEnd()) return 1;
+	      else return 0;
+	    }
+	}
 	
 	/**
 	 * Constructor of EECBMentionExtractor
@@ -60,6 +83,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
 		files = read(corpusPath);
+		// output: corpus/EECB2.0/data/1/1.eecb
 	}
 	
 	public Document nextDoc() throws Exception {
@@ -82,20 +106,89 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		        }
 		    }
 		    if(files.length <= fileIndex && filename.equals("")) return null;
-		    System.out.println("Processing " + filename + "............");
+		    
 		    anno = eecbReader.parse(filename);
 		    stanfordProcessor.annotate(anno);
+		 
+		    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
+		    for (CoreMap sentence : sentences) {
+		    	System.out.println(sentence);
+		    	int i = 1;
+		    	for (CoreLabel w : sentence.get(TokensAnnotation.class)) {
+		    		w.set(IndexAnnotation.class, i++);
+		    		if(!w.containsKey(UtteranceAnnotation.class)) {
+		    	        w.set(UtteranceAnnotation.class, 0);
+		    	    }
+		    	}
+		    	allTrees.add(sentence.get(TreeAnnotation.class));
+		    	allWords.add(sentence.get(TokensAnnotation.class));
+		    	EntityComparator comparator = new EntityComparator();
+		    	extractGoldMentions(sentence, allGoldMentions, comparator);
+		    }
 		    
+		    allPredictedMentions = mentionFinder.extractPredictedMentions(anno, -1, dictionaries);
+		    printRawDoc(sentences, allPredictedMentions, filename, false);
 			
 		} catch (IOException e) {
 			throw new RuntimeIOException(e);
 		}
 		
-		Document d = new Document();
-		
-		return d;
-		
+		Document doc = new Document();
+		return doc;
 	}
+	
+	private void printRawDoc(List<CoreMap> sentences, List<List<Mention>> allMentions, String filename, boolean gold) throws FileNotFoundException {
+	    StringBuilder doc = new StringBuilder();
+	    int previousOffset = 0;
+	    Counter<Integer> mentionCount = new ClassicCounter<Integer>();
+	    for(List<Mention> l : allMentions) {
+	      for(Mention m : l){
+	        mentionCount.incrementCount(m.goldCorefClusterID);
+	      }
+	    }
+	    
+	    for(int i = 0 ; i<sentences.size(); i++) {
+	      CoreMap sentence = sentences.get(i);
+	      List<Mention> mentions = allMentions.get(i);
+	      
+	      String[] tokens = sentence.get(TextAnnotation.class).split(" ");
+	      String sent = "";
+	      List<CoreLabel> t = sentence.get(TokensAnnotation.class);
+	      if(previousOffset+2 < t.get(0).get(CharacterOffsetBeginAnnotation.class)) sent+= "\n";
+	      previousOffset = t.get(t.size()-1).get(CharacterOffsetEndAnnotation.class);
+	      Counter<Integer> startCounts = new ClassicCounter<Integer>();
+	      Counter<Integer> endCounts = new ClassicCounter<Integer>();
+	      HashMap<Integer, Set<Integer>> endID = new HashMap<Integer, Set<Integer>>();
+	      for (Mention m : mentions) {
+	        startCounts.incrementCount(m.startIndex);
+	        endCounts.incrementCount(m.endIndex);
+	        if(!endID.containsKey(m.endIndex)) endID.put(m.endIndex, new HashSet<Integer>());
+	        endID.get(m.endIndex).add(m.goldCorefClusterID);
+	      }
+	      for (int j = 0 ; j < tokens.length; j++){
+	        if(endID.containsKey(j)) {
+	          for(Integer id : endID.get(j)){
+	            if(mentionCount.getCount(id)!=1 && gold) sent += "]_"+id;
+	            else sent += "]";
+	          }
+	        }
+	        for (int k = 0 ; k < startCounts.getCount(j) ; k++) {
+	          if(!sent.endsWith("[")) sent += " ";
+	          sent += "[";
+	        }
+	        sent += " ";
+	        sent = sent + tokens[j];
+	      }
+	      for(int k = 0 ; k <endCounts.getCount(tokens.length); k++) {
+	        sent += "]";
+	      }
+	      sent += "\n";
+	      doc.append(sent);
+	    }
+	    if(gold) logger.fine("New DOC: (GOLD MENTIONS) ==================================================");
+	    else logger.fine("New DOC: (Predicted Mentions) ==================================================");
+	    logger.fine(doc.toString());
+	  }
 	
 	// Define the two variables for obtaining the list of file names
 	public static int spc_count = 1;
@@ -146,6 +239,19 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	@Override
 	public String toString() {
 		return "EECBMentionExtractor: [ corpusPath : " + corpusPath + ", Length of file pool : " + file.size() +"]"; 
+	}
+	
+	
+	
+	/**
+	 * Extract the gold mentions
+	 * 
+	 * @param s
+	 * @param allGoldMentions
+	 * @param comparator
+	 */
+	private void extractGoldMentions(CoreMap s, List<List<Mention>> allGoldMentions, EntityComparator comparator) {
+		
 	}
 	
 }

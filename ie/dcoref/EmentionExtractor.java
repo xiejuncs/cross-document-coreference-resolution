@@ -86,5 +86,5 @@ public class EmentionExtractor {
 	    SieveCoreferenceSystem.logger.info("Ignoring specified annotators, using annotators=" + annoStr);
 	    pipelineProps.put("annotators", annoStr);
 	    return new StanfordCoreNLP(pipelineProps, false);
-	  }
+	  }	  
 }

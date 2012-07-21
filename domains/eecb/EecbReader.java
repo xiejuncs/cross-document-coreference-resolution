@@ -52,7 +52,6 @@ public class EecbReader extends EgenericDataSetReader {
 		entityCounts = new ClassicCounter<String>();
 		adjacentEntityMentions = new ClassicCounter<String>();
 		eventCounts = new ClassicCounter<String>();
-		
 		logger = Logger.getLogger(EecbReader.class.getName());
 	    // run quietly by default
 	    logger.setLevel(Level.SEVERE);
@@ -69,7 +68,6 @@ public class EecbReader extends EgenericDataSetReader {
 		assert basePath.exists();  // Assert whether the file name exists 
 		Annotation corpus = new Annotation("");
 		assert basePath.isFile(); // Each file name is not a directory
-		
 		allSentences.addAll(readDocument(basePath, corpus));
 		AnnotationUtils.addSentences(corpus, allSentences);
 		return corpus;
@@ -87,6 +85,7 @@ public class EecbReader extends EgenericDataSetReader {
 	private List<CoreMap> readDocument(File file, Annotation corpus) throws Exception {
 		//String prefix = file.getName().replaceAll(".eecb", "");
 		String prefix = file.getAbsolutePath().replaceAll(".eecb", "");
+		// preifx /scratch/JavaFile/stanford-corenlp-2012-05-22/corpus/EECB2.0/data/1/1
 		List<CoreMap> sentencesFromFile = readDocument(prefix, corpus);
 		return sentencesFromFile;
 	}
@@ -117,19 +116,11 @@ public class EecbReader extends EgenericDataSetReader {
 				CoreLabel l = new CoreLabel();
 				l.setWord(tokens.get(i).getLiteral());
 		        l.set(CoreAnnotations.TextAnnotation.class, l.word());
-		        l.set(CharacterOffsetBeginAnnotation.class, tokens.get(i).getByteStart());
-		        l.set(CharacterOffsetEndAnnotation.class, tokens.get(i).getByteEnd());
+		        l.set(CharacterOffsetBeginAnnotation.class, tokens.get(i).getTokenStart());
+		        l.set(CharacterOffsetEndAnnotation.class, tokens.get(i).getTokenEnd());
 		        words.add(l);
 		        if(i > 0) textContent.append(" ");
 		        textContent.append(tokens.get(i).getLiteral());
-			}
-			
-			if (words.size() == 1) {
-				String word = words.get(0).word();
-		        if (word.startsWith("<") && word.endsWith(">")) {
-		          tokenOffset += tokens.size();
-		          continue;
-		        }
 			}
 			
 			CoreMap sentence = new Annotation(textContent.toString());

@@ -19,8 +19,11 @@ import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntity;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEvent;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEventMention;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceRelationMention;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceSentenceSegmenter;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceToken;
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
@@ -35,7 +38,11 @@ import edu.stanford.nlp.util.CoreMap;
  *
  */
 public class EecbDocument extends EecbElement {
-	/** document preifx */
+	/** 
+	 * document preifx
+	 * Like this : /scratch/JavaFile/stanford-corenlp-2012-05-22/data/AFP_ENG_20030304.0250
+	 * Or : /scratch/JavaFile/stanford-corenlp-2012-05-22/corpus/EECB2.0/data/1/1 (for 1.eecb)
+	 */
 	private String mPrefix;
 	
 	/**All entities*/
@@ -100,6 +107,14 @@ public class EecbDocument extends EecbElement {
 	    return mSentences.get(index);
 	}
 	
+	public void addEventMention(EecbEventMention e) {
+	    mEventMentions.put(e.getId(), e);
+	}
+	
+	public void addEntityMention(EecbEntityMention em) {
+	    mEntityMentions.put(em.getId(), em);
+	}
+	
 	public ArrayList<EecbEntityMention> getEntityMentions(int sent) {
 	    return mSentenceEntityMentions.get(sent);
 	}
@@ -139,20 +154,119 @@ public class EecbDocument extends EecbElement {
 	 * @return
 	 * @throws IOException
 	 */
-	public static EecbDocument parseDocument(String prefix, String annotation) throws IOException {
+	public static EecbDocument parseDocument(String prefix, String annotation) throws Exception {
 		mLog.info("Reading Document : " + prefix);
 		mLog.info("Reading Annotation file from : " + annotation);
-		String[] array = prefix.split("/");
-		String id = array[3] + "-" + array[4];
-		EecbDocument doc = new EecbDocument(id);
-		// read the raw text
-		doc.setPrefix(prefix);
-		doc.readRawText(prefix + ".eecb");
-		System.out.println(prefix + ".eecb");
+		EecbDocument doc = null;
 		// Input the gold mention into the document according to the annotation file
-		doc.parseDocument(new File(prefix + ".eecb"), doc);
+		doc = parseDocument(new File(prefix + ".eecb"));
+		doc.setPrefix(prefix);
 		
+		// read the EecbTokens
+		List<List<EecbToken>> sentences = tokenizeAndSegmentSentences(doc.getRawText());
+	    doc.setSentences(sentences);
+	    for (List<EecbToken> sentence : sentences) {
+	      for (EecbToken token : sentence) {
+	        doc.addToken(token);
+	      }
+	    }
+		
+	    // construct the mEntityMentions matrix
+	    Set<String> entityKeys = doc.mEntityMentions.keySet();
+	    int sentence;
+	    for (String key : entityKeys) {
+	    	EecbEntityMention em = doc.mEntityMentions.get(key);
+	    	sentence = doc.mTokens.get(em.getExtent().getTokenStart()).getSentence();
+	    	// adjust the number of rows if necessary
+	        while (sentence >= doc.mSentenceEntityMentions.size()) {
+	          doc.mSentenceEntityMentions.add(new ArrayList<EecbEntityMention>());
+	          doc.mSentenceEventMentions.add(new ArrayList<EecbEventMention>());
+	        }
+	        ArrayList<EecbEntityMention> sentEnts = doc.mSentenceEntityMentions.get(sentence);
+	        boolean added = false;
+	        for (int i = 0; i < sentEnts.size(); i++) {
+	          EecbEntityMention crt = sentEnts.get(i);
+	          if ((crt.getExtent().getTokenStart() > em.getExtent().getTokenStart())) {
+	            sentEnts.add(i, em);
+	            added = true;
+	            break;
+	          }
+	        }
+	        if (!added) {
+	          sentEnts.add(em);
+	        }
+	    }
+	    
+	    // construct the mEventMentions matrix
+	    Set<String> eventKeys = doc.mEventMentions.keySet();
+	    for (String key : eventKeys) {
+	        EecbEventMention em = doc.mEventMentions.get(key);
+	        sentence = doc.mTokens.get(em.getExtent().getTokenStart()).getSentence();
+
+	        /*
+	         * adjust the number of rows if necessary -- if you're wondering why we do
+	         * this here again, (after we've done it for entities) it's because we can
+	         * have an event with no entities near the end of the document and thus
+	         * won't have created rows in mSentence*Mentions
+	         */
+	        while (sentence >= doc.mSentenceEntityMentions.size()) {
+	          doc.mSentenceEntityMentions.add(new ArrayList<EecbEntityMention>());
+	          doc.mSentenceEventMentions.add(new ArrayList<EecbEventMention>());
+	        }
+
+	        // store the event mentions in increasing order
+	        // (a) first, event mentions with no arguments
+	        // (b) then by the start position of their head, or
+	        // (c) if start is the same, in increasing order of ends
+	        ArrayList<EecbEventMention> sentEvents = doc.mSentenceEventMentions.get(sentence);
+	        boolean added = false;
+	        for (int i = 0; i < sentEvents.size(); i++) {
+	          EecbEventMention crt = sentEvents.get(i);
+	          if ((crt.getExtent().getTokenStart() > em.getExtent().getTokenStart())) {
+	            sentEvents.add(i, em);
+	            added = true;
+	            break;
+	          }
+	        }
+	        if (!added) {
+	          sentEvents.add(em);
+	        }
+	    }
+	    
 		return doc;
+	}
+	
+	/**
+	 * Tokenize the raw text
+	 * 
+	 * @param filenamePrefix
+	 * @return
+	 */
+	public static List<List<EecbToken>> tokenizeAndSegmentSentences(String rawText) {
+		List<List<EecbToken>> sentences = new ArrayList<List<EecbToken>>();
+		String[] sens = rawText.split("\n");
+		for (int i = 0; i < sens.length; i++) {
+			List<EecbToken> sentence = new ArrayList<EecbToken>();
+			String sen = sens[i];
+			Properties props = new Properties();
+		    props.put("annotators", "tokenize, ssplit, pos, lemma");
+		    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+		    Annotation seAnno = new Annotation(sen);
+		    pipeline.annotate(seAnno);
+		    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
+		    for(CoreMap ses : seSentences) {
+		    	for (int j = 0; j < ses.get(TokensAnnotation.class).size(); j++) {
+		    		CoreLabel token = ses.get(TokensAnnotation.class).get(j);
+		    		String word = token.get(TextAnnotation.class);
+		    		String lemma = token.get(LemmaAnnotation.class);
+		    		EecbToken eecbToken = new EecbToken(word, lemma, Integer.toString(j), Integer.toString(j+1), i);
+		    		sentence.add(eecbToken);
+		    	}
+		    }
+		    sentences.add(sentence);
+		}
+		
+		return sentences;
 	}
 	
 	// from f's name, get the combination of its topic and file name
@@ -197,7 +311,7 @@ public class EecbDocument extends EecbElement {
 		    for(CoreMap seSentence : seSentences) {
 		    	for (CoreLabel token : seSentence.get(TokensAnnotation.class)) {
 		    		String word = token.get(TextAnnotation.class);
-		    		EecbToken eecbToken = new EecbToken(word, Integer.toString(start), Integer.toString(start + 1), i);
+		    		EecbToken eecbToken = new EecbToken(word, "", Integer.toString(start), Integer.toString(start + 1), i); // Need to add the lemma
 		    		sen.add(eecbToken);
 		    		start = start + 1;
 		    	}
@@ -210,24 +324,31 @@ public class EecbDocument extends EecbElement {
 	/**
 	 * According to the EECB specification, parse one document
 	 */
-	public static EecbDocument parseDocument(File f, EecbDocument doc) {
+	public static EecbDocument parseDocument(File f) throws Exception {
 		String fileID = getKey(f);
-		System.out.println(fileID);
 		EecbDocument eecbDoc = new EecbDocument(fileID);
+		eecbDoc.readRawText(f.getAbsolutePath());
+		// READ the mentions.txt file
 		HashMap<String, ArrayList<String>> annotations = readAnnotation();
 		// get the document's annotation in order to get the gold entities and events
 		ArrayList<String> annotation = annotations.get(fileID);
 		assert annotation != null;
-		String text = doc.getRawText();
+		String text = eecbDoc.getRawText();
+		
 		assert text != null;
 		String[] sentences = text.split("\n");
+		// [V:4, N:27, N:26, N:45, V:7, N:28, N:21, N:22, V:1, N:23, V:3, V:2], V represents the event, N represents the entity
 		HashSet<String> corefMap = getCorefID(annotation);
-		// according to every 
+		
+		// according to every id
 		for (String id : corefMap) {
 			if (id.startsWith("N")) {
 				// Entity
-				EecbEntity entity = new EecbEntity(id, "N");
+				EecbEntity entity = new EecbEntity(id);
 				for (String anno : annotation) {
+					//String key = topicID + ":" + documentID;
+					//String value = type + ":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
+					// anno N:1:27:3:5:13:27
 					String[] annos = anno.split(":");
 					String key = annos[0] + ":" + annos[2];
 					if (key.equals(id)) {
@@ -251,18 +372,16 @@ public class EecbDocument extends EecbElement {
 					    	sb.append(tokens.get(i) + " ");
 					    }
 					    String mentionText = sb.toString().trim();
-					    String type = annos[0];
 					    String ID = fileID + ":" + annos[1] + ":" + annos[3] + ":" + annos[4];
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[3]), Integer.parseInt(annos[4]));
-					    EecbEntityMention entityMention = new EecbEntityMention(id, type, mention);
-					    entity.addMention(entityMention);
+					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null); // HEAD will be processed later
+					    eecbDoc.addEntityMention(entityMention);
 					}
 				}
-				
 				eecbDoc.addEntity(entity);
 			} else {
 				// Event
-				EecbEvent event = new EecbEvent(id, "N");
+				EecbEvent event = new EecbEvent(id);
 				for (String anno : annotation) {
 					String[] annos = anno.split(":");
 					String key = annos[0] + ":" + annos[2];
@@ -287,74 +406,16 @@ public class EecbDocument extends EecbElement {
 					    	sb.append(tokens.get(i) + " ");
 					    }
 					    String mentionText = sb.toString().trim();
-					    String type = annos[0];
 					    String ID = fileID + ":" + annos[1] + ":" + annos[3] + ":" + annos[4];
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[3]), Integer.parseInt(annos[4]));
-					    EecbEventMention eventMention = new EecbEventMention(ID, mention);
-					    event.addMention(eventMention);
+					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention);
+					    eecbDoc.addEventMention(eventMention);
 					}
 				}
 				eecbDoc.addEvent(event);
 			}
-		}
+		}	
 		
-		// read the EecbTokens
-		
-		List<List<EecbToken>> sens = parseSentense(sentences);
-		eecbDoc.setSentences(sens);
-		for (List<EecbToken> sen : sens) {
-			for (EecbToken token : sen) {
-				eecbDoc.addToken(token);
-			}
-		}
-		
-		// 
-		/*
-		assert annotation != null;
-		String text = doc.getRawText();
-		assert text != null;
-		String[] sentences = text.split("\n");
-		try {
-			for (String anno : annotation) {
-				// String value = type + ":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
-				String[] annos = anno.split(":");
-				String sentence = sentences[Integer.parseInt(annos[1])];
-				// tokenize the sentence in order to get the annotation entity and event
-				Properties props = new Properties();
-			    props.put("annotators", "tokenize, ssplit");
-			    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-			    Annotation seAnno = new Annotation(sentence);
-			    pipeline.annotate(seAnno);
-			    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
-			    ArrayList<String> tokens = new ArrayList<String>();
-			    for(CoreMap sen : seSentences) {
-			    	for (CoreLabel token : sen.get(TokensAnnotation.class)) {
-			    		String word = token.get(TextAnnotation.class);
-			    		tokens.add(word);
-			    	}
-			    }
-			    StringBuilder sb = new StringBuilder();
-			    for (int i = Integer.parseInt(annos[3]); i < Integer.parseInt(annos[4]); i++) {
-			    	sb.append(tokens.get(i) + " ");
-			    }
-			    String mentionText = sb.toString().trim();
-			    String type = annos[0];
-			    String ID = fileID + ":" + annos[1] + ":" + annos[3] + ":" + annos[4];
-			    if (!type.equals("V")) {
-			    	// Entity
-			    	EecbEntity entity = new EecbEntity(ID, type);
-			    	eecbDoc.addEntity(entity);
-			    } else {
-			    	// Event
-			    	EecbEvent evnet = new EecbEvent(ID, type);
-			    }
-			    
-			}
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		*/
 		return eecbDoc;
 	}
 	

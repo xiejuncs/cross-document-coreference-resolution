@@ -9,17 +9,13 @@ import java.util.List;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class EecbEvent {
-	private String Id;
-	
-	private String mType;
+public class EecbEvent extends EecbElement {
 	
 	/** The list of mentions for this event */
 	private List<EecbEventMention> mMentions;
 	
-	public EecbEvent(String Id, String type) {
-		this.Id = Id;
-		this.mType = type;
+	public EecbEvent(String id) {
+		super(id);
 		mMentions = new ArrayList<EecbEventMention>();
 	}
 	
@@ -34,9 +30,5 @@ public class EecbEvent {
 	/** Get the size of Event Mentions */
 	public int getMentionCount() {
 		return mMentions.size();
-	}
-	
-	public String getId() {
-		return this.Id;
 	}
 }

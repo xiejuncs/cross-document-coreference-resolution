@@ -1,0 +1,13 @@
+Stanford's Multi-Sieve System Programming Path:
+
+(1) SieveCoreferenceSystem
+	this.mentionExtractor.nextDoc()-->ACEMenionExtractor.nextDoc()-->GenericDataSetReader.parse()-->AceReader.read()-->AceReader.readDocument(File file, Annotation corpus)-->AceReader.readDocument(String prefix, Annotation corpus)-->AceDocument.parseDocument()-->AceDomReader.parseDocument()	
+
+
+
+
+NOTE:
+
+(1) List<CoreMao> sentences
+(2) CoreLabel token
+ 

@@ -17,4 +17,13 @@ public class EecbElement {
 	
 	public String getId() {return mID; }
 
+	// indentation for debug.
+	// Entity/Event without indentation
+	// EntityMention/EventMention with two indentations
+	public static void appendOffset(StringBuffer buffer, int offset) {
+		for(int i = 0; i < offset; i ++){
+			buffer.append(" ");
+		}
+	}
+	
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceToken;
 
 /**
  * EECB entity. In the EECB corpus, an corefid is used to represent the entity.
@@ -16,11 +17,9 @@ import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
  */
 public class EecbEntity extends EecbElement {	
 	private List<EecbEntityMention> mMentions;
-	private String mType;
 	
-	public EecbEntity(String id, String type) {
+	public EecbEntity(String id) {
 		super(id);
-		mType = type;
 		mMentions = new ArrayList<EecbEntityMention>();
 	}
 	
@@ -29,5 +28,18 @@ public class EecbEntity extends EecbElement {
 	public void addMention(EecbEntityMention m) { 
 	    mMentions.add(m);
 	    m.setParent(this);
-	  }
+	}
+	
+	public String toXML(int offset) {
+		StringBuffer buffer = new StringBuffer();
+	    appendOffset(buffer, offset);
+	    buffer.append("<entity ID=\"" + getId() + "\">\n");
+	    for(EecbEntityMention m: mMentions){
+	      buffer.append(m.toXml(offset + 2));
+	      buffer.append("\n");
+	    }
+	    appendOffset(buffer, offset);
+	    buffer.append("</entity>");
+	    return buffer.toString();
+	}
 }
