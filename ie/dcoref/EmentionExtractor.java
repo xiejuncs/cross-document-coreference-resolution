@@ -3,6 +3,8 @@ package edu.oregonstate.ie.dcoref;
 import java.util.List;
 import java.util.Properties;
 
+import edu.oregonstate.domains.eecb.reader.EecbTopic;
+
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -53,6 +55,10 @@ public class EmentionExtractor {
 	 * @return List of mentions found in each sentence ordered according to the tree traversal.
 	 * @throws Exception 
 	 */
+	public EecbTopic inistantiate() throws Exception {
+		return null; 
+	}
+	
 	public Document nextDoc() throws Exception {
 		return null; 
 	}
@@ -63,7 +69,7 @@ public class EmentionExtractor {
 	}
 	
 	/** Load Stanford Processor: skip unnecessary annotator */
-	  protected StanfordCoreNLP loadStanfordProcessor(Properties props) {
+	protected StanfordCoreNLP loadStanfordProcessor(Properties props) {
 	    boolean replicateCoNLL = Boolean.parseBoolean(props.getProperty(Constants.REPLICATECONLL_PROP, "false"));
 
 	    Properties pipelineProps = new Properties(props);
@@ -86,5 +92,5 @@ public class EmentionExtractor {
 	    SieveCoreferenceSystem.logger.info("Ignoring specified annotators, using annotators=" + annoStr);
 	    pipelineProps.put("annotators", annoStr);
 	    return new StanfordCoreNLP(pipelineProps, false);
-	  }	  
+	}	  
 }

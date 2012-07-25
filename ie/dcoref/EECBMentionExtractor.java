@@ -16,6 +16,7 @@ import java.util.List;
 
 import edu.oregonstate.CRC_MAIN;
 import edu.oregonstate.domains.eecb.EecbReader;
+import edu.oregonstate.domains.eecb.reader.EecbTopic;
 import edu.oregonstate.util.EECB_Constants;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Constants;
@@ -58,7 +59,7 @@ import edu.stanford.nlp.dcoref.MentionExtractor;
  */
 public class EECBMentionExtractor extends EmentionExtractor {
 	private EecbReader eecbReader;
-	private String corpusPath;
+	private String topicPath;
 	protected int fileIndex = 0;
 	protected String[] files;
 	
@@ -83,16 +84,69 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	 * @param semantics
 	 * @throws Exception
 	 */
-	public EECBMentionExtractor(LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
+	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
 		super(dict, semantics);
 		stanfordProcessor = loadStanfordProcessor(props);
-		corpusPath = props.getProperty(EECB_Constants.EECB_PROP, GlobalConstantVariables.CORPUS_PATH);
+		topicPath = props.getProperty(EECB_Constants.EECB_PROP, GlobalConstantVariables.CORPUS_PATH) + "/" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
-		files = read(corpusPath);
-		// output: corpus/EECB2.0/data/1/1.eecb
+		files = new File(topicPath).list();
+		// 2.eecb
+		// 1.eecb
 	}
 	
+	/**
+	 * inistantiate the EecbTopic object
+	 * 
+	 * extract all mentions in one doc cluster, represented by Mention 
+	 */
+	public EecbTopic inistantiate() throws Exception {
+		List<List<List<Mention>>> allPredictedMentions = new ArrayList<List<List<Mention>>>();;
+		for (int i = 0; i < files.length; i++) {
+			String fileAbsolutePath = topicPath + files[i];
+			try {
+				Annotation anno;
+				List<List<CoreLabel>> allWords = new ArrayList<List<CoreLabel>>();
+				List<List<Mention>> allGoldMentions = new ArrayList<List<Mention>>();
+				List<List<Mention>> allPredictedMention;
+				List<Tree> allTrees = new ArrayList<Tree>();
+				anno = eecbReader.parse(fileAbsolutePath);
+			    stanfordProcessor.annotate(anno);
+			 
+			    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
+			    for (CoreMap sentence : sentences) {
+			    	int j = 1;
+			    	for (CoreLabel w : sentence.get(TokensAnnotation.class)) {
+			    		w.set(IndexAnnotation.class, j++);
+			    		if(!w.containsKey(UtteranceAnnotation.class)) {
+			    	        w.set(UtteranceAnnotation.class, 0);
+			    	    }
+			    	}
+			    	allTrees.add(sentence.get(TreeAnnotation.class));
+			    	allWords.add(sentence.get(TokensAnnotation.class));
+			    	EntityComparator comparator = new EntityComparator();
+			    	extractGoldMentions(sentence, allGoldMentions, comparator);
+			    }
+			    
+			    allPredictedMention = mentionFinder.extractPredictedMentions(anno, -1, dictionaries);
+			    printRawDoc(sentences, allPredictedMention, fileAbsolutePath, false);
+			    allPredictedMentions.add(allPredictedMention);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+		
+		EecbTopic eecbTopic = new EecbTopic();
+		return eecbTopic;
+	}
+	
+	
+	
+	
+	/**
+	 * The method is designed for within document coreference resolution
+	 */
 	public Document nextDoc() throws Exception {
 		List<List<CoreLabel>> allWords = new ArrayList<List<CoreLabel>>();
 		List<List<Mention>> allGoldMentions = new ArrayList<List<Mention>>();
@@ -114,7 +168,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    }
 		    if(files.length <= fileIndex && filename.equals("")) return null;
 		    
-		    anno = eecbReader.parse(filename);
+		    anno = eecbReader.parse(topicPath + filename);
 		    stanfordProcessor.annotate(anno);
 		 
 		    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
@@ -244,7 +298,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	
 	@Override
 	public String toString() {
-		return "EECBMentionExtractor: [ corpusPath : " + corpusPath + ", Length of file pool : " + file.size() +"]"; 
+		return "EECBMentionExtractor: [ topicPath : " + topicPath + ", Length of file pool : " + file.size() +"]"; 
 	}
 	
 	/**
@@ -255,12 +309,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	 * @param comparator
 	 */
 	private void extractGoldMentions(CoreMap s, List<List<Mention>> allGoldMentions, EntityComparator comparator) {
-		/*
-		List<Mention> goldMentions = new ArrayList<Mention>();
-	    allGoldMentions.add(goldMentions);
-	    
-		*/
-		
 	    List<Mention> goldMentions = new ArrayList<Mention>();
 	    allGoldMentions.add(goldMentions);
 	    List<EntityMention> goldMentionList = s.get(MachineReadingAnnotations.EntityMentionsAnnotation.class);

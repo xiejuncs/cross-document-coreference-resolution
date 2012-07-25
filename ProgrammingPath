@@ -10,4 +10,8 @@ NOTE:
 
 (1) List<CoreMao> sentences
 (2) CoreLabel token
- 
+
+Edit RuleBasedCorefMentionFinder in order to incorporate the verb extraction 
+
+
+Initialize positions and corefCluster : Document.initializeCorefCluster();
