@@ -19,12 +19,15 @@ public class EecbEventMention extends EecbMention {
 	/** the parent event */
 	private EecbEvent mParent;
 	
+	private int mSentence;
+	
 	/** anchor text for this event, just the phrase annotated by the mentions.txt */
 	private EecbCharSeq mAnchor;
 
-	public EecbEventMention(String id, EecbCharSeq extent, EecbCharSeq anchor) {
+	public EecbEventMention(String id, EecbCharSeq extent, EecbCharSeq anchor, int sentence) {
 		super(id, extent);
 		this.mAnchor = anchor;
+		mSentence = sentence;
 		mRolesToArguments = new HashMap<String, EecbEventMentionArgument>();
 	}
 	
@@ -32,7 +35,7 @@ public class EecbEventMention extends EecbMention {
 	public String toString() {
 		return "EecbEventMention [mAnchor = " + mAnchor + ", mParent=" + mParent + 
 		", mRolesToArguments = " + mRolesToArguments + ", mExtent = " + mExtent +
-		", mId = " + mID + "]";
+		", mId = " + mID + ", mSentence = " + mSentence + "]";
 	}
 	
 	public Collection<EecbEventMentionArgument> getArgs() {
@@ -57,6 +60,10 @@ public class EecbEventMention extends EecbMention {
 	
 	public EecbCharSeq getAnchor() {
 		return mAnchor;
+	}
+	
+	public int getSentence() {
+		return mSentence;
 	}
 
 }

@@ -51,105 +51,12 @@ public class CRC_MAIN {
 	
 	public static final Logger logger = Logger.getLogger(CRC_MAIN.class.getName());
 	
-	/**
-	 * If true, we score the output of the given test document
-	 * Assumes gold annotations are available
-	 * 
-	 */
-	private final boolean doScore;
-	
-	/**
-	 * automatically set by looking at sieves
-	 */
-	private final boolean useSemantics;
-	
-	/**
-	 * Array of sieve passes to be used in the system
-	 * Ordered from highest precision to lowest
-	 * See paper, they use 7 sieves
-	 */
-	private final DeterministicCorefSieve [] sieves;
-	private final String [] sieveClassNames;
-	
-	/**
-	 * Dictionaries of all the useful goodies (gener, animacy, number etc)
-	 */
-	private final Dictionaries dictionaries;
-	
-	/**
-	 * Semantic knowledge : wordnet
-	 */
-	private final Semantics semantics;
-	
-	/**
-	 * Current sieve index
-	 */
-	public int currentSieve;
-	
-	/** counter for links in passes (Pair<correct links, total links>) */
-	public List<Pair<Integer, Integer>> linksCountInPass;
-	
-	/** scores for each pass */
-	public List<CorefScorer> scorePairwise;
-	public List<CorefScorer> scoreBcubed;
-	public List<CorefScorer> scoreMUC;
-	
-	private List<CorefScorer> scoreSingleDoc;
-	
-	/** Additional scoring stats */
-	int additionalCorrectLinksCount;
-	int additionalLinksCount;
-	
-	public CRC_MAIN(Properties props) throws Exception {
-		// initialize required fields
-		currentSieve = -1;
-		
-		linksCountInPass = new ArrayList<Pair<Integer,Integer>>();
-		scorePairwise = new ArrayList<CorefScorer>();
-		scoreBcubed = new ArrayList<CorefScorer>();
-		scoreMUC = new ArrayList<CorefScorer>();
-		
-		/** construct the sieve passes */
-		String sievePasses = props.getProperty(Constants.SIEVES_PROP, Constants.SIEVEPASSES);
-	    sieveClassNames = sievePasses.trim().split(",\\s*");
-	    sieves = new DeterministicCorefSieve[sieveClassNames.length];
-	    for(int i = 0; i < sieveClassNames.length; i ++){
-	      sieves[i] = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses."+sieveClassNames[i]).getConstructor().newInstance();
-	      sieves[i].init(props);
-	    }
-	    
-	    //
-	    // create scoring framework
-	    //
-	    doScore = Boolean.parseBoolean(props.getProperty(Constants.SCORE_PROP, "false"));
-	    
-	    //
-	    // set useWordNet
-	    //
-	    useSemantics = sievePasses.contains("AliasMatch") || sievePasses.contains("LexicalChainMatch");
-	    
-	    if(doScore){
-	        for(int i = 0 ; i < sieveClassNames.length ; i++){
-	          scorePairwise.add(new ScorerPairwise());
-	          scoreBcubed.add(new ScorerBCubed(BCubedType.B0));
-	          scoreMUC.add(new ScorerMUC());
-	          linksCountInPass.add(new Pair<Integer, Integer>(0, 0));
-	        }
-	      }
-	    
-	    //
-	    // load all dictionaries
-	    //
-	    dictionaries = new Dictionaries(props);
-	    semantics = (useSemantics)? new Semantics(dictionaries) : null;
-	}
-	
 	private static LexicalizedParser makeParser(Properties props) {
 	    int maxLen = Integer.parseInt(props.getProperty(Constants.PARSER_MAXLEN_PROP, "100"));
 	    String[] options = {"-maxLength", Integer.toString(maxLen)};
 	    LexicalizedParser parser = LexicalizedParser.loadModel(props.getProperty(Constants.PARSER_MODEL_PROP, DefaultPaths.DEFAULT_PARSER_MODEL), options);
 	    return parser;
-	  }
+	}
 	
 	/**
 	 * 
@@ -158,9 +65,17 @@ public class CRC_MAIN {
 	 */
 	public static void main(String[] args) throws Exception {
 		logger.info("Start: ============================================================");
+		
+		/**
+		 * The configuration for EECB corpus
+		 */
 		Properties props = new Properties();
 		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 		props.put("dcoref.eecb", GlobalConstantVariables.CORPUS_PATH);
+		// Deterministic sieves in step 6 of Algorithm 1, apply Pronoun Match after cross document coreference resolution
+		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2," +
+				"StrictHeadMatch3, StrictHeadMatch4, AliasMatch, RelaxedHeadMatch, LexicalChainMatch");
+				
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		
 		/** initialize logger */
@@ -239,6 +154,19 @@ public class CRC_MAIN {
 	        if(Constants.SKIP_COREF) {
 	          continue;
 	        }
+	    }
+	    
+	    corefSystem.coref(document);  // Do Coreference Resolution using the self defined coreference method
+
+	    if(corefSystem.doScore()){
+	        //Identifying possible coreferring mentions in the corpus along with any recall/precision errors with gold corpus
+	    	corefSystem.printTopK(logger, document, corefSystem.semantics());
+
+	        logger.fine("pairwise score for this doc: ");
+	        corefSystem.getScoreSingleDoc().get(corefSystem.getSieves().length-1).printF1(logger);
+	        logger.fine("accumulated score: ");
+	        corefSystem.printF1(true);
+	        logger.fine("\n");
 	    }
 	    
 	    logger.info("Done: ===================================================");

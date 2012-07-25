@@ -176,7 +176,8 @@ public class EecbDocument extends EecbElement {
 	    int sentence;
 	    for (String key : entityKeys) {
 	    	EecbEntityMention em = doc.mEntityMentions.get(key);
-	    	sentence = doc.mTokens.get(em.getExtent().getTokenStart()).getSentence();
+	    	sentence = em.getSentence();
+	    	
 	    	// adjust the number of rows if necessary
 	        while (sentence >= doc.mSentenceEntityMentions.size()) {
 	          doc.mSentenceEntityMentions.add(new ArrayList<EecbEntityMention>());
@@ -201,7 +202,7 @@ public class EecbDocument extends EecbElement {
 	    Set<String> eventKeys = doc.mEventMentions.keySet();
 	    for (String key : eventKeys) {
 	        EecbEventMention em = doc.mEventMentions.get(key);
-	        sentence = doc.mTokens.get(em.getExtent().getTokenStart()).getSentence();
+	        sentence = em.getSentence(); // add sentence id
 
 	        /*
 	         * adjust the number of rows if necessary -- if you're wondering why we do
@@ -323,6 +324,12 @@ public class EecbDocument extends EecbElement {
 	
 	/**
 	 * According to the EECB specification, parse one document
+	 * <b>NOTE</b>
+	 * 
+	 * The annotation style is not right, according to my current implementation. Modify later
+	 * 
+	 * The most important thing is to go through the process quickly
+	 * 
 	 */
 	public static EecbDocument parseDocument(File f) throws Exception {
 		String fileID = getKey(f);
@@ -372,9 +379,9 @@ public class EecbDocument extends EecbElement {
 					    	sb.append(tokens.get(i) + " ");
 					    }
 					    String mentionText = sb.toString().trim();
-					    String ID = fileID + ":" + annos[1] + ":" + annos[3] + ":" + annos[4];
+					    String ID = fileID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4];
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[3]), Integer.parseInt(annos[4]));
-					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null); // HEAD will be processed later
+					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, Integer.parseInt(annos[1])); // HEAD will be processed later
 					    eecbDoc.addEntityMention(entityMention);
 					}
 				}
@@ -406,9 +413,9 @@ public class EecbDocument extends EecbElement {
 					    	sb.append(tokens.get(i) + " ");
 					    }
 					    String mentionText = sb.toString().trim();
-					    String ID = fileID + ":" + annos[1] + ":" + annos[3] + ":" + annos[4];
+					    String ID = fileID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4];
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[3]), Integer.parseInt(annos[4]));
-					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention);
+					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention, Integer.parseInt(annos[1]));
 					    eecbDoc.addEventMention(eventMention);
 					}
 				}

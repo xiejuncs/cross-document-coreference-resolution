@@ -1,6 +1,6 @@
 package edu.oregonstate.domains.eecb.reader;
 
-import edu.stanford.nlp.trees.Span;
+import edu.stanford.nlp.ie.machinereading.structure.Span;
 
 
 /**

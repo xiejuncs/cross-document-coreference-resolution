@@ -5,20 +5,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import edu.oregonstate.EgenericDataSetReader;
+import edu.oregonstate.domains.eecb.reader.EecbCharSeq;
 import edu.oregonstate.domains.eecb.reader.EecbDocument;
 import edu.oregonstate.domains.eecb.reader.EecbEntity;
 import edu.oregonstate.domains.eecb.reader.EecbEntityMention;
 import edu.oregonstate.domains.eecb.reader.EecbEventMention;
 import edu.oregonstate.domains.eecb.reader.EecbToken;
 import edu.oregonstate.util.GlobalConstantVariables;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceCharSeq;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
 import edu.stanford.nlp.ie.machinereading.structure.AnnotationUtils;
 import edu.stanford.nlp.ie.machinereading.structure.EntityMention;
 import edu.stanford.nlp.ie.machinereading.structure.EventMention;
+import edu.stanford.nlp.ie.machinereading.structure.ExtractionObject;
+import edu.stanford.nlp.ie.machinereading.structure.Span;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -103,11 +109,9 @@ public class EecbReader extends EgenericDataSetReader {
 		// NOTE: this method remains to be finish
 		EecbDocument eecbDocument = EecbDocument.parseDocument(prefix, GlobalConstantVariables.MENTION_ANNOTATION_PATH);
 		String docID = eecbDocument.getId();
-		
-		// map entity mention ID strings to their EntityMention counterparts
 		Map<String, EntityMention> entityMentionMap = new HashMap<String, EntityMention>();
-		
 		int tokenOffset = 0;
+		
 		for (int sentenceIndex = 0; sentenceIndex < eecbDocument.getSentenceCount(); sentenceIndex++ ) {
 			List<EecbToken> tokens = eecbDocument.getSentence(sentenceIndex);
 			List<CoreLabel> words = new ArrayList<CoreLabel>();
@@ -130,7 +134,7 @@ public class EecbReader extends EgenericDataSetReader {
 		    
 		    List<EecbEntityMention> entityMentions = eecbDocument.getEntityMentions(sentenceIndex);
 		    List<EecbEventMention> eventMentions = eecbDocument.getEventMentions(sentenceIndex);
-		    /*
+		    
 		    // convert entity mentions
 		    for (EecbEntityMention eecbEntityMention : entityMentions) {
 		    	String corefID = "";
@@ -141,8 +145,10 @@ public class EecbReader extends EgenericDataSetReader {
 		    			break;
 		    		}
 		    	}
-		    	
-		    	EntityMention convertedMention = convertEecbEntityMention(eecbEntityMention, docID, sentence, tokenOffset, corefID);
+
+		    	// 
+		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, eecbEntityMention.getExtent().getTokenOffset(), 
+		    			eecbEntityMention.getExtent().getTokenOffset(), "", "", "");
 		    	entityCounts.incrementCount(convertedMention.getType());
 		    	logger.info("CONVERTED MENTION HEAD SPAN: " + convertedMention.getHead());
 		        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
@@ -152,14 +158,43 @@ public class EecbReader extends EgenericDataSetReader {
 		    
 		    // convert EventMentions
 		    for (EecbEventMention eecbEventMention : eventMentions) {
-		    	EventMention convertedMention = convertEecbEventMention(eecbEventMention, docID, sentence, entityMentionMap, tokenOffset);
+		    	EecbCharSeq anchor = eecbEventMention.getAnchor();
+		    	ExtractionObject anchorObject = new ExtractionObject(
+		    			eecbEventMention.getId() + "-anchor",
+		    	        sentence,
+		    	        new Span(anchor.getTokenStart() - tokenOffset, anchor.getTokenEnd() + 1 - tokenOffset),
+		    	        "ANCHOR",
+		    	        null);
+		    	
+		    	Set<String> roleSet = eecbEventMention.getRoles();
+		        List<String> roles = new ArrayList<String>();
+		        for(String role: roleSet) roles.add(role);
+		        List<ExtractionObject> convertedArgs = new ArrayList<ExtractionObject>();
+
+		        int left = Integer.MAX_VALUE;
+		        int right = Integer.MIN_VALUE;
+		        for(String role: roles){
+		          EecbEntityMention arg = eecbEventMention.getArg(role);
+		          ExtractionObject o = entityMentionMap.get(arg.getId());
+		          if(o == null){
+		            logger.severe("READER ERROR: Failed to find event argument with id " + arg.getId());
+		            logger.severe("This happens because a few event mentions illegally span multiple sentences. Will ignore this mention.");
+		            return null;
+		          }
+		          convertedArgs.add(o);
+		          if(o.getExtentTokenStart() < left) left = o.getExtentTokenStart();
+		          if(o.getExtentTokenEnd() > right) right = o.getExtentTokenEnd();
+		        }
+		    	
+
+		    	EventMention convertedMention = new EventMention(eecbEventMention.getId(), sentence, eecbEventMention.getExtent().getTokenOffset(), "", "", anchorObject, convertedArgs, null); // 
 		    	if(convertedMention != null){
 		            eventCounts.incrementCount(convertedMention.getType());
 		            logger.info("CONVERTED EVENT MENTION: " + convertedMention);
 		            AnnotationUtils.addEventMention(sentence, convertedMention);
 		        }
 		    }
-		    */
+		    
 		    
 		    results.add(sentence);
 		    tokenOffset += tokens.size();

@@ -20,7 +20,7 @@ public class EecbEntityMention extends EecbMention {
 	
 	@Override
 	public String toString() {
-		return "EecbEntityMention [mHead=" + mHead + "]";
+		return "EecbEntityMention [mHead=" + mHead + ", mExtent" + this.mExtent +", mSentence = " + mSentence +"]";
 	  }
 	
 	/** The set of event mentions that contain this entity mention */
@@ -34,13 +34,16 @@ public class EecbEntityMention extends EecbMention {
 	/** Position of the head word of this mention */
 	private int mHeadTokenPosition;
 	
-	public EecbEntityMention(String id, EecbCharSeq extent, EecbCharSeq head) {
+	private int mSentence;
+	
+	public EecbEntityMention(String id, EecbCharSeq extent, EecbCharSeq head, int sentence) {
 		super(id, extent);
 	    mExtent = extent;
 	    mHead = head;
 	    mParent = null;
 	    mHeadTokenPosition = -1;
 	    mEventMentions = new ArrayList<EecbEventMention>();
+	    mSentence = sentence;
 	}
 	
 	public void setParent(EecbEntity e) { mParent = e; }
@@ -48,6 +51,7 @@ public class EecbEntityMention extends EecbMention {
 	public EecbCharSeq getHead() { return mHead; }
 	public EecbCharSeq getExtent() { return mExtent; }
 	public int getHeadTokenPosition() { return mHeadTokenPosition; }
+	public int getSentence() { return mSentence; }
 	
 	public void addEventMention(EecbEventMention rm) {
 	    mEventMentions.add(rm);
