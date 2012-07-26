@@ -90,9 +90,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		topicPath = props.getProperty(EECB_Constants.EECB_PROP, GlobalConstantVariables.CORPUS_PATH) + "/" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
+		// Output 2.eecb and 1.eecb
 		files = new File(topicPath).list();
-		// 2.eecb
-		// 1.eecb
 	}
 	
 	/**
@@ -100,48 +99,29 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	 * 
 	 * extract all mentions in one doc cluster, represented by Mention 
 	 */
-	public EecbTopic inistantiate() throws Exception {
-		List<List<List<Mention>>> allPredictedMentions = new ArrayList<List<List<Mention>>>();;
-		for (int i = 0; i < files.length; i++) {
-			String fileAbsolutePath = topicPath + files[i];
-			try {
-				Annotation anno;
-				List<List<CoreLabel>> allWords = new ArrayList<List<CoreLabel>>();
-				List<List<Mention>> allGoldMentions = new ArrayList<List<Mention>>();
-				List<List<Mention>> allPredictedMention;
-				List<Tree> allTrees = new ArrayList<Tree>();
-				anno = eecbReader.parse(fileAbsolutePath);
-			    stanfordProcessor.annotate(anno);
-			 
-			    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
-			    for (CoreMap sentence : sentences) {
-			    	int j = 1;
-			    	for (CoreLabel w : sentence.get(TokensAnnotation.class)) {
-			    		w.set(IndexAnnotation.class, j++);
-			    		if(!w.containsKey(UtteranceAnnotation.class)) {
-			    	        w.set(UtteranceAnnotation.class, 0);
-			    	    }
-			    	}
-			    	allTrees.add(sentence.get(TreeAnnotation.class));
-			    	allWords.add(sentence.get(TokensAnnotation.class));
-			    	EntityComparator comparator = new EntityComparator();
-			    	extractGoldMentions(sentence, allGoldMentions, comparator);
-			    }
-			    
-			    allPredictedMention = mentionFinder.extractPredictedMentions(anno, -1, dictionaries);
-			    printRawDoc(sentences, allPredictedMention, fileAbsolutePath, false);
-			    allPredictedMentions.add(allPredictedMention);
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-		}
-		
+	public EecbTopic inistantiate(EmentionExtractor mentionExtractor) throws Exception {
 		EecbTopic eecbTopic = new EecbTopic();
+		Document document;
+		while (true) {
+	    	document = mentionExtractor.nextDoc();
+	    	if (document == null) break;
+	    	document.extractGoldCorefClusters();
+	    	addDocument(eecbTopic, document);
+	    }
+
 		return eecbTopic;
 	}
 	
-	
+	/**
+	 * add the according fields of document into eecbTopic, which will be used to conduct
+	 * high-precision deterministic sieves in the sixth step in the Algorithm 1 
+	 * 
+	 * @param eecbTopic
+	 * @param document
+	 */
+	public void addDocument(EecbTopic eecbTopic, Document document) {
+		
+	}
 	
 	
 	/**

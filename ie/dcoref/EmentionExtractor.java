@@ -55,7 +55,7 @@ public class EmentionExtractor {
 	 * @return List of mentions found in each sentence ordered according to the tree traversal.
 	 * @throws Exception 
 	 */
-	public EecbTopic inistantiate() throws Exception {
+	public EecbTopic inistantiate(EmentionExtractor mentionExtractor) throws Exception {
 		return null; 
 	}
 	

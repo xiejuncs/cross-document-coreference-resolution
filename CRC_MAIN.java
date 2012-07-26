@@ -153,7 +153,7 @@ public class CRC_MAIN {
 		    //
 		    EecbTopic eecbTopic;
 		    
-		    eecbTopic = mentionExtractor.inistantiate();
+		    eecbTopic = mentionExtractor.inistantiate(mentionExtractor);
 		    
 		    Document document;
 		    //
