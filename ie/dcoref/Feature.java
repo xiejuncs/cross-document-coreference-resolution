@@ -34,7 +34,7 @@ public class Feature {
 			former = c2;
 			latter = c1;
 			if(gold) {
-				formerCentroid = c2.goldCentroid;
+				formerCentroid = c2.goldCentroid; // what is goldCentroid or predictedCentroid
 				latterCentroid = c1.goldCentroid;
 			} else {
 				formerCentroid = c2.predictedCentroid;
@@ -45,7 +45,7 @@ public class Feature {
 		Mention latterRep = latter.getRepresentativeMention();
 		boolean isVerb = latterRep.isVerb || formerRep.isVerb;
 
-		String mentionType = ""; 
+		String mentionType = "";
 		if(!isVerb) {
 			if(formerRep.mentionType==MentionType.PROPER && latterRep.mentionType==MentionType.PROPER) mentionType = "-PROPER";
 			else if(formerRep.mentionType==MentionType.PRONOMINAL || latterRep.mentionType==MentionType.PRONOMINAL) mentionType = "-PRONOMINAL";

@@ -4,9 +4,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Vector;
@@ -15,13 +17,6 @@ import java.util.logging.Logger;
 
 import edu.oregonstate.domains.eecb.EecbReader;
 import edu.oregonstate.util.GlobalConstantVariables;
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntity;
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEvent;
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEventMention;
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceRelationMention;
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceSentenceSegmenter;
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceToken;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -72,6 +67,14 @@ public class EecbDocument extends EecbElement {
 	/** The raw byte document, no preprocessing */
 	private String mRawText;
 	
+	/** use a list of string to represent the raw text of a document, each string is a sentence */
+	private List<String> lRawText;
+	
+	/** In order to know the correspondence between the topic document and documents contained in this directory */
+	Map<Integer, String> topicToDocument;
+	
+	Map<String, Integer> documentToTopic;
+	
 	public void setSentences(List<List<EecbToken>> sentences) {
 	    mSentences = sentences;
 	}
@@ -89,6 +92,9 @@ public class EecbDocument extends EecbElement {
 		mSentenceEventMentions = new ArrayList<ArrayList<EecbEventMention>>();
 		
 		mTokens = new Vector<EecbToken>();
+		
+		topicToDocument = new HashMap<Integer, String>();
+		documentToTopic = new HashMap<String, Integer>();
 	}
 	
 	public String getRawText() {
@@ -145,45 +151,39 @@ public class EecbDocument extends EecbElement {
 	
 	/**
 	 * read the eecb file
-	 * <p>
-	 * <b>NOTED</b> Two issues:
-	 * First: the annotated entity and event mention
-	 * Second: the raw text
 	 * 
-	 * @param prefix
+	 * @param files
 	 * @return
-	 * @throws IOException
 	 */
-	public static EecbDocument parseDocument(String prefix, String annotation) throws Exception {
-		mLog.info("Reading Document : " + prefix);
-		mLog.info("Reading Annotation file from : " + annotation);
-		EecbDocument doc = null;
-		// Input the gold mention into the document according to the annotation file
-		doc = parseDocument(new File(prefix + ".eecb"));
-		doc.setPrefix(prefix);
+	public static EecbDocument parseDocument(List<String> files, String topic) {
+		// document is actually a topic, just for convince
+		EecbDocument document = new EecbDocument(topic);
+		document.readRawText(files, topic);
+		// get the document's annotation in order to get the gold entities and events
+		parseDocument(document);
 		
 		// read the EecbTokens
-		List<List<EecbToken>> sentences = tokenizeAndSegmentSentences(doc.getRawText());
-	    doc.setSentences(sentences);
+		List<List<EecbToken>> sentences = tokenizeAndSegmentSentences(document.getRawText());
+		document.setSentences(sentences);
 	    for (List<EecbToken> sentence : sentences) {
 	      for (EecbToken token : sentence) {
-	        doc.addToken(token);
+	    	  document.addToken(token);
 	      }
 	    }
 		
 	    // construct the mEntityMentions matrix
-	    Set<String> entityKeys = doc.mEntityMentions.keySet();
+	    Set<String> entityKeys = document.mEntityMentions.keySet();
 	    int sentence;
 	    for (String key : entityKeys) {
-	    	EecbEntityMention em = doc.mEntityMentions.get(key);
+	    	EecbEntityMention em = document.mEntityMentions.get(key);
 	    	sentence = em.getSentence();
 	    	
 	    	// adjust the number of rows if necessary
-	        while (sentence >= doc.mSentenceEntityMentions.size()) {
-	          doc.mSentenceEntityMentions.add(new ArrayList<EecbEntityMention>());
-	          doc.mSentenceEventMentions.add(new ArrayList<EecbEventMention>());
+	        while (sentence >= document.mSentenceEntityMentions.size()) {
+	        	document.mSentenceEntityMentions.add(new ArrayList<EecbEntityMention>());
+	        	document.mSentenceEventMentions.add(new ArrayList<EecbEventMention>());
 	        }
-	        ArrayList<EecbEntityMention> sentEnts = doc.mSentenceEntityMentions.get(sentence);
+	        ArrayList<EecbEntityMention> sentEnts = document.mSentenceEntityMentions.get(sentence);
 	        boolean added = false;
 	        for (int i = 0; i < sentEnts.size(); i++) {
 	          EecbEntityMention crt = sentEnts.get(i);
@@ -199,9 +199,9 @@ public class EecbDocument extends EecbElement {
 	    }
 	    
 	    // construct the mEventMentions matrix
-	    Set<String> eventKeys = doc.mEventMentions.keySet();
+	    Set<String> eventKeys = document.mEventMentions.keySet();
 	    for (String key : eventKeys) {
-	        EecbEventMention em = doc.mEventMentions.get(key);
+	        EecbEventMention em = document.mEventMentions.get(key);
 	        sentence = em.getSentence(); // add sentence id
 
 	        /*
@@ -210,16 +210,16 @@ public class EecbDocument extends EecbElement {
 	         * have an event with no entities near the end of the document and thus
 	         * won't have created rows in mSentence*Mentions
 	         */
-	        while (sentence >= doc.mSentenceEntityMentions.size()) {
-	          doc.mSentenceEntityMentions.add(new ArrayList<EecbEntityMention>());
-	          doc.mSentenceEventMentions.add(new ArrayList<EecbEventMention>());
+	        while (sentence >= document.mSentenceEntityMentions.size()) {
+	        	document.mSentenceEntityMentions.add(new ArrayList<EecbEntityMention>());
+	        	document.mSentenceEventMentions.add(new ArrayList<EecbEventMention>());
 	        }
 
 	        // store the event mentions in increasing order
 	        // (a) first, event mentions with no arguments
 	        // (b) then by the start position of their head, or
 	        // (c) if start is the same, in increasing order of ends
-	        ArrayList<EecbEventMention> sentEvents = doc.mSentenceEventMentions.get(sentence);
+	        ArrayList<EecbEventMention> sentEvents = document.mSentenceEventMentions.get(sentence);
 	        boolean added = false;
 	        for (int i = 0; i < sentEvents.size(); i++) {
 	          EecbEventMention crt = sentEvents.get(i);
@@ -233,8 +233,169 @@ public class EecbDocument extends EecbElement {
 	          sentEvents.add(em);
 	        }
 	    }
-	    
-		return doc;
+		
+		return document;
+	}
+	
+	public static void parseDocument(EecbDocument document){
+		// READ the mentions.txt file
+		HashMap<String, ArrayList<String>> annotations = readAnnotation();
+		String documentID = document.getId();		
+		List<String> sentences = document.lRawText;
+		ArrayList<String> annotation = annotations.get(documentID);
+		
+		assert annotation != null;
+		HashSet<String> corefMap = getCorefID(annotation);
+		
+		// according to every id
+		for (String id : corefMap) {
+			if (id.startsWith("N")) {
+				// Entity
+				EecbEntity entity = new EecbEntity(id);
+				for (String anno : annotation) {
+					//String key = topicID;
+					//String value = type + ":" + documentID +":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
+					// anno N:1:1:27:3:5:13:27
+					String[] annos = anno.split(":");
+					String key = annos[0] + ":" + annos[3];
+					if (key.equals(id)) {
+						String sentenceID = documentID + ":" + annos[1] + ":" + annos[2];
+						int documentSentenceID = document.documentToTopic.get(sentenceID);
+						String sentence = sentences.get(documentSentenceID);
+						// tokenize the sentence in order to get the annotation entity and event
+						Properties props = new Properties();
+					    props.put("annotators", "tokenize, ssplit");
+					    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+					    Annotation seAnno = new Annotation(sentence);
+					    pipeline.annotate(seAnno);
+					    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
+					    ArrayList<String> tokens = new ArrayList<String>();
+					    for(CoreMap sen : seSentences) {
+					    	for (CoreLabel token : sen.get(TokensAnnotation.class)) {
+					    		String word = token.get(TextAnnotation.class);
+					    		tokens.add(word);
+					    	}
+					    }
+					    StringBuilder sb = new StringBuilder();
+					    for (int i = Integer.parseInt(annos[4]); i < Integer.parseInt(annos[5]); i++) {
+					    	sb.append(tokens.get(i) + " ");
+					    }
+					    String mentionText = sb.toString().trim();
+					    String ID = documentID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4] + ":" + annos[5];
+					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[4]), Integer.parseInt(annos[5]));
+					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, documentSentenceID); // HEAD will be processed later
+					    document.addEntityMention(entityMention);
+					    entity.addMention(entityMention);
+					}
+				}
+				document.addEntity(entity);
+			} else {
+				// Event
+				EecbEvent event = new EecbEvent(id);
+				for (String anno : annotation) {
+					String[] annos = anno.split(":");
+					String key = annos[0] + ":" + annos[2];
+					if (key.equals(id)) {
+						String sentenceID = documentID + ":" + annos[1] + ":" + annos[2];
+						int documentSentenceID = document.documentToTopic.get(sentenceID);
+						String sentence = sentences.get(documentSentenceID);
+						// tokenize the sentence in order to get the annotation entity and event
+						Properties props = new Properties();
+					    props.put("annotators", "tokenize, ssplit");
+					    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+					    Annotation seAnno = new Annotation(sentence);
+					    pipeline.annotate(seAnno);
+					    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
+					    ArrayList<String> tokens = new ArrayList<String>();
+					    for(CoreMap sen : seSentences) {
+					    	for (CoreLabel token : sen.get(TokensAnnotation.class)) {
+					    		String word = token.get(TextAnnotation.class);
+					    		tokens.add(word);
+					    	}
+					    }
+					    StringBuilder sb = new StringBuilder();
+					    for (int i = Integer.parseInt(annos[4]); i < Integer.parseInt(annos[5]); i++) {
+					    	sb.append(tokens.get(i) + " ");
+					    }
+					    String mentionText = sb.toString().trim();
+					    String ID = documentID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4] + ":" + annos[5];
+					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[4]), Integer.parseInt(annos[5]));
+					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention, documentSentenceID);
+					    document.addEventMention(eventMention);
+					    event.addMention(eventMention);
+					}
+				}
+				document.addEvent(event);
+			}
+		}	
+	}
+	
+	// from f's name, get the combination of its topic and file name
+	public static String getKey(String filename, String topic) {
+		String key;
+		key = topic + ":" + filename;
+		key = key.substring(0, key.length() - 5);
+		return key;
+	}
+	
+	/**
+	 * Read the raw text
+	 * 
+	 * @param files
+	 * @param topic
+	 */
+	private void readRawText(List<String> files, String topic) {
+		List<Integer> lines = new ArrayList<Integer>(); 
+		int j = 0;
+		List<String> rawText = new ArrayList<String>();
+		HashMap<String, ArrayList<String>> annotations = readAnnotation();
+		ArrayList<String> annotation = annotations.get(topic);
+		for (String filename : files) {
+			String documentID = filename.substring(0, filename.length() - 5);
+			String key = topic + ":" + documentID;
+			ArrayList<String> anno = new ArrayList<String>();
+			for (String record : annotation) {
+				String[] records = record.split(":");
+				if (records[1].equals(documentID)) {
+					anno.add(record);
+				}
+			}
+			filename = GlobalConstantVariables.CORPUS_PATH + topic + "/" + filename;
+			Integer[] sentences = getSentences(anno);
+			int i = 0;
+			try {
+				BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(filename));
+				for (String line = entitiesBufferedReader.readLine(); line != null; line = entitiesBufferedReader.readLine()) {
+					line = line.replaceAll("\\<[^\\>]*\\>", "");
+					boolean contain = false;
+					for (Integer sentence : sentences) {
+						if (sentence == i) {
+							contain = true;
+							break;
+						}
+					}
+					if (contain) { 
+						rawText.add(line);
+						topicToDocument.put(j, key + ":" + Integer.toString(i));
+						documentToTopic.put(key + ":" + Integer.toString(i), j);
+						j++;
+					}
+					i++;
+				}
+				lines.add(i);
+				entitiesBufferedReader.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+		
+		lRawText = rawText;
+		StringBuffer sb = new StringBuffer();
+		for (String line : rawText) {
+			sb.append(line + "\n");
+		}
+		mRawText = sb.toString().trim();
 	}
 	
 	/**
@@ -285,7 +446,7 @@ public class EecbDocument extends EecbElement {
 		HashSet<String> corefMap = new HashSet<String>();
 		for (String annos : annotation) {
 			String[] anno = annos.split(":");
-			String key = anno[0] + ":" + anno[2];
+			String key = anno[0] + ":" + anno[3];
 			corefMap.add(key);
 		}
 		return corefMap;
@@ -322,108 +483,23 @@ public class EecbDocument extends EecbElement {
 		return sens;
 	}
 	
-	/**
-	 * According to the EECB specification, parse one document
-	 * <b>NOTE</b>
-	 * 
-	 * The annotation style is not right, according to my current implementation. Modify later
-	 * 
-	 * The most important thing is to go through the process quickly
-	 * 
-	 */
-	public static EecbDocument parseDocument(File f) throws Exception {
-		String fileID = getKey(f);
-		EecbDocument eecbDoc = new EecbDocument(fileID);
-		eecbDoc.readRawText(f.getAbsolutePath());
-		// READ the mentions.txt file
-		HashMap<String, ArrayList<String>> annotations = readAnnotation();
-		// get the document's annotation in order to get the gold entities and events
-		ArrayList<String> annotation = annotations.get(fileID);
-		assert annotation != null;
-		String text = eecbDoc.getRawText();
+	public static Integer[] getSentences(ArrayList<String> annotation) {
+		HashSet<String> sentences = new HashSet<String>();
+		for (String annos : annotation) {
+			String[] anno = annos.split(":");
+			String key = anno[2];
+			sentences.add(key);
+		}
 		
-		assert text != null;
-		String[] sentences = text.split("\n");
-		// [V:4, N:27, N:26, N:45, V:7, N:28, N:21, N:22, V:1, N:23, V:3, V:2], V represents the event, N represents the entity
-		HashSet<String> corefMap = getCorefID(annotation);
+		Integer[] sentenceLines = new Integer[sentences.size()];
+		int i = 0;
+		for (String sentence : sentences) {
+			sentenceLines[i] = Integer.parseInt(sentence);
+			i++;
+		}
+		Arrays.sort(sentenceLines);
 		
-		// according to every id
-		for (String id : corefMap) {
-			if (id.startsWith("N")) {
-				// Entity
-				EecbEntity entity = new EecbEntity(id);
-				for (String anno : annotation) {
-					//String key = topicID + ":" + documentID;
-					//String value = type + ":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
-					// anno N:1:27:3:5:13:27
-					String[] annos = anno.split(":");
-					String key = annos[0] + ":" + annos[2];
-					if (key.equals(id)) {
-						String sentence = sentences[Integer.parseInt(annos[1])];
-						// tokenize the sentence in order to get the annotation entity and event
-						Properties props = new Properties();
-					    props.put("annotators", "tokenize, ssplit");
-					    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-					    Annotation seAnno = new Annotation(sentence);
-					    pipeline.annotate(seAnno);
-					    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
-					    ArrayList<String> tokens = new ArrayList<String>();
-					    for(CoreMap sen : seSentences) {
-					    	for (CoreLabel token : sen.get(TokensAnnotation.class)) {
-					    		String word = token.get(TextAnnotation.class);
-					    		tokens.add(word);
-					    	}
-					    }
-					    StringBuilder sb = new StringBuilder();
-					    for (int i = Integer.parseInt(annos[3]); i < Integer.parseInt(annos[4]); i++) {
-					    	sb.append(tokens.get(i) + " ");
-					    }
-					    String mentionText = sb.toString().trim();
-					    String ID = fileID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4];
-					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[3]), Integer.parseInt(annos[4]));
-					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, Integer.parseInt(annos[1])); // HEAD will be processed later
-					    eecbDoc.addEntityMention(entityMention);
-					}
-				}
-				eecbDoc.addEntity(entity);
-			} else {
-				// Event
-				EecbEvent event = new EecbEvent(id);
-				for (String anno : annotation) {
-					String[] annos = anno.split(":");
-					String key = annos[0] + ":" + annos[2];
-					if (key.equals(id)) {
-						String sentence = sentences[Integer.parseInt(annos[1])];
-						// tokenize the sentence in order to get the annotation entity and event
-						Properties props = new Properties();
-					    props.put("annotators", "tokenize, ssplit");
-					    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-					    Annotation seAnno = new Annotation(sentence);
-					    pipeline.annotate(seAnno);
-					    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
-					    ArrayList<String> tokens = new ArrayList<String>();
-					    for(CoreMap sen : seSentences) {
-					    	for (CoreLabel token : sen.get(TokensAnnotation.class)) {
-					    		String word = token.get(TextAnnotation.class);
-					    		tokens.add(word);
-					    	}
-					    }
-					    StringBuilder sb = new StringBuilder();
-					    for (int i = Integer.parseInt(annos[3]); i < Integer.parseInt(annos[4]); i++) {
-					    	sb.append(tokens.get(i) + " ");
-					    }
-					    String mentionText = sb.toString().trim();
-					    String ID = fileID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4];
-					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[3]), Integer.parseInt(annos[4]));
-					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention, Integer.parseInt(annos[1]));
-					    eecbDoc.addEventMention(eventMention);
-					}
-				}
-				eecbDoc.addEvent(event);
-			}
-		}	
-		
-		return eecbDoc;
+		return sentenceLines;
 	}
 	
 	/**
@@ -458,8 +534,8 @@ public class EecbDocument extends EecbElement {
 				// check whether annotation HashMap contains the key (topic:documentID), 
 				// if contains, add the current string combination (type:sentenceNumber:corefID:startIndex:endIndex:startCharIndex:endCharIndex) to the existed ArrayList
 				// if not contains, initialize an empty ArrayList, and add the string combination to the empty ArrayList
-				String key = topicID + ":" + documentID;
-				String value = type + ":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
+				String key = topicID;
+				String value = type + ":" + documentID + ":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
 				boolean contains = annotation.containsKey(key);
 				ArrayList<String> values = new ArrayList<String>();
 				if (contains) {
@@ -475,29 +551,6 @@ public class EecbDocument extends EecbElement {
 			System.exit(1);
 		}
 		return annotation;
-	}
-	
-	/**
-	 * Read the raw text, can be split by \n for convince
-	 * 
-	 * @param filename
-	 * @throws IOException
-	 */
-	private void readRawText(String filename) throws IOException {
-		StringBuffer sb = new StringBuffer();
-		try {
-			BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(filename));
-			for (String line = entitiesBufferedReader.readLine(); line != null; line = entitiesBufferedReader.readLine()) {
-				line = line.replaceAll("\\<[^\\>]*\\>", "");
-				sb.append(line);  // whether need to add a \n tag in order to make it obvious
-				sb.append("\n");
-			}
-			entitiesBufferedReader.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		mRawText = sb.toString().trim();
 	}
 
 }

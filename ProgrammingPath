@@ -15,3 +15,7 @@ Edit RuleBasedCorefMentionFinder in order to incorporate the verb extraction
 
 
 Initialize positions and corefCluster : Document.initializeCorefCluster();
+
+
+Mention Detection Part: RuleBasedCorefMention: add one function in order to support the VB mention detection. similar to noun phrase extraction or named entity extraction, regular expression is used to match the mention.
+  

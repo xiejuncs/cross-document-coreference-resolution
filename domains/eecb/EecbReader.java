@@ -64,51 +64,36 @@ public class EecbReader extends EgenericDataSetReader {
 	}
 	
 	/**
-	 * Read in the detail file and mentions.txt in order to count how many entity and event mention exist
-	 * in one single document
+	 * The important class for Stanford system is Document. The corefernce function 
+	 * defined in the SivveCoreferenceSystem also uses Document to conduct the resolution.
+	 * However, in EECB corpus, each topic directory contains several documents. Hence, we 
+	 * concatenate them together. This is the first step that we need to do.
 	 * 
+	 * @param files list of documents included in specific topic
+	 * @return
 	 */
-	public Annotation read(String path) throws Exception {
+	public Annotation read(List<String> files, String topic) {
+		if (files == null) {
+			new RuntimeException("There are no files contained in this topic");		
+		}
 		List<CoreMap> allSentences = new ArrayList<CoreMap>();
-		File basePath = new File(path);	
-		assert basePath.exists();  // Assert whether the file name exists 
 		Annotation corpus = new Annotation("");
-		assert basePath.isFile(); // Each file name is not a directory
-		allSentences.addAll(readDocument(basePath, corpus));
+		allSentences.addAll(readDocument(files, topic, corpus));
 		AnnotationUtils.addSentences(corpus, allSentences);
 		return corpus;
 	}
-	
 	/**
-	 * Reads in .eecb file
+	 * READ the document
 	 * 
-	 * @param file
-	 * 			a file object of EECB file
-	 * @param corpus
+	 * @param files list of documents included in specific topic
+	 * @param corpus the annotation got 
 	 * @return
-	 * @throws IOException
 	 */
-	private List<CoreMap> readDocument(File file, Annotation corpus) throws Exception {
-		//String prefix = file.getName().replaceAll(".eecb", "");
-		String prefix = file.getAbsolutePath().replaceAll(".eecb", "");
-		// preifx /scratch/JavaFile/stanford-corenlp-2012-05-22/corpus/EECB2.0/data/1/1
-		List<CoreMap> sentencesFromFile = readDocument(prefix, corpus);
-		return sentencesFromFile;
-	}
-	
-	/**
-	 * deal with .eecb file 
-	 * @param prefix
-	 * @param corpus
-	 * @return
-	 * @throws Exception
-	 */
-	private List<CoreMap> readDocument(String prefix, Annotation corpus) throws Exception {
-		logger.info("Reading Document: " + prefix);
+	private List<CoreMap> readDocument(List<String> files, String topic, Annotation corpus) {
 		List<CoreMap> results = new ArrayList<CoreMap>();
-		// NOTE: this method remains to be finish
-		EecbDocument eecbDocument = EecbDocument.parseDocument(prefix, GlobalConstantVariables.MENTION_ANNOTATION_PATH);
+		EecbDocument eecbDocument = EecbDocument.parseDocument(files, topic);
 		String docID = eecbDocument.getId();
+		
 		Map<String, EntityMention> entityMentionMap = new HashMap<String, EntityMention>();
 		int tokenOffset = 0;
 		
@@ -145,12 +130,13 @@ public class EecbReader extends EgenericDataSetReader {
 		    			break;
 		    		}
 		    	}
-
+		    	
 		    	// 
 		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, eecbEntityMention.getExtent().getTokenOffset(), 
-		    			eecbEntityMention.getExtent().getTokenOffset(), "", "", "");
+		    			null, "", "", "");
+		    	convertedMention.setCorefID(corefID);
 		    	entityCounts.incrementCount(convertedMention.getType());
-		    	logger.info("CONVERTED MENTION HEAD SPAN: " + convertedMention.getHead());
+		    	//logger.info("CONVERTED MENTION HEAD SPAN: " + convertedMention.getHead());
 		        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
 		        AnnotationUtils.addEntityMention(sentence, convertedMention);
 		        entityMentionMap.put(eecbEntityMention.getId(), convertedMention);
@@ -202,4 +188,5 @@ public class EecbReader extends EgenericDataSetReader {
 		
 		return results;
 	}
+	
 }

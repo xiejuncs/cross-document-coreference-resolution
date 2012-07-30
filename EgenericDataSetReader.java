@@ -128,7 +128,25 @@ public class EgenericDataSetReader {
 		return retVal;
 	}
 	
+	public final Annotation parse(List<String> files, String topic) throws IOException {
+		Annotation retVal;
+		
+		try {
+			retVal = this.read(files, topic);
+		} catch (Exception ex) {
+			IOException iox = new IOException();
+			iox.initCause(ex);
+			throw iox;
+		}
+		
+		return retVal;
+	}
+	
 	public Annotation read(String path) throws Exception {
+		return null;
+	}
+	
+	public Annotation read(List<String> files, String topic) throws Exception {
 		return null;
 	}
 	

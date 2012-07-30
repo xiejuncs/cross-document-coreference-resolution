@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,7 +63,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	private EecbReader eecbReader;
 	private String topicPath;
 	protected int fileIndex = 0;
-	protected String[] files;
+	protected ArrayList<String> files;
 	
 	private static Logger logger = CRC_MAIN.logger;
 	
@@ -90,67 +92,42 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		topicPath = props.getProperty(EECB_Constants.EECB_PROP, GlobalConstantVariables.CORPUS_PATH) + "/" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
-		// Output 2.eecb and 1.eecb
-		files = new File(topicPath).list();
+		// Output [1.eecb, 2.eecb]
+		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
+		sort(files);
+	}
+	
+	/** sort the files name according to the sequence*/
+	public void sort(ArrayList<String> files) {
+		Integer[] numbers = new Integer[files.size()];
+		for (int i = 0; i < files.size(); i++) {
+			numbers[i] = Integer.parseInt(files.get(i).substring(0, files.get(i).length() - 5));
+		}
+		Arrays.sort(numbers);
+		for (int i = 0; i < numbers.length; i++) {
+			files.set(i, Integer.toString(numbers[i]) + ".eecb");
+		}
 	}
 	
 	/**
-	 * inistantiate the EecbTopic object
-	 * 
+	 * We represent topic as Document class. For example, if there are two documents included 
+	 * in this class. Then we need to concatenate them together. As a whole, we do coreference 
+	 * resolution. In this way, there are less works involved in this situation.
+	 *  
+	 *  @param mentionExtractor extractor for each document
+	 *  @return topic represented by each topic
 	 * extract all mentions in one doc cluster, represented by Mention 
 	 */
-	public EecbTopic inistantiate(EmentionExtractor mentionExtractor) throws Exception {
-		EecbTopic eecbTopic = new EecbTopic();
-		Document document;
-		while (true) {
-	    	document = mentionExtractor.nextDoc();
-	    	if (document == null) break;
-	    	document.extractGoldCorefClusters();
-	    	addDocument(eecbTopic, document);
-	    }
-
-		return eecbTopic;
-	}
-	
-	/**
-	 * add the according fields of document into eecbTopic, which will be used to conduct
-	 * high-precision deterministic sieves in the sixth step in the Algorithm 1 
-	 * 
-	 * @param eecbTopic
-	 * @param document
-	 */
-	public void addDocument(EecbTopic eecbTopic, Document document) {
-		
-	}
-	
-	
-	/**
-	 * The method is designed for within document coreference resolution
-	 */
-	public Document nextDoc() throws Exception {
+	public Document inistantiate(EmentionExtractor mentionExtractor, String topic) throws Exception {
 		List<List<CoreLabel>> allWords = new ArrayList<List<CoreLabel>>();
 		List<List<Mention>> allGoldMentions = new ArrayList<List<Mention>>();
-		List<List<Mention>> allPredictedMentions;
+		List<List<Mention>> allPredictedMentions = null;
 		List<Tree> allTrees = new ArrayList<Tree>();
-		Annotation anno;
+		Annotation anno = null;
 		try {
-			String filename="";
-		    while(files.length > fileIndex){
-		        if(files[fileIndex].contains("eecb")) {
-		        	filename = files[fileIndex];
-		            fileIndex++;
-		            break;
-		        }
-		        else {
-		            fileIndex++;
-		            filename="";
-		        }
-		    }
-		    if(files.length <= fileIndex && filename.equals("")) return null;
-		    
-		    anno = eecbReader.parse(topicPath + filename);
-		    stanfordProcessor.annotate(anno);
-		 
+			anno = eecbReader.parse(files, topic);
+			stanfordProcessor.annotate(anno);
+			 
 		    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
 		    for (CoreMap sentence : sentences) {
 		    	int i = 1;
@@ -160,6 +137,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	        w.set(UtteranceAnnotation.class, 0);
 		    	    }
 		    	}
+		   
 		    	allTrees.add(sentence.get(TreeAnnotation.class));
 		    	allWords.add(sentence.get(TokensAnnotation.class));
 		    	EntityComparator comparator = new EntityComparator();
@@ -167,114 +145,18 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    }
 		    
 		    allPredictedMentions = mentionFinder.extractPredictedMentions(anno, -1, dictionaries);
-		    printRawDoc(sentences, allPredictedMentions, filename, false);
-			
-		} catch (IOException e) {
-			throw new RuntimeIOException(e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
 		}
 		
-		MentionExtractor mentionExtractor = new MentionExtractor(dictionaries, semantics);		
-		return mentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
+		MentionExtractor dcorfMentionExtractor = new MentionExtractor(dictionaries, semantics);		
+		return dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
 	}
-	
-	private void printRawDoc(List<CoreMap> sentences, List<List<Mention>> allMentions, String filename, boolean gold) throws FileNotFoundException {
-	    StringBuilder doc = new StringBuilder();
-	    int previousOffset = 0;
-	    Counter<Integer> mentionCount = new ClassicCounter<Integer>();
-	    for(List<Mention> l : allMentions) {
-	      for(Mention m : l){
-	        mentionCount.incrementCount(m.goldCorefClusterID);
-	      }
-	    }
-	    
-	    for(int i = 0 ; i<sentences.size(); i++) {
-	      CoreMap sentence = sentences.get(i);
-	      List<Mention> mentions = allMentions.get(i);
-	      
-	      String[] tokens = sentence.get(TextAnnotation.class).split(" ");
-	      String sent = "";
-	      List<CoreLabel> t = sentence.get(TokensAnnotation.class);
-	      if(previousOffset+2 < t.get(0).get(CharacterOffsetBeginAnnotation.class)) sent+= "\n";
-	      previousOffset = t.get(t.size()-1).get(CharacterOffsetEndAnnotation.class);
-	      Counter<Integer> startCounts = new ClassicCounter<Integer>();
-	      Counter<Integer> endCounts = new ClassicCounter<Integer>();
-	      HashMap<Integer, Set<Integer>> endID = new HashMap<Integer, Set<Integer>>();
-	      for (Mention m : mentions) {
-	        startCounts.incrementCount(m.startIndex);
-	        endCounts.incrementCount(m.endIndex);
-	        if(!endID.containsKey(m.endIndex)) endID.put(m.endIndex, new HashSet<Integer>());
-	        endID.get(m.endIndex).add(m.goldCorefClusterID);
-	      }
-	      for (int j = 0 ; j < tokens.length; j++){
-	        if(endID.containsKey(j)) {
-	          for(Integer id : endID.get(j)){
-	            if(mentionCount.getCount(id)!=1 && gold) sent += "]_"+id;
-	            else sent += "]";
-	          }
-	        }
-	        for (int k = 0 ; k < startCounts.getCount(j) ; k++) {
-	          if(!sent.endsWith("[")) sent += " ";
-	          sent += "[";
-	        }
-	        sent += " ";
-	        sent = sent + tokens[j];
-	      }
-	      for(int k = 0 ; k <endCounts.getCount(tokens.length); k++) {
-	        sent += "]";
-	      }
-	      sent += "\n";
-	      doc.append(sent);
-	    }
-	    if(gold) logger.fine("New DOC: (GOLD MENTIONS) ==================================================");
-	    else logger.fine("New DOC: (Predicted Mentions) ==================================================");
-	    logger.fine(doc.toString());
-	  }
 	
 	// Define the two variables for obtaining the list of file names
 	public static int spc_count = 1;
 	private static ArrayList<String> file;
-	
-	/**
-	 * Given a corpus path, get the list of file names resides in the folder and its sub-folder
-	 * 	 * 
-	 * @param corpusPath
-	 * @return
-	 */
-	private String[] read(String corpusPath) {
-		file = new ArrayList<String>();
-		File aFile = new File(corpusPath);
-		Process(aFile);
-		String[] fileArray = file.toArray(new String[file.size()]);
-		return fileArray;
-	}
-	
-	/**
-	 * Iterate the folder and its sub-folder.
-	 * If the File object is a directory, recursive
-	 * If the File object is a file, then get its name
-	 * 
-	 * @param aFile
-	 */
-	public void Process(File aFile) {
-		spc_count++;
-		String spcs = "";
-		for (int i = 0; i < spc_count; i++)
-		      spcs += " ";
-		if(aFile.isFile())
-		    file.add(aFile.getParent() + "/" + aFile.getName());
-			//System.out.println(spcs + "[FILE] " + aFile.getParent() + "/" + aFile.getName());
-		else if (aFile.isDirectory()) {
-			//System.out.println(spcs + "[DIR] " + aFile.getName());
-		      File[] listOfFiles = aFile.listFiles();
-		      if(listOfFiles!=null) {
-		        for (int i = 0; i < listOfFiles.length; i++)
-		          Process(listOfFiles[i]);
-		      } else {
-		    	  System.out.println(spcs + " [ACCESS DENIED]");
-		      }
-		}
-		spc_count--;
-	}
 	
 	@Override
 	public String toString() {
@@ -289,7 +171,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	 * @param comparator
 	 */
 	private void extractGoldMentions(CoreMap s, List<List<Mention>> allGoldMentions, EntityComparator comparator) {
-	    List<Mention> goldMentions = new ArrayList<Mention>();
+		List<Mention> goldMentions = new ArrayList<Mention>();
 	    allGoldMentions.add(goldMentions);
 	    List<EntityMention> goldMentionList = s.get(MachineReadingAnnotations.EntityMentionsAnnotation.class);
 	        
@@ -313,7 +195,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	        int id = topic * 100000000 + doc * 1000000 + start * 1000 + end;
 	        men.mentionID = id;
 	        men.corefClusterID = Integer.parseInt(parseID[3]);
-
 	        //String[] parseCorefID = e.getCorefID().split("-E");
 	        //men.goldCorefClusterID = Integer.parseInt(parseCorefID[parseCorefID.length-1]);
 	        men.originalRef = -1;
@@ -341,8 +222,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	        }
 	      }
 	    }
-	    
-	    
 	  }
 	
 }
