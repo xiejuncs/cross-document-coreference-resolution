@@ -3,7 +3,9 @@ package edu.oregonstate.domains.eecb;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.io.File;
@@ -18,6 +20,7 @@ import edu.oregonstate.domains.eecb.reader.EecbEntityMention;
 import edu.oregonstate.domains.eecb.reader.EecbEventMention;
 import edu.oregonstate.domains.eecb.reader.EecbToken;
 import edu.oregonstate.util.GlobalConstantVariables;
+import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceCharSeq;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
 import edu.stanford.nlp.ie.machinereading.structure.AnnotationUtils;
@@ -27,12 +30,19 @@ import edu.stanford.nlp.ie.machinereading.structure.ExtractionObject;
 import edu.stanford.nlp.ie.machinereading.structure.Span;
 import edu.stanford.nlp.ling.CoreAnnotations;
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.CoreAnnotations.BeginIndexAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.IndexAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.parser.lexparser.ParserConstraint;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
 /**
@@ -82,6 +92,25 @@ public class EecbReader extends EgenericDataSetReader {
 		AnnotationUtils.addSentences(corpus, allSentences);
 		return corpus;
 	}
+	
+	/**
+	 * Get the 
+	 * 
+	 * @param sentence
+	 * @param extentTokenSpan
+	 * @return
+	 */
+	public String getExtentString(CoreMap sentence, Span extentTokenSpan) {
+	    List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
+	    StringBuilder sb = new StringBuilder();
+	    for (int i = extentTokenSpan.start(); i < extentTokenSpan.end(); i ++){
+	      CoreLabel token = tokens.get(i);
+	      if(i > extentTokenSpan.start()) sb.append(" ");
+	      sb.append(token.word());
+	    }
+	    return sb.toString();
+	}
+	
 	/**
 	 * READ the document
 	 * 
@@ -130,13 +159,12 @@ public class EecbReader extends EgenericDataSetReader {
 		    			break;
 		    		}
 		    	}
-		    	
+		    
 		    	// 
 		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, eecbEntityMention.getExtent().getTokenOffset(), 
 		    			null, "", "", "");
 		    	convertedMention.setCorefID(corefID);
 		    	entityCounts.incrementCount(convertedMention.getType());
-		    	//logger.info("CONVERTED MENTION HEAD SPAN: " + convertedMention.getHead());
 		        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
 		        AnnotationUtils.addEntityMention(sentence, convertedMention);
 		        entityMentionMap.put(eecbEntityMention.getId(), convertedMention);
@@ -187,6 +215,5 @@ public class EecbReader extends EgenericDataSetReader {
 		}
 		
 		return results;
-	}
-	
+	}	
 }

@@ -240,7 +240,7 @@ public class EecbDocument extends EecbElement {
 	public static void parseDocument(EecbDocument document){
 		// READ the mentions.txt file
 		HashMap<String, ArrayList<String>> annotations = readAnnotation();
-		String documentID = document.getId();		
+		String documentID = document.getId();
 		List<String> sentences = document.lRawText;
 		ArrayList<String> annotation = annotations.get(documentID);
 		
@@ -251,7 +251,8 @@ public class EecbDocument extends EecbElement {
 		for (String id : corefMap) {
 			if (id.startsWith("N")) {
 				// Entity
-				EecbEntity entity = new EecbEntity(id);
+				EecbEntity entity = new EecbEntity(documentID + ":" + id);
+				int idOffset = 1;
 				for (String anno : annotation) {
 					//String key = topicID;
 					//String value = type + ":" + documentID +":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
@@ -281,17 +282,19 @@ public class EecbDocument extends EecbElement {
 					    	sb.append(tokens.get(i) + " ");
 					    }
 					    String mentionText = sb.toString().trim();
-					    String ID = documentID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4] + ":" + annos[5];
+					    String ID = documentID + ":N" + annos[3] + ":" + Integer.toString(idOffset);
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[4]), Integer.parseInt(annos[5]));
 					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, documentSentenceID); // HEAD will be processed later
 					    document.addEntityMention(entityMention);
 					    entity.addMention(entityMention);
+					    idOffset++;
 					}
 				}
 				document.addEntity(entity);
 			} else {
 				// Event
-				EecbEvent event = new EecbEvent(id);
+				EecbEvent event = new EecbEvent(documentID + ":" + id);
+				int idOffset = 1;
 				for (String anno : annotation) {
 					String[] annos = anno.split(":");
 					String key = annos[0] + ":" + annos[2];
@@ -318,11 +321,12 @@ public class EecbDocument extends EecbElement {
 					    	sb.append(tokens.get(i) + " ");
 					    }
 					    String mentionText = sb.toString().trim();
-					    String ID = documentID + ":" + annos[1] + ":" + annos[2] + ":" + annos[3] + ":" + annos[4] + ":" + annos[5];
+					    String ID = documentID + ":V" + annos[3] + ":" + Integer.toString(idOffset);
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[4]), Integer.parseInt(annos[5]));
 					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention, documentSentenceID);
 					    document.addEventMention(eventMention);
 					    event.addMention(eventMention);
+					    idOffset++;
 					}
 				}
 				document.addEvent(event);

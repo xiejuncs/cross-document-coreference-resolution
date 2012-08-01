@@ -78,9 +78,8 @@ public class CRC_MAIN {
 		props.put("dcoref.score", "true");
 		// Deterministic sieves in step 6 of Algorithm 1, apply Pronoun Match after cross document coreference resolution
 		// Hence, in this way, in the final part, we need to create a Stanford CoreNLP again.
-		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch");
-		//props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, " +
-		//"StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
+		//props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch");
+		//props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
 		
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		
@@ -152,14 +151,17 @@ public class CRC_MAIN {
 		   
 		    // Parse one document at a time, and do single-doc coreference resolution in each
 		    Document document = mentionExtractor.inistantiate(mentionExtractor, topic);
+		    document.extractGoldCorefClusters();
 		    corefSystem.coref(document);  // Do Coreference Resolution using the self defined coreference method
 		    if(corefSystem.doScore()){
 		        //Identifying possible coreferring mentions in the corpus along with any recall/precision errors with gold corpus
 		    	corefSystem.printTopK(logger, document, corefSystem.semantics());
 
 		        logger.fine("pairwise score for this doc: ");
+		        System.out.println("pairwise score for this doc: ");
 		        corefSystem.getScoreSingleDoc().get(corefSystem.getSieves().length-1).printF1(logger);
 		        logger.fine("accumulated score: ");
+		        System.out.println("accumulated score: ");
 		        corefSystem.printF1(true);
 		        logger.fine("\n");
 		    }
