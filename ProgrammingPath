@@ -25,5 +25,6 @@ SieveCoreferenceSystem : 496, 537, 538 add continue sentence
 
 Problem: Document: findTwinMentionsStrict comment
 
+dcoref/Constants defines all the constant variables the Stanford System uses to set the default configuration
 
   

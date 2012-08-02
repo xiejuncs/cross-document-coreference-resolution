@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -18,6 +19,7 @@ import edu.oregonstate.ie.dcoref.EmentionExtractor;
 import edu.oregonstate.util.EECB_Constants;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Constants;
+import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -70,7 +72,9 @@ public class CRC_MAIN {
 		logger.info("Start: ============================================================");
 		
 		/**
-		 * The configuration for EECB corpus
+		 * The configuration for EECB corpus, 
+		 * There are two types of props: first is in the sixth step: high-precision deterministic sieves
+		 * second is in the 10th step : pronoun sieve
 		 */
 		Properties props = new Properties();
 		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
@@ -79,7 +83,13 @@ public class CRC_MAIN {
 		// Deterministic sieves in step 6 of Algorithm 1, apply Pronoun Match after cross document coreference resolution
 		// Hence, in this way, in the final part, we need to create a Stanford CoreNLP again.
 		//props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch");
-		//props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
+		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
+		
+		Properties pronounProps = new Properties();
+		pronounProps.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+		pronounProps.put("dcoref.eecb", GlobalConstantVariables.CORPUS_PATH);
+		pronounProps.put("dcoref.sievePasses", "PronounMatch");
+		
 		
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		
@@ -107,11 +117,6 @@ public class CRC_MAIN {
 	    logger.fine(timeStamp);
 	    logger.fine(props.toString());
 	    Constants.printConstants(logger);
-	   
-	    // initialize coref system
-	    SieveCoreferenceSystem corefSystem = new SieveCoreferenceSystem(props);
-	    // Load the Stanford Parser
-	    LexicalizedParser parser = makeParser(props);
 	    
 	    /** 
 	     * Cluster of Documents, In the current time, we just assume that each topic is a cluster
@@ -125,6 +130,11 @@ public class CRC_MAIN {
 		    // In our case, the props contains the
 		    // Use default mention finder : Rule based (need to be modified for VERB. In the current time,
 		   	// <b>NOTED</b> Only nominal, pronominal and verbal mention will be extracted
+	    	// initialize coref system
+		    SieveCoreferenceSystem corefSystem = new SieveCoreferenceSystem(props);
+		    // Load the Stanford Parser
+		    LexicalizedParser parser = makeParser(props);
+	    	
 		    EmentionExtractor mentionExtractor = null;
 		    mentionExtractor = new EECBMentionExtractor(topic, parser, corefSystem.dictionaries(), props, corefSystem.semantics());
 		    
@@ -163,6 +173,24 @@ public class CRC_MAIN {
 		        logger.fine("accumulated score: ");
 		        System.out.println("accumulated score: ");
 		        corefSystem.printF1(true);
+		        logger.fine("\n");
+		    }
+		    
+		    // Get the coref Clusters from the document, and then apply the iterative event/entity coreference
+		    Map<Integer, CorefCluster> predictedCorefCluster = document.corefClusters;
+		    
+		    SieveCoreferenceSystem pronounCorefSystem = new SieveCoreferenceSystem(pronounProps);
+		    pronounCorefSystem.coref(document);
+		    if(pronounCorefSystem.doScore()){
+		        //Identifying possible coreferring mentions in the corpus along with any recall/precision errors with gold corpus
+		    	pronounCorefSystem.printTopK(logger, document, corefSystem.semantics());
+
+		        logger.fine("pairwise score for this doc: ");
+		        System.out.println("pairwise score for this doc: ");
+		        pronounCorefSystem.getScoreSingleDoc().get(pronounCorefSystem.getSieves().length-1).printF1(logger);
+		        logger.fine("accumulated score: ");
+		        System.out.println("accumulated score: ");
+		        pronounCorefSystem.printF1(true);
 		        logger.fine("\n");
 		    }
 	    }
