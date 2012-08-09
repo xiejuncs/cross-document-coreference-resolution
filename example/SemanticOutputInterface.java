@@ -179,7 +179,7 @@ public class SemanticOutputInterface {
 				pos = Integer.parseInt(position) - 1;
 			}
 			
-			SrlAnnotation anno = new SrlAnnotation(id, token, predicate, start, end, pos);
+			SrlAnnotation anno = new SrlAnnotation(id, token, predicate, pos, start, end);
 			offset = end;	// increment the offset
 			annotations.add(anno);
 		}
@@ -246,6 +246,7 @@ public class SemanticOutputInterface {
 				// find its yield according to headsPosition
 				semRoles.put(role, span);
 			}
+			
 			semanticRoles.put(annotation, semRoles);
 		}
 		
@@ -297,11 +298,12 @@ public class SemanticOutputInterface {
 			 }
 			 System.out.println(id);
 			 System.out.println(tokens);
-			 extentsWithArgumentRoles.put(id , extentWithArgumentRoles);
 			 System.out.println(extentWithArgumentRoles);
-			 System.out.println("\n");
+			 extentsWithArgumentRoles.put(id , extentWithArgumentRoles);
 			 sentenceidToSentence.put(id, tokens);
 		 }
+		 
+		 System.out.println(sentenceidToSentence.size());
 	}
 	
 	/**

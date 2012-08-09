@@ -198,8 +198,7 @@ public class EecbReader extends EgenericDataSetReader {
 		    	}
 		    
 		    	Span extent = new Span(eecbEntityMention.getExtent().getTokenStart(), eecbEntityMention.getExtent().getTokenEnd());
-		    	Span head = new Span(eecbEntityMention.getHead().getTokenStart(), eecbEntityMention.getHead().getTokenEnd());
-		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, extent, head, "", "", "");
+		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, extent, null, "", "", "");
 		    	convertedMention.setCorefID(corefID);
 		    	entityCounts.incrementCount(convertedMention.getType());
 		        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);

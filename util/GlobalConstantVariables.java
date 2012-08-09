@@ -15,5 +15,6 @@ public class GlobalConstantVariables {
 	public static final String CONFIG_PATH = "src/edu/oregonstate/";
 	public static final String MENTION_ANNOTATION_PATH = "corpus/mentions.txt";
 	public static final String WORD_SIMILARITY_PATH = "corpus/sims.lsp";
+	public static final String WORD_NET_CONFIGURATION_PATH = "src/edu/oregonstate/lib/file_properties.xml";
 	
 }

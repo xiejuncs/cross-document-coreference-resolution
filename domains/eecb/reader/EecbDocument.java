@@ -20,6 +20,11 @@ import edu.oregonstate.domains.eecb.EecbReader;
 import edu.oregonstate.example.SemanticOutputInterface;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEntityMention;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEventMention;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceToken;
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
+import edu.stanford.nlp.ie.machinereading.structure.EntityMention;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -37,6 +42,7 @@ import edu.stanford.nlp.util.CoreMap;
  *
  */
 public class EecbDocument extends EecbElement {
+	
 	/** 
 	 * document preifx
 	 * Like this : /scratch/JavaFile/stanford-corenlp-2012-05-22/data/AFP_ENG_20030304.0250
@@ -107,6 +113,10 @@ public class EecbDocument extends EecbElement {
 		return this.mRawText;
 	}
 	
+	public EecbToken getToken(int i) {
+	    return mTokens.get(i);
+	}
+	
 	public void setPrefix(String mPrefix) {
 		this.mPrefix = mPrefix;
 	}
@@ -175,7 +185,6 @@ public class EecbDocument extends EecbElement {
 		Map<Integer, Integer> matchResult = new HashMap<Integer, Integer>();
 		for (int i = 0; i < lRawText.size(); i++) {
 			String sentence = lRawText.get(i);
-			
 			char[] chars = sentence.toCharArray();
 			int textLength = chars.length;
 			StringBuilder originalSentencewithoutSpace = new StringBuilder();
@@ -193,7 +202,7 @@ public class EecbDocument extends EecbElement {
 					sb.append(tokens.get(j));
 				}
 				String sent = sb.toString().trim();
-				if (originalsent.equals(sent)) {
+				if (originalsent.contains(sent)) {
 					matchResult.put(i, key);
 					break;
 				}
@@ -208,7 +217,7 @@ public class EecbDocument extends EecbElement {
 	/**
 	 * align the SRL result with the document to make sure that the event has the according arguments
 	 * there is  mis-match between the true arguments and the result outputted by SRL
-	 * so we need to look at byteStart and byteEnd not token. Because different tokenization method
+	 * so we need to look at byteStart and byteEnd instead of token. Because different tokenization method
 	 * has different tokenization results
 	 * 
 	 * @param document
@@ -218,7 +227,6 @@ public class EecbDocument extends EecbElement {
 			Map<Integer, Map<SrlAnnotation, Map<String, List<SrlAnnotation>>>> extentsWithArgumentRoles) {
 		
 		HashMap<String, EecbEventMention> events = document.mEventMentions;
-		int idOffset = 0;
 		for (String key : events.keySet()) {
 			
 			EecbEventMention eventMention = events.get(key);
@@ -226,16 +234,15 @@ public class EecbDocument extends EecbElement {
 			EecbCharSeq anchor = eventMention.getAnchor();
 			int start = anchor.getByteStart();
 			int end = anchor.getByteEnd();
-			int correspondingID = matchResult.get(sentenceID);
-			Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> srlResult = extentsWithArgumentRoles.get(Integer.toString(correspondingID));
 			
-			if (srlResult == null) continue;
+			int correspondingID = matchResult.get(sentenceID);
+			Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> srlResult = extentsWithArgumentRoles.get(correspondingID);
 			
 			for (SrlAnnotation predicate : srlResult.keySet()) {
 				int predicateStart = predicate.getStartOffset();
 				int predicateEnd = predicate.getEndOffset();
 				if ((predicateStart == start) && (predicateEnd == end)) {
-					Map<String, List<SrlAnnotation>> arguments = new HashMap<String, List<SrlAnnotation>>();
+					Map<String, List<SrlAnnotation>> arguments = srlResult.get(predicate);
 					for (String argKey : arguments.keySet()) {
 						List<SrlAnnotation> argument = arguments.get(argKey);
 						StringBuilder sb = new StringBuilder();
@@ -243,13 +250,23 @@ public class EecbDocument extends EecbElement {
 							String word = token.getText();
 							sb.append(word + " ");
 						}
-						String mentionText = sb.toString().trim();
+						//String mentionText = sb.toString().trim();
 						int starOffset = argument.get(0).getStartOffset();
 						int endOffset = argument.get(argument.size() - 1).getEndOffset();
-						EecbCharSeq mention = new EecbCharSeq(mentionText, starOffset, endOffset);
-					    EecbEntityMention entityMention = new EecbEntityMention(Integer.toString(idOffset), mention, null, sentenceID); // HEAD will be processed later
-						idOffset++;
-						eventMention.addArg(entityMention, argKey);
+						
+						// according to the sentenceID, startOffset and endoffset, find the corresponding entitymention
+						for (String emID : document.mEntityMentions.keySet()) {
+							EecbEntityMention em = document.mEntityMentions.get(emID);
+							int emSenID = em.getSentence();
+							int emStartOffset = em.getExtent().getByteStart();
+							int emEndOffset = em.getExtent().getByteEnd();
+							if (sentenceID == emSenID && starOffset == emStartOffset && endOffset == emEndOffset) {
+								eventMention.addArg(em, argKey);
+							}
+							break;
+						}
+						
+						
 					}
 					
 					// do not need to go through all the documents, just once
@@ -260,6 +277,55 @@ public class EecbDocument extends EecbElement {
 		}
 		
 	}
+	
+	/**
+	   * Matches all relevant mentions, i.e. entities and anchors, to tokens Note:
+	   * entity mentions may match with multiple tokens!
+	   */
+	  public void matchCharSeqs() {
+	    //
+	    // match the head and extent of entity mentions
+	    //
+	    Set<String> keys = mEntityMentions.keySet();
+	    for (String key : keys) {
+	      EecbEntityMention m = mEntityMentions.get(key);
+
+	      //
+	      // match the extent charseq to 1+ phrase(s)
+	      //
+	      try {
+	        m.getExtent().match(mTokens);
+	      } catch (MatchException e) {
+	        mLog.severe("READER ERROR: Failed to match entity mention extent: " + "[" + m.getExtent().getText() + ", "
+	            + m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + "]");
+	        //mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
+	        System.exit(1);
+	      }
+
+	      //
+	      // set the head word of the mention
+	      //
+	      //m.detectHeadToken(this);      
+	    }
+	    
+	    // we need to do this for events as well since they may not have any AceEntityMentions associated with them (if they have no arguments)
+	    Set<String> eventKeys = mEventMentions.keySet();
+	    for (String key : eventKeys) {
+	      EecbEventMention m = mEventMentions.get(key);
+	      
+	      //
+	      // match the extent charseq to 1+ phrase(s)
+	      //
+	      try {
+	        m.getExtent().match(mTokens);
+	      } catch (MatchException e) {
+	        mLog.severe("READER ERROR: Failed to match event mention extent: " + "[" + m.getExtent().getText() + ", "
+	            + m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + "]");
+	        //mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
+	        System.exit(1);
+	      }
+	    }
+	  }
 	
 	/**
 	 * read the eecb file, and I need to incorporate the SRL result here
@@ -299,6 +365,7 @@ public class EecbDocument extends EecbElement {
 			sentenceidToSentence.put(id, tokens);
 		}
 		
+		
 		// the corresponding between the raw text and the semantic role labeling result
 		Map<Integer, Integer> matchResult = matchSentence(document.lRawText, sentenceidToSentence);
 		
@@ -318,6 +385,8 @@ public class EecbDocument extends EecbElement {
 	      }
 	    }
 		
+	    document.matchCharSeqs();
+	    
 	    // construct the mEntityMentions matrix
 	    Set<String> entityKeys = document.mEntityMentions.keySet();
 	    int sentence;

@@ -1,6 +1,5 @@
 package edu.oregonstate.data;
 
-
 /**
  * Implementation for aligning the result of SRL and the gold annotations
  * 
