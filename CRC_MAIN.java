@@ -2,10 +2,8 @@ package edu.oregonstate;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
@@ -13,29 +11,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.File;
 
-import edu.oregonstate.domains.eecb.reader.EecbTopic;
 import edu.oregonstate.ie.dcoref.EECBMentionExtractor;
 import edu.oregonstate.ie.dcoref.EmentionExtractor;
+import edu.oregonstate.search.In;
 import edu.oregonstate.util.EECB_Constants;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
-import edu.stanford.nlp.dcoref.CorefScorer;
-import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.ScorerBCubed;
-import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
-import edu.stanford.nlp.dcoref.ScorerMUC;
-import edu.stanford.nlp.dcoref.ScorerPairwise;
-import edu.stanford.nlp.dcoref.Semantics;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem.LogFormatter;
-import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.pipeline.DefaultPaths;
-import edu.stanford.nlp.util.Pair;
-import edu.stanford.nlp.util.StringUtils;
 
 /**
  * The main entry point for cross document coreference resolution
@@ -160,7 +148,7 @@ public class CRC_MAIN {
 		    }
 		   
 		    // Parse one document at a time, and do single-doc coreference resolution in each
-		    Document document = mentionExtractor.inistantiate(mentionExtractor, topic);
+		    Document document = mentionExtractor.inistantiate(topic);
 		    document.extractGoldCorefClusters();
 		    corefSystem.coref(document);  // Do Coreference Resolution using the self defined coreference method
 		    if(corefSystem.doScore()){
@@ -203,7 +191,16 @@ public class CRC_MAIN {
 		File corpusDir = new File(corpusPath);
 		String[] directories = corpusDir.list();
 		// sort the arrays in order to execute in directory sequence
-		Arrays.sort(directories);	
+		// sort string array and sort int array are different.
+		// Hence, I need to convert the string array to int array first, and then transform back
+		int[] dirs = new int[directories.length];
+		for (int i = 0; i < directories.length; i++) {
+			dirs[i] = Integer.parseInt(directories[i]);
+		}
+		Arrays.sort(dirs);
+		for (int i = 0; i < directories.length; i++) {
+			directories[i] = Integer.toString(dirs[i]);
+		}
 		return directories;
 	}
 	

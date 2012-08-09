@@ -18,7 +18,6 @@ import java.util.List;
 
 import edu.oregonstate.CRC_MAIN;
 import edu.oregonstate.domains.eecb.EecbReader;
-import edu.oregonstate.domains.eecb.reader.EecbTopic;
 import edu.oregonstate.util.EECB_Constants;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Constants;
@@ -80,12 +79,12 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	
 	private static class EventComparator implements Comparator<EventMention> {
 		public int compare(EventMention m1, EventMention m2){
-		      if(m1.getExtentTokenStart() > m2.getExtentTokenStart()) return 1;
-		      else if(m1.getExtentTokenStart() < m2.getExtentTokenStart()) return -1;
-		      else if(m1.getExtentTokenEnd() > m2.getExtentTokenEnd()) return -1;
-		      else if(m1.getExtentTokenEnd() < m2.getExtentTokenEnd()) return 1;
-		      else return 0;
-		    }
+		    if(m1.getExtentTokenStart() > m2.getExtentTokenStart()) return 1;
+		    else if(m1.getExtentTokenStart() < m2.getExtentTokenStart()) return -1;
+		    else if(m1.getExtentTokenEnd() > m2.getExtentTokenEnd()) return -1;
+		    else if(m1.getExtentTokenEnd() < m2.getExtentTokenEnd()) return 1;
+		    else return 0;
+		}
 	}
 	
 	/**
@@ -103,9 +102,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		topicPath = props.getProperty(EECB_Constants.EECB_PROP, GlobalConstantVariables.CORPUS_PATH) + "/" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
-		// Output [1.eecb, 2.eecb]
 		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
-		sort(files);
+		sort(files);   // Output [1.eecb, 2.eecb, 3.eecb, 4.eecb, 5.eecb]
 	}
 	
 	/** sort the files name according to the sequence*/
@@ -129,13 +127,14 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	 *  @return topic represented by each topic
 	 * extract all mentions in one doc cluster, represented by Mention 
 	 */
-	public Document inistantiate(EmentionExtractor mentionExtractor, String topic) throws Exception {
+	public Document inistantiate(String topic) throws Exception {
 		List<List<CoreLabel>> allWords = new ArrayList<List<CoreLabel>>();
 		List<List<Mention>> allGoldMentions = new ArrayList<List<Mention>>();
 		List<List<Mention>> allPredictedMentions = null;
 		List<Tree> allTrees = new ArrayList<Tree>();
-		Annotation anno = null;
+		Annotation anno = new Annotation("");
 		try {
+			// call the eecbReader
 			anno = eecbReader.parse(files, topic);
 			stanfordProcessor.annotate(anno);
 			 

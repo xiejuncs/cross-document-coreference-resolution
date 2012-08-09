@@ -1,0 +1,22 @@
+              "	              -	         O	         O
+          World	              -	      B-A1	      B-A0
+             's	              -	      I-A1	      I-A0
+        sexiest	              -	      I-A1	      I-A0
+            man	              -	      I-A1	      I-A0
+              '	              -	      I-A1	      I-A0
+           Hugh	              -	      I-A1	      I-A0
+        Jackman	              -	      E-A1	      E-A0
+            has	              -	         O	         O
+           been	              -	         O	         O
+          roped	          roped	       S-V	         O
+             in	              -	  S-AM-DIR	         O
+             to	              -	  B-AM-PNC	         O
+           host	           host	  I-AM-PNC	       S-V
+            the	              -	  I-AM-PNC	      B-A1
+           81st	              -	  I-AM-PNC	      I-A1
+         annual	              -	  I-AM-PNC	      I-A1
+        Academy	              -	  I-AM-PNC	      I-A1
+         Awards	              -	  I-AM-PNC	      I-A1
+       ceremony	              -	  I-AM-PNC	      I-A1
+              "	              -	  E-AM-PNC	      E-A1
+

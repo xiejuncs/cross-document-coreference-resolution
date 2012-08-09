@@ -3,8 +3,6 @@ package edu.oregonstate.ie.dcoref;
 import java.util.List;
 import java.util.Properties;
 
-import edu.oregonstate.domains.eecb.reader.EecbTopic;
-
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -55,11 +53,7 @@ public class EmentionExtractor {
 	 * @return List of mentions found in each sentence ordered according to the tree traversal.
 	 * @throws Exception 
 	 */
-	public Document inistantiate(EmentionExtractor mentionExtractor, String topic) throws Exception {
-		return null; 
-	}
-	
-	public Document nextDoc() throws Exception {
+	public Document inistantiate(String topic) throws Exception {
 		return null; 
 	}
 	

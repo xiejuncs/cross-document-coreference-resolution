@@ -15,13 +15,17 @@ import java.util.Vector;
 import java.util.List;
 import java.util.logging.Logger;
 
+import edu.oregonstate.data.SrlAnnotation;
 import edu.oregonstate.domains.eecb.EecbReader;
+import edu.oregonstate.example.SemanticOutputInterface;
 import edu.oregonstate.util.GlobalConstantVariables;
+import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.ling.tokensregex.types.Expressions.OrExpression;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
@@ -70,9 +74,11 @@ public class EecbDocument extends EecbElement {
 	/** use a list of string to represent the raw text of a document, each string is a sentence */
 	private List<String> lRawText;
 	
+	/** In order to output the intermediate results to semantic role labeling software. Each line is separated by a new line except the last one */
+	private String nRawText;
+	
 	/** In order to know the correspondence between the topic document and documents contained in this directory */
 	Map<Integer, String> topicToDocument;
-	
 	Map<String, Integer> documentToTopic;
 	
 	public void setSentences(List<List<EecbToken>> sentences) {
@@ -103,6 +109,10 @@ public class EecbDocument extends EecbElement {
 	
 	public void setPrefix(String mPrefix) {
 		this.mPrefix = mPrefix;
+	}
+	
+	public List<String> getlRawText() {
+		return this.lRawText;
 	}
 	
 	public int getSentenceCount() {
@@ -150,7 +160,114 @@ public class EecbDocument extends EecbElement {
 	}
 	
 	/**
-	 * read the eecb file
+	 * match two sentence and its id
+	 * <p>
+	 * here we just use the simple match, iterate the two sentence find
+	 * 
+	 * @param lRawText
+	 * @param sentenceidToSentence
+	 * @return Map<Integer, Integer> the former is the sentence id in the raw text, and the later is the sentence id in the 
+	 *								 transformed result
+	 */
+	private static Map<Integer, Integer> matchSentence(List<String> lRawText, Map<Integer, List<String>> sentenceidToSentence) {
+		// we need to make sure there exists one-one correspondence between the original text and output sentence
+		assert lRawText.size() == sentenceidToSentence.size();
+		Map<Integer, Integer> matchResult = new HashMap<Integer, Integer>();
+		for (int i = 0; i < lRawText.size(); i++) {
+			String sentence = lRawText.get(i);
+			
+			char[] chars = sentence.toCharArray();
+			int textLength = chars.length;
+			StringBuilder originalSentencewithoutSpace = new StringBuilder();
+			for (int j = 0; j < textLength; j++) {
+				char character = chars[j];
+				String charac = Character.toString(character);
+				if (!charac.equals(" "))	originalSentencewithoutSpace.append(charac);
+			}
+			String originalsent = originalSentencewithoutSpace.toString().trim();
+			for (Integer key : sentenceidToSentence.keySet()) {
+				List<String> tokens = sentenceidToSentence.get(key);
+				// concatenate the tokens together
+				StringBuilder sb = new StringBuilder();
+				for (int j = 0; j < tokens.size(); j++) {
+					sb.append(tokens.get(j));
+				}
+				String sent = sb.toString().trim();
+				if (originalsent.equals(sent)) {
+					matchResult.put(i, key);
+					break;
+				}
+			}
+		}
+		
+		/**ensure that every sentence has its corresponding SRL annotations*/
+		assert matchResult.size() == lRawText.size();
+		return matchResult;
+	}
+	
+	/**
+	 * align the SRL result with the document to make sure that the event has the according arguments
+	 * there is  mis-match between the true arguments and the result outputted by SRL
+	 * so we need to look at byteStart and byteEnd not token. Because different tokenization method
+	 * has different tokenization results
+	 * 
+	 * @param document
+	 * @param matchResult
+	 */
+	private static void alignSRL(EecbDocument document, Map<Integer, Integer> matchResult, 
+			Map<Integer, Map<SrlAnnotation, Map<String, List<SrlAnnotation>>>> extentsWithArgumentRoles) {
+		
+		HashMap<String, EecbEventMention> events = document.mEventMentions;
+		int idOffset = 0;
+		for (String key : events.keySet()) {
+			
+			EecbEventMention eventMention = events.get(key);
+			int sentenceID = eventMention.getSentence();
+			EecbCharSeq anchor = eventMention.getAnchor();
+			int start = anchor.getByteStart();
+			int end = anchor.getByteEnd();
+			int correspondingID = matchResult.get(sentenceID);
+			Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> srlResult = extentsWithArgumentRoles.get(Integer.toString(correspondingID));
+			
+			if (srlResult == null) continue;
+			
+			for (SrlAnnotation predicate : srlResult.keySet()) {
+				int predicateStart = predicate.getStartOffset();
+				int predicateEnd = predicate.getEndOffset();
+				if ((predicateStart == start) && (predicateEnd == end)) {
+					Map<String, List<SrlAnnotation>> arguments = new HashMap<String, List<SrlAnnotation>>();
+					for (String argKey : arguments.keySet()) {
+						List<SrlAnnotation> argument = arguments.get(argKey);
+						StringBuilder sb = new StringBuilder();
+						for (SrlAnnotation token : argument) {
+							String word = token.getText();
+							sb.append(word + " ");
+						}
+						String mentionText = sb.toString().trim();
+						int starOffset = argument.get(0).getStartOffset();
+						int endOffset = argument.get(argument.size() - 1).getEndOffset();
+						EecbCharSeq mention = new EecbCharSeq(mentionText, starOffset, endOffset);
+					    EecbEntityMention entityMention = new EecbEntityMention(Integer.toString(idOffset), mention, null, sentenceID); // HEAD will be processed later
+						idOffset++;
+						eventMention.addArg(entityMention, argKey);
+					}
+					
+					// do not need to go through all the documents, just once
+					break;
+				}
+			}
+
+		}
+		
+	}
+	
+	/**
+	 * read the eecb file, and I need to incorporate the SRL result here
+	 * <p>
+	 * the reason is that I parse the entity and event here. I need to match them together according to the byteoffset and tokenoffset
+	 * sometimes, if I can not match the byteoffset and tokenoffset, then need to shrink the extent in order to match part of the 
+	 * annotated mention
+	 * 
 	 * 
 	 * @param files
 	 * @return
@@ -159,9 +276,39 @@ public class EecbDocument extends EecbElement {
 		// document is actually a topic, just for convince
 		EecbDocument document = new EecbDocument(topic);
 		document.readRawText(files, topic);
+		// incorporate the SRL result
+		
+		/** Example Start */
+		String file = "corpus/topic1rawtext.output";
+		SemanticOutputInterface semantic = new SemanticOutputInterface();
+		semantic.setDocument(semantic.read(file));
+		Map<Integer, List<List<String>>> doc = semantic.getDocument();
+		 
+		 
+		Map<Integer, Map<SrlAnnotation, Map<String, List<SrlAnnotation>>>> extentsWithArgumentRoles = new HashMap<Integer, Map<SrlAnnotation,Map<String,List<SrlAnnotation>>>>();
+		Map<Integer, List<String>> sentenceidToSentence = new HashMap<Integer, List<String>>();
+		for (Integer id : doc.keySet()) {
+			List<List<String>> sentence = doc.get(id);
+			Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> extentWithArgumentRoles = semantic.extractExtent(sentence);
+			if (extentWithArgumentRoles.size() == 0) continue;
+			List<String> tokens = new ArrayList<String>();
+			for (List<String> data : sentence) {
+				tokens.add(data.get(1));
+			}
+			extentsWithArgumentRoles.put(id , extentWithArgumentRoles);
+			sentenceidToSentence.put(id, tokens);
+		}
+		
+		// the corresponding between the raw text and the semantic role labeling result
+		Map<Integer, Integer> matchResult = matchSentence(document.lRawText, sentenceidToSentence);
+		
+		/** Example End */
+		
 		// get the document's annotation in order to get the gold entities and events
 		parseDocument(document);
 		
+		alignSRL(document, matchResult, extentsWithArgumentRoles);   // align the srl result with the document
+
 		// read the EecbTokens
 		List<List<EecbToken>> sentences = tokenizeAndSegmentSentences(document.getRawText());
 		document.setSentences(sentences);
@@ -237,6 +384,13 @@ public class EecbDocument extends EecbElement {
 		return document;
 	}
 	
+	/**
+	 * parse the documents in order to align the mentions
+	 * 
+	 * @param document
+	 * @param matchResult
+	 * @param extentsWithArgumentRoles
+	 */
 	public static void parseDocument(EecbDocument document){
 		// READ the mentions.txt file
 		HashMap<String, ArrayList<String>> annotations = readAnnotation();
@@ -263,27 +417,9 @@ public class EecbDocument extends EecbElement {
 						String sentenceID = documentID + ":" + annos[1] + ":" + annos[2];
 						int documentSentenceID = document.documentToTopic.get(sentenceID);
 						String sentence = sentences.get(documentSentenceID);
-						// tokenize the sentence in order to get the annotation entity and event
-						Properties props = new Properties();
-					    props.put("annotators", "tokenize, ssplit");
-					    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-					    Annotation seAnno = new Annotation(sentence);
-					    pipeline.annotate(seAnno);
-					    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
-					    ArrayList<String> tokens = new ArrayList<String>();
-					    for(CoreMap sen : seSentences) {
-					    	for (CoreLabel token : sen.get(TokensAnnotation.class)) {
-					    		String word = token.get(TextAnnotation.class);
-					    		tokens.add(word);
-					    	}
-					    }
-					    StringBuilder sb = new StringBuilder();
-					    for (int i = Integer.parseInt(annos[4]); i < Integer.parseInt(annos[5]); i++) {
-					    	sb.append(tokens.get(i) + " ");
-					    }
-					    String mentionText = sb.toString().trim();
+					    String mentionText = getMentionExtent(sentence, Integer.parseInt(annos[6]), Integer.parseInt(annos[7]));
 					    String ID = documentID + ":N" + annos[3] + ":" + Integer.toString(idOffset);
-					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[4]), Integer.parseInt(annos[5]));
+					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[6]), Integer.parseInt(annos[7]));
 					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, documentSentenceID); // HEAD will be processed later
 					    document.addEntityMention(entityMention);
 					    entity.addMention(entityMention);
@@ -302,28 +438,11 @@ public class EecbDocument extends EecbElement {
 						String sentenceID = documentID + ":" + annos[1] + ":" + annos[2];
 						int documentSentenceID = document.documentToTopic.get(sentenceID);
 						String sentence = sentences.get(documentSentenceID);
-						// tokenize the sentence in order to get the annotation entity and event
-						Properties props = new Properties();
-					    props.put("annotators", "tokenize, ssplit");
-					    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-					    Annotation seAnno = new Annotation(sentence);
-					    pipeline.annotate(seAnno);
-					    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
-					    ArrayList<String> tokens = new ArrayList<String>();
-					    for(CoreMap sen : seSentences) {
-					    	for (CoreLabel token : sen.get(TokensAnnotation.class)) {
-					    		String word = token.get(TextAnnotation.class);
-					    		tokens.add(word);
-					    	}
-					    }
-					    StringBuilder sb = new StringBuilder();
-					    for (int i = Integer.parseInt(annos[4]); i < Integer.parseInt(annos[5]); i++) {
-					    	sb.append(tokens.get(i) + " ");
-					    }
-					    String mentionText = sb.toString().trim();
+						String mentionText = getMentionExtent(sentence, Integer.parseInt(annos[6]), Integer.parseInt(annos[7]));
 					    String ID = documentID + ":V" + annos[3] + ":" + Integer.toString(idOffset);
-					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[4]), Integer.parseInt(annos[5]));
-					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention, documentSentenceID);
+					    EecbCharSeq extent = new EecbCharSeq(sentence, 0, getSenteceSize(sentence));
+					    EecbCharSeq mention = new EecbCharSeq(mentionText, Integer.parseInt(annos[6]), Integer.parseInt(annos[7]));
+					    EecbEventMention eventMention = new EecbEventMention(ID, extent, mention, documentSentenceID);
 					    document.addEventMention(eventMention);
 					    event.addMention(eventMention);
 					    idOffset++;
@@ -332,6 +451,37 @@ public class EecbDocument extends EecbElement {
 				document.addEvent(event);
 			}
 		}	
+	}
+	
+	/** how many characters the sentence has except the whitespace*/
+	public static int getSenteceSize(String sentence) {
+		sentence = sentence.replaceAll("\\s", "");
+		return sentence.length();
+	}
+	
+	/**
+	 * According to the EECB corpus mentions.txt format, extract the mention text for sepcific startCharIndex and endCharIndex
+	 * 
+	 * @param sentence the original text used for extracting the mention extent according to the EECB corpus mentions.txt format
+	 * @param startIndex the startCharIndex extracted from the mentions.txt
+	 * @param endIndex  the endCharIndex extracted from the mentions.txt
+	 * @return the mention extent
+	 */
+	public static String getMentionExtent(String sentence, int startIndex, int endIndex) {
+		int offset = 0;
+		char[] chars = sentence.toCharArray();
+		int textLength = chars.length;
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < textLength; i++) {
+			String character = Character.toString(chars[i]);
+			if (!character.equals(" ")) offset = offset + 1;
+			
+			if ((offset > startIndex) && (offset <= endIndex) ) {
+				if (offset == endIndex && (character.equals(" "))) continue;
+				sb.append(character);
+			}
+		}
+		return sb.toString();
 	}
 	
 	// from f's name, get the combination of its topic and file name
@@ -395,11 +545,14 @@ public class EecbDocument extends EecbElement {
 		}
 		
 		lRawText = rawText;
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
+		StringBuilder nsb = new StringBuilder();
 		for (String line : rawText) {
 			sb.append(line + "\n");
+			nsb.append(line + "\n\n");
 		}
 		mRawText = sb.toString().trim();
+		nRawText = nsb.toString().trim();
 	}
 	
 	/**
@@ -424,8 +577,7 @@ public class EecbDocument extends EecbElement {
 		    	for (int j = 0; j < ses.get(TokensAnnotation.class).size(); j++) {
 		    		CoreLabel token = ses.get(TokensAnnotation.class).get(j);
 		    		String word = token.get(TextAnnotation.class);
-		    		String lemma = token.get(LemmaAnnotation.class);
-		    		EecbToken eecbToken = new EecbToken(word, lemma, Integer.toString(j), Integer.toString(j+1), i);
+		    		EecbToken eecbToken = new EecbToken(word, "", "", Integer.toString(j), Integer.toString(j+1), i);
 		    		sentence.add(eecbToken);
 		    	}
 		    }
@@ -477,7 +629,7 @@ public class EecbDocument extends EecbElement {
 		    for(CoreMap seSentence : seSentences) {
 		    	for (CoreLabel token : seSentence.get(TokensAnnotation.class)) {
 		    		String word = token.get(TextAnnotation.class);
-		    		EecbToken eecbToken = new EecbToken(word, "", Integer.toString(start), Integer.toString(start + 1), i); // Need to add the lemma
+		    		EecbToken eecbToken = new EecbToken(word, "", "", Integer.toString(start), Integer.toString(start + 1), i); // Need to add the lemma
 		    		sen.add(eecbToken);
 		    		start = start + 1;
 		    	}

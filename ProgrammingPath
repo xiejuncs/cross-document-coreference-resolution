@@ -27,4 +27,10 @@ Problem: Document: findTwinMentionsStrict comment
 
 dcoref/Constants defines all the constant variables the Stanford System uses to set the default configuration
 
-  
+import edu.stanford.nlp.trees.Span;
+
+AceEntityMention has detectHeadToken
+
+Add the mentions to the events, specified in the AceDomReader parseEventMention 
+
+// Add by Jun Xie : for future search

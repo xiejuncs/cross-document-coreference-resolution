@@ -134,6 +134,7 @@ public class EgenericDataSetReader {
 		try {
 			retVal = this.read(files, topic);
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			IOException iox = new IOException();
 			iox.initCause(ex);
 			throw iox;

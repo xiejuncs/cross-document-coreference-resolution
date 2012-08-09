@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEvent;
+
 /**
  * Store only EECB event mention
  * 
@@ -19,11 +21,13 @@ public class EecbEventMention extends EecbMention {
 	/** the parent event */
 	private EecbEvent mParent;
 	
+	// record the sentence id
 	private int mSentence;
 	
 	/** anchor text for this event, just the phrase annotated by the mentions.txt */
 	private EecbCharSeq mAnchor;
 
+	/** scope is the whole sentence, while the extent is the sentence segment the mention is in*/
 	public EecbEventMention(String id, EecbCharSeq extent, EecbCharSeq anchor, int sentence) {
 		super(id, extent);
 		this.mAnchor = anchor;
@@ -60,6 +64,14 @@ public class EecbEventMention extends EecbMention {
 	
 	public EecbCharSeq getAnchor() {
 		return mAnchor;
+	}
+	
+	public void setParent(EecbEvent e) {
+	    mParent = e;
+	}
+
+	public EecbEvent getParent() {
+	    return mParent;
 	}
 	
 	public int getSentence() {
