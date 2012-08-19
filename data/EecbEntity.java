@@ -1,4 +1,4 @@
-package edu.oregonstate.domains.eecb.reader;
+package edu.oregonstate.data;
 
 import java.util.ArrayList;
 import java.util.List;

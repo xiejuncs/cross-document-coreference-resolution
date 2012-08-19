@@ -1,4 +1,4 @@
-package edu.oregonstate.domains.eecb.reader;
+package edu.oregonstate.data;
 
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
 import edu.stanford.nlp.trees.Span;
@@ -17,15 +17,22 @@ public class EecbCharSeq {
 	/** in order to bookkeep the the start and end of the tokens */
 	private Span mTokenOffset;
 	
+	private int mSentenceID;
+	
 	/**
 	 * The reason for this is that we extract the annotation according to character index of the tokens
 	 */
 	private Span mByteOffset;
 	
-	public EecbCharSeq(String text, int start, int end) {
+	public EecbCharSeq(String text, int start, int end, int sentenceID) {
 		mText = text;
 		mByteOffset = new Span(start, end);
 		mTokenOffset = null;
+		mSentenceID = sentenceID;
+	}
+	
+	public int sentenceID() {
+		return mSentenceID;
 	}
 	
 	public int getByteStart() {
@@ -69,6 +76,8 @@ public class EecbCharSeq {
 	    int end = -1;
 	    
 	    for (int i = 0; i < tokens.size(); i++) {
+	    	if (tokens.get(i).getSentence() != mSentenceID) continue;
+	    	
 	    	if (tokens.get(i).getByteOffset().start() == mByteOffset.start()) {
 	            start = i;
 	        } else if (mByteOffset.start() > tokens.get(i).getByteOffset().start()
@@ -76,11 +85,11 @@ public class EecbCharSeq {
 	            start = i;
 	        }
 	    	
-	    	if (tokens.get(i).getByteOffset().end() == mByteOffset.end() + 1) {
+	    	if (tokens.get(i).getByteOffset().end() == mByteOffset.end()) {
 	            end = i;
 	            break;
 	        } else if (mByteOffset.end() >= tokens.get(i).getByteOffset().start()
-	                && mByteOffset.end() < tokens.get(i).getByteOffset().end() - 1) {
+	                && mByteOffset.end() < tokens.get(i).getByteOffset().end()) {
 	            end = i;
 	            break;
 	        }

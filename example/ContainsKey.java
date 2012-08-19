@@ -1,13 +1,16 @@
 package edu.oregonstate.example;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 public class ContainsKey {
 
 	public static void main(String[] args) {
-		HashMap<String, String> entities = new HashMap<String, String>();
-		String key = "id";
-		boolean contains = entities.containsKey(key);
-		System.out.println(contains);
+		String smi = "I've been . to 908 in this morning. But '' it is really matter!";
+		
+		List<String> cmi = Arrays.asList(smi.replaceAll("[^a-zA-Z0-9 ]", " ").split("\\s+"));
+		
+		System.out.println(cmi);
 	}
 }

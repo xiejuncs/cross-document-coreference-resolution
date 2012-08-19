@@ -1,4 +1,4 @@
-package edu.oregonstate.ie.dcoref;
+package edu.oregonstate.io;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,22 +17,19 @@ import java.util.logging.Logger;
 import java.util.List;
 
 import edu.oregonstate.CRC_MAIN;
-import edu.oregonstate.domains.eecb.EecbReader;
+import edu.oregonstate.io.EecbReader;
 import edu.oregonstate.util.EECB_Constants;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
-import edu.stanford.nlp.dcoref.RuleBasedCorefMentionFinder;
 import edu.stanford.nlp.dcoref.Semantics;
 import edu.stanford.nlp.ie.machinereading.structure.EntityMention;
 import edu.stanford.nlp.ie.machinereading.structure.EventMention;
 import edu.stanford.nlp.ie.machinereading.structure.MachineReadingAnnotations;
-import edu.stanford.nlp.io.RuntimeIOException;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.ling.CoreAnnotations.BeginIndexAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.EntityTypeAnnotation;
@@ -41,20 +38,16 @@ import edu.stanford.nlp.ling.CoreAnnotations.NamedEntityTagAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.UtteranceAnnotation;
-import edu.stanford.nlp.ling.CoreAnnotations.ValueAnnotation;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.TokenizerAnnotator;
 import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.trees.semgraph.SemanticGraphCoreAnnotations.CollapsedDependenciesAnnotation;
-import edu.stanford.nlp.trees.tregex.TregexMatcher;
-import edu.stanford.nlp.trees.tregex.TregexPattern;
 import edu.stanford.nlp.util.CoreMap;
-import edu.stanford.nlp.util.Pair;
 import edu.stanford.nlp.dcoref.MentionExtractor;
+import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 
 /**
  * Extract <COREF> mentions from eecb corpus  
@@ -87,15 +80,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		}
 	}
 	
-	/**
-	 * Constructor of EECBMentionExtractor
-	 * 
-	 * @param p
-	 * @param dict
-	 * @param props
-	 * @param semantics
-	 * @throws Exception
-	 */
 	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
 		super(dict, semantics);
 		stanfordProcessor = loadStanfordProcessor(props);
@@ -135,7 +119,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		Annotation anno = new Annotation("");
 		try {
 			// call the eecbReader
-			anno = eecbReader.parse(files, topic);
+			anno = eecbReader.read(files, topic);
 			stanfordProcessor.annotate(anno);
 			 
 		    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
@@ -155,6 +139,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
+		    // Plus the srl Annotation to the extracted mention 
 		    allPredictedMentions = mentionFinder.extractPredictedMentions(anno, -1, dictionaries);
 		    
 		    /** according to the extraction result, print the original document with different annotation */
@@ -167,16 +152,16 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		}
 		
 		MentionExtractor dcorfMentionExtractor = new MentionExtractor(dictionaries, semantics);		
-		return dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
+		Document document = dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
+		document.extractGoldCorefClusters();
+		return document;
 	}
 	
-	// Define the two variables for obtaining the list of file names
-	public static int spc_count = 1;
-	private static ArrayList<String> file;
+	
 	
 	@Override
 	public String toString() {
-		return "EECBMentionExtractor: [ topicPath : " + topicPath + ", Length of file pool : " + file.size() +"]"; 
+		return "EECBMentionExtractor: [ topicPath : " + topicPath + ", Length of file pool : " + files.size() +"]"; 
 	}
 	
 	private void printRawDoc(List<CoreMap> sentences, List<List<Mention>> allMentions, boolean gold) throws FileNotFoundException {
@@ -260,11 +245,11 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	        men.startIndex = e.getExtentTokenStart();
 	        men.endIndex = e.getExtentTokenEnd();
 
-	        String[] parseID = e.getObjectId().split(":");
+	        String[] parseID = e.getObjectId().split("-");
 	        //men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
 	        men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
-	        String[] parseCorefID = e.getCorefID().split(":");
-	        men.goldCorefClusterID = Integer.parseInt(parseCorefID[parseCorefID.length-1]);
+	        String[] parseCorefID = e.getCorefID().split("-");
+	        men.goldCorefClusterID = Integer.parseInt(parseCorefID[parseCorefID.length-1].substring(1));
 	        men.originalRef = -1;
 	        
 	        for(int j=allGoldMentions.size()-1 ; j>=0 ; j--){
@@ -298,10 +283,10 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		        men.startIndex = e.getExtentTokenStart();
 		        men.endIndex = e.getExtentTokenEnd();
 
-		        String[] parseID = e.getObjectId().split(":");
+		        String[] parseID = e.getObjectId().split("-");
 		        //men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
 		        men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
-		        String[] parseCorefID = e.getObjectId().split(":");
+		        String[] parseCorefID = e.getObjectId().split("-");
 		        String corefID = parseCorefID[1];
 		        int length = corefID.length();
 		        String CorefClusterID = corefID.substring(1, length);

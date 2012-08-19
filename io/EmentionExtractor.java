@@ -1,22 +1,15 @@
-package edu.oregonstate.ie.dcoref;
+package edu.oregonstate.io;
 
-import java.util.List;
 import java.util.Properties;
 
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.dcoref.RuleBasedCorefMentionFinder;
 import edu.stanford.nlp.dcoref.Semantics;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.trees.HeadFinder;
-import edu.stanford.nlp.trees.SemanticHeadFinder;
-import edu.stanford.nlp.trees.Tree;
 
 /**
  * generic mention extractor from a corpus
@@ -25,8 +18,6 @@ import edu.stanford.nlp.trees.Tree;
  *
  */
 public class EmentionExtractor {
-
-	protected HeadFinder headFinder;
 	
 	protected String currentDocumentID;
 	
@@ -42,7 +33,6 @@ public class EmentionExtractor {
 	public static final boolean VERBOSE = false;
 	
 	public EmentionExtractor(Dictionaries dict, Semantics semantics) {
-		this.headFinder = new SemanticHeadFinder();
 		this.dictionaries = dict;
 		this.semantics = semantics;
 		this.mentionFinder = new RuleBasedCorefMentionFinder();

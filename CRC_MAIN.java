@@ -4,22 +4,25 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Map;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.File;
+import Jama.Matrix;
 
-import edu.oregonstate.ie.dcoref.EECBMentionExtractor;
-import edu.oregonstate.ie.dcoref.EmentionExtractor;
-import edu.oregonstate.search.In;
+import edu.oregonstate.io.EECBMentionExtractor;
+import edu.oregonstate.io.EmentionExtractor;
+import edu.oregonstate.search.IterativeResolution;
+import edu.oregonstate.training.Train;
 import edu.oregonstate.util.EECB_Constants;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.Constants;
-import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
+import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.dcoref.ScorerBCubed;
+import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem.LogFormatter;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
@@ -40,11 +43,13 @@ import edu.stanford.nlp.pipeline.DefaultPaths;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
+
 public class CRC_MAIN {
 	
 	public static final Logger logger = Logger.getLogger(CRC_MAIN.class.getName());
+	public static Properties props; // in order to use for later methods
 	
-	private static LexicalizedParser makeParser(Properties props) {
+	public static LexicalizedParser makeParser(Properties props) {
 	    int maxLen = Integer.parseInt(props.getProperty(Constants.PARSER_MAXLEN_PROP, "100"));
 	    String[] options = {"-maxLength", Integer.toString(maxLen)};
 	    LexicalizedParser parser = LexicalizedParser.loadModel(props.getProperty(Constants.PARSER_MODEL_PROP, DefaultPaths.DEFAULT_PARSER_MODEL), options);
@@ -68,16 +73,7 @@ public class CRC_MAIN {
 		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 		props.put("dcoref.eecb", GlobalConstantVariables.CORPUS_PATH);
 		props.put("dcoref.score", "true");
-		// Deterministic sieves in step 6 of Algorithm 1, apply Pronoun Match after cross document coreference resolution
-		// Hence, in this way, in the final part, we need to create a Stanford CoreNLP again.
-		//props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch");
 		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
-		
-		Properties pronounProps = new Properties();
-		pronounProps.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-		pronounProps.put("dcoref.eecb", GlobalConstantVariables.CORPUS_PATH);
-		pronounProps.put("dcoref.sievePasses", "PronounMatch");
-		
 		
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		
@@ -113,6 +109,11 @@ public class CRC_MAIN {
 	     * foreach document cluster c in C 
 	     */
 	    String[] topics = getTopics(GlobalConstantVariables.CORPUS_PATH);
+	    
+	    Train train = new Train(topics, 10, 1.0, 0.7);
+	    Matrix initialmodel = train.assignInitialWeights();
+	    Matrix model = train.train(initialmodel);
+	    
 	    for (String topic : topics) {
 	    	// Extract the mention and gold mentions from the EECB 1.0 corpus
 		    // In our case, the props contains the
@@ -149,8 +150,8 @@ public class CRC_MAIN {
 		   
 		    // Parse one document at a time, and do single-doc coreference resolution in each
 		    Document document = mentionExtractor.inistantiate(topic);
-		    document.extractGoldCorefClusters();
-		    corefSystem.coref(document);  // Do Coreference Resolution using the self defined coreference method
+		    //document.extractGoldCorefClusters();
+		    corefSystem.coref(document); 
 		    if(corefSystem.doScore()){
 		        //Identifying possible coreferring mentions in the corpus along with any recall/precision errors with gold corpus
 		    	corefSystem.printTopK(logger, document, corefSystem.semantics());
@@ -165,22 +166,19 @@ public class CRC_MAIN {
 		    }
 		    
 		    // Get the coref Clusters from the document, and then apply the iterative event/entity coreference
-		    Map<Integer, CorefCluster> predictedCorefCluster = document.corefClusters;
-		    
-		    SieveCoreferenceSystem pronounCorefSystem = new SieveCoreferenceSystem(pronounProps);
-		    pronounCorefSystem.coref(document);
-		    if(pronounCorefSystem.doScore()){
+		    IterativeResolution ir = new IterativeResolution(document, corefSystem.dictionaries(), model);
+		    ir.merge(document, corefSystem.dictionaries());
+		    if(corefSystem.doScore()){
 		        //Identifying possible coreferring mentions in the corpus along with any recall/precision errors with gold corpus
-		    	pronounCorefSystem.printTopK(logger, document, corefSystem.semantics());
-
-		        logger.fine("pairwise score for this doc: ");
-		        System.out.println("pairwise score for this doc: ");
-		        pronounCorefSystem.getScoreSingleDoc().get(pronounCorefSystem.getSieves().length-1).printF1(logger);
-		        logger.fine("accumulated score: ");
-		        System.out.println("accumulated score: ");
-		        pronounCorefSystem.printF1(true);
-		        logger.fine("\n");
+		    	System.out.println("Bcubed score");
+		    	CorefScorer score = new ScorerBCubed(BCubedType.Bconll);
+		    	score.calculateScore(document);
+		    	System.out.println(score.getF1());
+		    	System.out.println(score.getPrecision());
+		    	System.out.println(score.getRecall());
+		    	
 		    }
+
 	    }
 	    
 	    logger.info("Done: ===================================================");

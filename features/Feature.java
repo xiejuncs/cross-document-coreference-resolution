@@ -1,22 +1,51 @@
-package edu.oregonstate.ie.dcoref;
+package edu.oregonstate.features;
 
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
+import edu.oregonstate.featureExtractor.JointArgumentMatch;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
-
+import edu.stanford.nlp.dcoref.Dictionaries.MentionType;
+import edu.stanford.nlp.util.IntPair;
+import edu.oregonstate.featureExtractor.SimilarityVector;
 
 
 public class Feature {
 
+	// used in generating features
+	public static boolean SRL_INDICATOR = true;
+	public static boolean USE_DISAGREE = true;
+	
+	/**
+	 * 
+	 * generate features for cluster pair
+	 * <b>NOTE</b>
+	 * if any of two clusters containing a verbal mention, we consider the merge an operation between event (V) clusters;
+	 * otherwise it is a merge between entity (E) clusters.
+	 * According to the paper, we append to all entity features the suffix Proper or Common based on the type of the head 
+	 * word of the first mention in each of the two clusters. We use the suffix Proper only if both head words are proper noun
+	 * 
+	 * <p>
+	 * The detail list used when comparing two clusters are specified in Table 2 in section 5 
+	 * 
+	 * @param document
+	 * @param c1
+	 * @param c2
+	 * @param gold
+	 * @param dict
+	 * @return
+	 */
 	public static Counter<String> getFeatures(Document document, CorefCluster c1, CorefCluster c2, boolean gold, Dictionaries dict){
 
 		CorefCluster former;
 		CorefCluster latter;
+		// an example, Key: Number, ClassicCounter<String> Number = {singular: 1; plural:1}
 		HashMap<String, ClassicCounter<String>> formerCentroid;
 		HashMap<String, ClassicCounter<String>> latterCentroid;
     
@@ -34,7 +63,7 @@ public class Feature {
 			former = c2;
 			latter = c1;
 			if(gold) {
-				formerCentroid = c2.goldCentroid; // what is goldCentroid or predictedCentroid
+				formerCentroid = c2.goldCentroid;
 				latterCentroid = c1.goldCentroid;
 			} else {
 				formerCentroid = c2.predictedCentroid;
@@ -42,7 +71,7 @@ public class Feature {
 			}
 		}
 		Mention formerRep = former.getRepresentativeMention();
-		Mention latterRep = latter.getRepresentativeMention();
+		Mention latterRep = latter.getRepresentativeMention(); 
 		boolean isVerb = latterRep.isVerb || formerRep.isVerb;
 
 		String mentionType = "";
@@ -60,7 +89,6 @@ public class Feature {
 
 		for(Mention m1 : c1.getCorefMentions()) {
 			for(Mention m2 : c2.getCorefMentions()) {
-        
 				if(!JointArgumentMatch.DOPRONOUN && (m1.isPronominal() || m2.isPronominal())) continue;
 				IntPair menPair = new IntPair(Math.min(m1.mentionID, m2.mentionID), Math.max(m1.mentionID, m2.mentionID));
 
@@ -163,6 +191,7 @@ public class Feature {
 			features.setCount("MENTION_WORDS-NOMINAL", features.getCount("MENTION_WORDS"));
 			features.remove("MENTION_WORDS");
 		}
+		
 		return features;
 	}
 

@@ -11,8 +11,14 @@ public class Tokenization {
 	public static void main(String[] args) {
 		String text = "Word comes from People magazine and other celebrity news outlets that Tara Reid, 33, who starred in ``American Pie'' and appeared on U.S. TV show ``Scrubs,'' has entered the Promises Treatment Center in Malibu, California - the same facility that in the past has been the rehab facility of choice for many a Hollywood star.";
 		
-		int startIndex = 223;
-		int endIndex = 268;
+		
+		// 52 61
+		int astartIndex = 70;
+		int aendIndex = 156;
+		/*
+		int startIndex = 72;
+		int endIndex = 95;
+		
 		int offset = 0;
 		char[] chars = text.toCharArray();
 		int textLength = chars.length;
@@ -25,15 +31,18 @@ public class Tokenization {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < textLength; i++) {
 			String character = characters[i];
-			if (!character.equals(" ")) offset = offset + 1;
-			if ((offset > startIndex) && (offset <= endIndex) ) {
-				if (offset == endIndex && (character.equals(" "))) continue;
+			if ((offset >= startIndex) && (offset < endIndex) ) {
+				if (offset == startIndex) astartIndex = i;
+				if (offset == (endIndex-1)) aendIndex = i+1;
+				if (offset == startIndex && (character.equals(" "))) continue;
 				sb.append(character);
 			}
-			
-			
+			if (!character.equals(" ")) offset = offset + 1;
 		}
 		System.out.println(sb.toString());
 		System.out.println(sb.toString().length());
+		*/
+		System.out.println(text.substring(astartIndex, aendIndex));
+		System.out.println(text.substring(astartIndex, aendIndex).length());
 	}
 }

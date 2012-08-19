@@ -9,18 +9,19 @@ import java.util.ArrayList;
 /**
  * A class to train and evaluate Linear Regression models with L2-Regularization
  * 
+ * two models for the paper, one model for entity cluster pair, one model for event cluster pair
+ * 
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
 public class LinearRegression {
+	
 	public Double lambda;
 	public String trainingFile;
-	public String testingFile;
 	
-	public LinearRegression() {
-		lambda = 1.0;
-		trainingFile = "regressiondata/regression-train.csv";
-		testingFile = "regressiondata/regression-test.csv";
+	public LinearRegression(String trainingFile, Double coefficient) {
+		lambda = coefficient;
+		this.trainingFile = trainingFile;
 	}
 	
 	/**
@@ -29,7 +30,7 @@ public class LinearRegression {
 	 * @param fileName
 	 * @return
 	 */
-	private Matrix readMatrix(String fileName) {
+	public Matrix readMatrix(String fileName) {
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(fileName));
 			List<double[]> data_array = new ArrayList<double[]>();
@@ -185,6 +186,18 @@ public class LinearRegression {
 		return sum;
 	}
 	
+	
+	public Matrix calculateWeight() {
+			Matrix training = readMatrix(trainingFile);
+			/** get the actual features, meanwhile add a N*1 column vector with value being all 1 as the first column of the features */
+			Matrix trainingData = getDataPoints(training);
+			Matrix trainingTargets = getTargets(training);
+		    // Train the model.
+		    Matrix weights = trainLinearRegressionModel(trainingData, trainingTargets, lambda);
+		    // Evaluate the model using training and testing data.
+		    return weights;
+	}
+	
 	/**
 	 * args consists of the training file path and testing file path
 	 * <p>
@@ -201,27 +214,17 @@ public class LinearRegression {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LinearRegression lr = new LinearRegression();
+		LinearRegression lr = new LinearRegression(args[0], Double.parseDouble(args[1]));
 		try {
 			Matrix training = lr.readMatrix(lr.trainingFile);
-			Matrix testing = lr.readMatrix(lr.testingFile);
-			
 			/** get the actual features, meanwhile add a N*1 column vector with value being all 1 as the first column of the features */
 			Matrix trainingData = lr.getDataPoints(training);
-			Matrix testingData = lr.getDataPoints(testing);
-			
 			Matrix trainingTargets = lr.getTargets(training);
-		    Matrix testingTargets = lr.getTargets(testing);
-		    
 		    // Train the model.
 		    Matrix weights = lr.trainLinearRegressionModel(trainingData, trainingTargets, lr.lambda);
-
 		    // Evaluate the model using training and testing data.
 		    double training_error = lr.evaluateLinearRegressionModel(trainingData, trainingTargets, weights);
-		    double testing_error = lr.evaluateLinearRegressionModel(testingData, testingTargets, weights);
-
 		    System.out.println(training_error);
-		    System.out.println(testing_error);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);			

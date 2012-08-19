@@ -1,4 +1,4 @@
-package edu.oregonstate.domains.eecb.reader;
+package edu.oregonstate.data;
 
 /**
  * Base class for all EECB annotation elements

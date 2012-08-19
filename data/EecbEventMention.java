@@ -1,11 +1,9 @@
-package edu.oregonstate.domains.eecb.reader;
+package edu.oregonstate.data;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEvent;
 
 /**
  * Store only EECB event mention
@@ -16,33 +14,29 @@ import edu.stanford.nlp.ie.machinereading.domains.ace.reader.AceEvent;
 public class EecbEventMention extends EecbMention {
 
 	/** Maps argument role to argument mentions */
-	private Map<String, EecbEventMentionArgument> mRolesToArguments;
+	private Map<String, EecbEntityMention> mRolesToArguments;
 	
 	/** the parent event */
 	private EecbEvent mParent;
-	
-	// record the sentence id
-	private int mSentence;
 	
 	/** anchor text for this event, just the phrase annotated by the mentions.txt */
 	private EecbCharSeq mAnchor;
 
 	/** scope is the whole sentence, while the extent is the sentence segment the mention is in*/
 	public EecbEventMention(String id, EecbCharSeq extent, EecbCharSeq anchor, int sentence) {
-		super(id, extent);
+		super(id, extent, sentence);
 		this.mAnchor = anchor;
-		mSentence = sentence;
-		mRolesToArguments = new HashMap<String, EecbEventMentionArgument>();
+		mRolesToArguments = new HashMap<String, EecbEntityMention>();
 	}
 	
 	@Override
 	public String toString() {
 		return "EecbEventMention [mAnchor = " + mAnchor + ", mParent=" + mParent + 
 		", mRolesToArguments = " + mRolesToArguments + ", mExtent = " + mExtent +
-		", mId = " + mID + ", mSentence = " + mSentence + "]";
+		", mId = " + mID + ", mSentence = " + mSentenceID + "]";
 	}
 	
-	public Collection<EecbEventMentionArgument> getArgs() {
+	public Collection<EecbEntityMention> getArgs() {
 		return mRolesToArguments.values();
 	}
 	
@@ -51,11 +45,11 @@ public class EecbEventMention extends EecbMention {
 	}
 	
 	public EecbEntityMention getArg(String role) {
-		return mRolesToArguments.get(role).getContent();
+		return mRolesToArguments.get(role);
 	}
 	
 	public void addArg(EecbEntityMention em, String role){
-		mRolesToArguments.put(role, new EecbEventMentionArgument(role, em));
+		mRolesToArguments.put(role, em);
 	}
 	
 	public void setAnchor(EecbCharSeq anchor) {
@@ -72,10 +66,6 @@ public class EecbEventMention extends EecbMention {
 
 	public EecbEvent getParent() {
 	    return mParent;
-	}
-	
-	public int getSentence() {
-		return mSentence;
 	}
 
 }

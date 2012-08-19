@@ -17,8 +17,33 @@ import net.didion.jwnl.dictionary.Dictionary;
  * find the links between synonyms, we need to calculate the percentage of newly-introduced mentions links after the merge 
  * that are wordnet synonyms
  */  
-public class WordnetExample {
+public class Wordnet {
         	
+	public static boolean findSynonyms(List<String> cluster1, List<String> cluster2) {
+		Set<String> synos = new HashSet<String>();
+		
+		try {
+			for (String word : cluster1) {
+				IndexWord indexWord = Dictionary.getInstance().getIndexWord(POS.VERB, word);
+				if (indexWord == null) continue;
+				Synset[] senses = indexWord.getSenses();
+				for (int i = 0; i < senses.length; i++) {
+					for (String word1 : cluster2) {
+						if (senses[i].containsWord(word1)) {
+							synos.add(word + "----->" + word1);
+						}
+					}
+				}
+			}
+		} catch (JWNLException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		
+		return (synos.size() > 0) ? true : false;
+	}
+	
+	
 	public static void main(String[] args) {
 		configureJWordNet();
 		List<String> cluster1 = new ArrayList<String>();
@@ -28,7 +53,7 @@ public class WordnetExample {
 		cluster2.add("strike");
 		cluster2.add("join");
 		cluster2.add("say");
-		Set<String> synos = new HashSet<String>();	
+		Set<String> synos = new HashSet<String>();
 	
 		try {
 			for (String word : cluster1) {

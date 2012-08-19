@@ -1,4 +1,4 @@
-package edu.oregonstate.domains.eecb;
+package edu.oregonstate.io;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -8,13 +8,14 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.oregonstate.CRC_MAIN;
 import edu.oregonstate.EgenericDataSetReader;
-import edu.oregonstate.domains.eecb.reader.EecbCharSeq;
-import edu.oregonstate.domains.eecb.reader.EecbDocument;
-import edu.oregonstate.domains.eecb.reader.EecbEntity;
-import edu.oregonstate.domains.eecb.reader.EecbEntityMention;
-import edu.oregonstate.domains.eecb.reader.EecbEventMention;
-import edu.oregonstate.domains.eecb.reader.EecbToken;
+import edu.oregonstate.data.EecbCharSeq;
+import edu.oregonstate.data.EecbDocument;
+import edu.oregonstate.data.EecbEntity;
+import edu.oregonstate.data.EecbEntityMention;
+import edu.oregonstate.data.EecbEventMention;
+import edu.oregonstate.data.EecbToken;
 import edu.stanford.nlp.ie.machinereading.structure.AnnotationUtils;
 import edu.stanford.nlp.ie.machinereading.structure.EntityMention;
 import edu.stanford.nlp.ie.machinereading.structure.EventMention;
@@ -25,11 +26,8 @@ import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.stats.ClassicCounter;
-import edu.stanford.nlp.stats.Counter;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.ie.machinereading.structure.Span;
-import edu.oregonstate.example.SemanticOutputInterface;
 
 /**
  * Simple Wrapper of EECB code to strcture objects
@@ -38,9 +36,6 @@ import edu.oregonstate.example.SemanticOutputInterface;
  *
  */
 public class EecbReader extends EgenericDataSetReader {
-	private Counter<String> entityCounts;
-	private Counter<String> adjacentEntityMentions;
-	private Counter<String> eventCounts;
 	
 	/**
 	 * Make an EecbReader
@@ -51,10 +46,7 @@ public class EecbReader extends EgenericDataSetReader {
 	
 	public EecbReader(StanfordCoreNLP processor, boolean preprocess) {
 		super(processor, preprocess, false, true);
-		entityCounts = new ClassicCounter<String>();
-		adjacentEntityMentions = new ClassicCounter<String>();
-		eventCounts = new ClassicCounter<String>();
-		logger = Logger.getLogger(EecbReader.class.getName());
+		logger = Logger.getLogger(CRC_MAIN.class.getName());
 	    // run quietly by default
 	    logger.setLevel(Level.SEVERE);
 	}
@@ -86,7 +78,7 @@ public class EecbReader extends EgenericDataSetReader {
 	 * @param extentTokenSpan
 	 * @return
 	 */
-	public String getExtentString(CoreMap sentence, Span extentTokenSpan) {
+	public static String getExtentString(CoreMap sentence, Span extentTokenSpan) {
 	    List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
 	    StringBuilder sb = new StringBuilder();
 	    for (int i = extentTokenSpan.start(); i < extentTokenSpan.end(); i ++){
@@ -95,58 +87,10 @@ public class EecbReader extends EgenericDataSetReader {
 	      sb.append(token.word());
 	    }
 	    return sb.toString();
-	}
+	}	
 	
 	/**
-	 * match two sentence and its id
-	 * <p>
-	 * here we just use the simple match, iterate the two sentence find
-	 * 
-	 * @param lRawText
-	 * @param sentenceidToSentence
-	 * @return Map<Integer, Integer> the former is the sentence id in the raw text, and the later is the sentence id in the 
-	 *								 transformed result
-	 */
-	private Map<Integer, Integer> matchSentence(List<String> lRawText, Map<Integer, List<String>> sentenceidToSentence) {
-		// we need to make sure there exists one-one correspondence between the original text and output sentence
-		assert lRawText.size() == sentenceidToSentence.size();
-		Map<Integer, Integer> matchResult = new HashMap<Integer, Integer>();
-		for (int i = 0; i < lRawText.size(); i++) {
-			String sentence = lRawText.get(i);
-			
-			char[] chars = sentence.toCharArray();
-			int textLength = chars.length;
-			StringBuilder originalSentencewithoutSpace = new StringBuilder();
-			for (int j = 0; j < textLength; j++) {
-				char character = chars[j];
-				String charac = Character.toString(character);
-				if (!charac.equals(" "))	originalSentencewithoutSpace.append(charac);
-			}
-			String originalsent = originalSentencewithoutSpace.toString().trim();
-			for (Integer key : sentenceidToSentence.keySet()) {
-				List<String> tokens = sentenceidToSentence.get(key);
-				// concatenate the tokens together
-				StringBuilder sb = new StringBuilder();
-				for (int j = 0; j < tokens.size(); j++) {
-					sb.append(tokens.get(j));
-				}
-				String sent = sb.toString().trim();
-				if (originalsent.equals(sent)) {
-					matchResult.put(i, key);
-					break;
-				}
-			}
-		}
-		
-		/**ensure that every sentence has its corresponding SRL annotations*/
-		assert matchResult.size() == lRawText.size();
-		return matchResult;
-	}
-	
-	
-	
-	/**
-	 * READ the document
+	 * READ the document and transform to the CoreLabel
 	 * 
 	 * @param files list of documents included in specific topic
 	 * @param corpus the annotation got 
@@ -154,15 +98,13 @@ public class EecbReader extends EgenericDataSetReader {
 	 */
 	private List<CoreMap> readDocument(List<String> files, String topic, Annotation corpus) {
 		List<CoreMap> results = new ArrayList<CoreMap>();
-		EecbDocument eecbDocument = EecbDocument.parseDocument(files, topic);
-		
-		
+		EecbDocument eecbDocument = new EecbDocument(topic, files);
+		eecbDocument.parse();
 		
 		String docID = eecbDocument.getId();
 		
-		Map<String, EntityMention> entityMentionMap = new HashMap<String, EntityMention>();
-		int tokenOffset = 0;
-		
+		// because tokenset is different from the the acutal tokenize 
+		int offset = 0;
 		for (int sentenceIndex = 0; sentenceIndex < eecbDocument.getSentenceCount(); sentenceIndex++ ) {
 			List<EecbToken> tokens = eecbDocument.getSentence(sentenceIndex);
 			List<CoreLabel> words = new ArrayList<CoreLabel>();
@@ -197,13 +139,14 @@ public class EecbReader extends EgenericDataSetReader {
 		    		}
 		    	}
 		    
-		    	Span extent = new Span(eecbEntityMention.getExtent().getTokenStart(), eecbEntityMention.getExtent().getTokenEnd());
+		    	int extEnd = eecbEntityMention.getExtent().getTokenEnd() - offset + 1;
+		    	int extStart = eecbEntityMention.getExtent().getTokenStart() - offset;
+		    	
+		    	Span extent = new Span(extStart, extEnd);
 		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, extent, null, "", "", "");
 		    	convertedMention.setCorefID(corefID);
-		    	entityCounts.incrementCount(convertedMention.getType());
 		        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
 		        AnnotationUtils.addEntityMention(sentence, convertedMention);
-		        entityMentionMap.put(eecbEntityMention.getId(), convertedMention);
 		    }
 		    
 		    // convert EventMentions
@@ -212,7 +155,7 @@ public class EecbReader extends EgenericDataSetReader {
 		    	ExtractionObject anchorObject = new ExtractionObject(
 		    			eecbEventMention.getId() + "-anchor",
 		    	        sentence,
-		    	        new Span(anchor.getTokenStart() - tokenOffset, anchor.getTokenEnd() + 1 - tokenOffset),
+		    	        new Span(anchor.getTokenStart(), anchor.getTokenEnd()),
 		    	        "ANCHOR",
 		    	        null);
 		    	
@@ -221,35 +164,36 @@ public class EecbReader extends EgenericDataSetReader {
 		        for(String role: roleSet) roles.add(role);
 		        List<ExtractionObject> convertedArgs = new ArrayList<ExtractionObject>();
 
-		        int left = Integer.MAX_VALUE;
-		        int right = Integer.MIN_VALUE;
 		        for(String role: roles){
 		          EecbEntityMention arg = eecbEventMention.getArg(role);
-		          ExtractionObject o = entityMentionMap.get(arg.getId());
-		          if(o == null){
-		            logger.severe("READER ERROR: Failed to find event argument with id " + arg.getId());
-		            logger.severe("This happens because a few event mentions illegally span multiple sentences. Will ignore this mention.");
-		            return null;
-		          }
+		          int extEnd = arg.getExtent().getTokenEnd();
+			    	if (extEnd > sentence.size()) {
+			    		extEnd = sentence.size();
+			    	}
+			    	
+			    	Span extent = new Span(arg.getExtent().getTokenStart(), extEnd);
+			    	EntityMention convertedMention = new EntityMention(arg.getId(), sentence, extent, null, "", "", "");
+			        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
+		          ExtractionObject o = convertedMention;
+		          
 		          convertedArgs.add(o);
-		          if(o.getExtentTokenStart() < left) left = o.getExtentTokenStart();
-		          if(o.getExtentTokenEnd() > right) right = o.getExtentTokenEnd();
 		        }
 		    	
-		        Span extent = new Span(eecbEventMention.getExtent().getTokenStart(), eecbEventMention.getExtent().getTokenEnd());
+		        int extEnd = eecbEventMention.getExtent().getTokenEnd() - offset + 1;
+		    	int extStart = eecbEventMention.getExtent().getTokenStart() - offset;
+		        
+		        Span extent = new Span(extStart, extEnd);
 		    	EventMention convertedMention = new EventMention(eecbEventMention.getId(), sentence, extent, "", "", anchorObject, convertedArgs, null); // 
 		    	if(convertedMention != null){
-		            eventCounts.incrementCount(convertedMention.getType());
 		            logger.info("CONVERTED EVENT MENTION: " + convertedMention);
 		            AnnotationUtils.addEventMention(sentence, convertedMention);
 		        }
 		    }
 		    
-		    
 		    results.add(sentence);
-		    tokenOffset += tokens.size();
+		    offset += tokens.size();
 		}
-		
 		return results;
-	}	
+	}
+	
 }

@@ -107,50 +107,11 @@ public class EgenericDataSetReader {
 			convertToCoreLabels(kid);
 	}
 	
-	/**
-	 * Parses one file or directory with data from one domain
-	 * 
-	 * @param path
-	 * @return
-	 * @throws IOException
-	 */
-	public final Annotation parse(String path) throws IOException {
-		Annotation retVal;
-		
-		try {
-			retVal = this.read(path);
-		} catch (Exception ex) {
-			IOException iox = new IOException();
-			iox.initCause(ex);
-			throw iox;
-		}
-		
-		return retVal;
-	}
-	
-	public final Annotation parse(List<String> files, String topic) throws IOException {
-		Annotation retVal;
-		
-		try {
-			retVal = this.read(files, topic);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			IOException iox = new IOException();
-			iox.initCause(ex);
-			throw iox;
-		}
-		
-		return retVal;
-	}
-	
-	public Annotation read(String path) throws Exception {
-		return null;
-	}
-	
 	public Annotation read(List<String> files, String topic) throws Exception {
 		return null;
 	}
 	
+	/** a string for CoreLabel */
 	public static String sentenceToString(List<CoreLabel> tokens) {
 		StringBuilder os = new StringBuilder();
 		

@@ -1,4 +1,4 @@
-package edu.oregonstate.example;
+package edu.oregonstate.featureExtractor;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

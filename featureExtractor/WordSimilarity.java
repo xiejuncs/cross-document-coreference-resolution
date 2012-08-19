@@ -28,7 +28,7 @@ public class WordSimilarity {
 	private List<SimWord> datas;
  	
 	/** represent each similarity word */
-	static class SimWord {
+	public static class SimWord {
 		String token;
 		Double value;
 		
@@ -39,7 +39,7 @@ public class WordSimilarity {
 		
 		@Override
 		public String toString() {
-			return token + ":" + value;
+			return token;
 		}
 	}
 	
@@ -57,6 +57,7 @@ public class WordSimilarity {
 		sort(datas);
 		int n = 10;
 		List<SimWord> toptenList = new ArrayList<SimWord>();
+		if (datas.size() < 10) return toptenList;
 		for (int i = 0; i < 10; i++) {
 			toptenList.add(datas.get(i));
 		}
