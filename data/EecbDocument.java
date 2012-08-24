@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import edu.oregonstate.CRC_MAIN;
+import edu.oregonstate.training.Train;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -44,8 +45,6 @@ public class EecbDocument extends EecbElement {
 	
 	/** all entity mentions */
 	private HashMap<String, EecbEntityMention> mEntityMentions;
-	
-	
 	
 	/** All entity mentions in a given sentence, sorted in textual order */
 	private ArrayList<ArrayList<EecbEntityMention>> mSentenceEntityMentions;
@@ -81,12 +80,15 @@ public class EecbDocument extends EecbElement {
 	Map<String, Integer> documentPositioninTopic;
 	Map<Integer, String> sentencePositionDocument;
 	
+	private int baseID;
+	
 	static Logger mLog = Logger.getLogger(CRC_MAIN.class.getName());
 	
 	public EecbDocument(String id, List<String> files) {
 		super(id);
 		mFiles = files;
 		mPrefix = id;
+		baseID = 1000000 * Integer.parseInt(id);
 		
 		mEntities = new HashMap<String, EecbEntity>();
 		mEntityMentions = new HashMap<String, EecbEntityMention>();
@@ -206,7 +208,7 @@ public class EecbDocument extends EecbElement {
 	      } catch (MatchException e) {
 	        mLog.severe("READER ERROR: Failed to match entity mention extent: " + "[" + m.getExtent().getText() + ", "
 	            + m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + ", " + m.sentenceID() + "]");
-	        System.out.println(sentencePositionDocument.get(m.sentenceID()));
+	        System.out.println(mPrefix + "-" +sentencePositionDocument.get(m.sentenceID()));
 	        mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
 	        mLog.severe("Document prefix: " + mID);
 	        System.exit(1);
@@ -365,7 +367,7 @@ public class EecbDocument extends EecbElement {
 						int end = Integer.parseInt(annos[7]);
 					    String mentionText = getMentionExtent(sentence, start, end);
 					    int[] byteoffset = convertByteOffset(sentence, start, end);
-					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset);
+					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID);
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, byteoffset[0], byteoffset[1], documentSentenceID);
 					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, documentSentenceID); // HEAD will be processed later
 					    addEntityMention(entityMention);
@@ -388,10 +390,11 @@ public class EecbDocument extends EecbElement {
 						int end = Integer.parseInt(annos[7]);
 						String mentionText = getMentionExtent(sentence, start, end);
 						int[] byteoffset = convertByteOffset(sentence, start, end);
-					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset);
-					    EecbCharSeq extent = new EecbCharSeq(sentence, 0, sentence.length(), documentSentenceID);
+					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID);
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, byteoffset[0], byteoffset[1], documentSentenceID);
-					    EecbEventMention eventMention = new EecbEventMention(ID, extent, mention, documentSentenceID);
+					    
+					    // because we do not know the extent, so we just use the mention as its extent
+					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention, documentSentenceID);
 					    addEventMention(eventMention);
 					    event.addMention(eventMention);
 					    idOffset++;
@@ -415,6 +418,18 @@ public class EecbDocument extends EecbElement {
 	 * @return
 	 */
 	public int[] convertByteOffset(String sentence, int startIndex, int endIndex) {
+		// adjust startIndex and endIndex
+		int tmp = endIndex;
+		String sent = sentence.replaceAll(" ", "");
+		if (tmp > sent.length()) {
+			tmp = sent.length();
+		}
+		
+		int span = endIndex - startIndex;
+		endIndex = tmp;
+		startIndex = tmp - span;
+		
+		
 		int astartIndex = 0;
 		int aendIndex = 0;
 		
@@ -476,12 +491,12 @@ public class EecbDocument extends EecbElement {
 	 * @param files
 	 * @param topic
 	 */
-	private void readRawText() {
+	private void readRawText1() {
 		int j = 0;
 		// put all documents into one document
 		for (String file : mFiles) {
 			try {
-				String filename = GlobalConstantVariables.CORPUS_PATH + mID + File.separator + file;
+				String filename = GlobalConstantVariables.WHOLE_CORPUS_PATH + mID + File.separator + file;
 				BufferedReader br = new BufferedReader(new FileReader(filename));
 				int i = 0;
 				// filename : 1.eecb
@@ -507,6 +522,48 @@ public class EecbDocument extends EecbElement {
         }
         mRawText = sb.toString().trim();
         nRawText = nsb.toString().trim();
+        
+        //Train.writeTextFile(GlobalConstantVariables.RESULT_PATH+mPrefix, nRawText);
+	}
+	
+	/**
+	 * just read the annotated example
+	 */
+	private void readRawText() {
+		int j = 0;
+		// put all documents into one document
+		for (String file : mFiles) {
+			try {
+				String filename = GlobalConstantVariables.WHOLE_CORPUS_PATH + mID + File.separator + file;
+				BufferedReader br = new BufferedReader(new FileReader(filename));
+				int i = 0;
+				// filename : 1.eecb
+				for (String line = br.readLine(); line != null; line = br.readLine()) {
+					String strline = line.replaceAll("\\<[^\\>]*\\>", "");
+					if (strline.length() < line.length()) {
+						lRawText.add(strline);
+						documentPositioninTopic.put(file.substring(0, file.length() - 5) + "-" + Integer.toString(i), j);
+						sentencePositionDocument.put(j, file.substring(0, file.length() - 5) + "-" + Integer.toString(i));
+						j = j + 1;
+					}
+					i = i + 1;
+				}
+			} catch (IOException ex) {
+				ex.printStackTrace();
+				System.exit(1);
+			}
+		}
+		
+		StringBuilder sb = new StringBuilder();
+        StringBuilder nsb = new StringBuilder();
+        for (String line : lRawText) {
+                sb.append(line + "\n");
+                nsb.append(line + "\n\n");
+        }
+        mRawText = sb.toString().trim();
+        nRawText = nsb.toString().trim();
+        
+        //Train.writeTextFile(GlobalConstantVariables.RESULT_PATH+mPrefix, nRawText);
 	}
 	
 	/**
@@ -592,7 +649,6 @@ public class EecbDocument extends EecbElement {
 				ArrayList<String> values = new ArrayList<String>();
 				if (contains) {
 					values = annotation.get(key);
-					
 				}
 				values.add(value);
 				annotation.put(key, values);

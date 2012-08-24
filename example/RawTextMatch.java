@@ -60,7 +60,7 @@ public class RawTextMatch {
 					anno.add(record);
 				}
 			}
-			filename = GlobalConstantVariables.CORPUS_PATH + topic + "/" + filename;
+			filename = GlobalConstantVariables.WHOLE_CORPUS_PATH + topic + "/" + filename;
 			System.out.println(anno);
 			Integer[] sentences = getSentences(anno);
 			for (Integer sentence : sentences) {

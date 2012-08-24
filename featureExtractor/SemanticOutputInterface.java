@@ -184,6 +184,8 @@ public class SemanticOutputInterface {
 			annotations.add(anno);
 		}
 		
+		//System.out.println(annotations);
+		
 		/** find how many predicates annotated by the semantic role labeling software*/
 		List<Integer> predicates = new ArrayList<Integer>();
 		for (int i = 0; i < annotations.size(); i++) {
@@ -202,7 +204,7 @@ public class SemanticOutputInterface {
 			Map<String, Integer> argument = new HashMap<String, Integer>();
 			for (int j = 0; j < sentence.size(); j++) {
 				List<String> data = sentence.get(j);
-				if (data.get(i).equals("A0") || data.get(i).equals("A1")) {
+				if (data.get(i).equals("A0") || data.get(i).equals("A1") || data.get(i).equals("A2") || data.get(i).equals("AM-LOC")) {
 					argument.put(data.get(i), j);
 				}
 			}
@@ -224,12 +226,13 @@ public class SemanticOutputInterface {
 		
 		outputNode = new ArrayList<Node>();
 		nodes = new HashMap<Node, List<Node>>();
-		// initialize the arugments for the breadth-first search
+		// initialize the arguments for the breadth-first search
 		for (int i = 0; i < headsPosition.size(); i++) {
 			outputNode.add(new Node(i));
 		}
 		for (int i = 0; i < headsPosition.size(); i++) {
 			int parent = headsPosition.get(i);
+			if (parent == i) continue;
 			addEdge(outputNode.get(parent), outputNode.get(i));
 		}
 		
@@ -280,7 +283,7 @@ public class SemanticOutputInterface {
 	 * @param args
 	 */
 	public static void main(String[] args) {		
-		 String file = "corpus/topic1rawtext.output";
+		 String file = "corpus/srloutput/1.output";
 		 SemanticOutputInterface semantic = new SemanticOutputInterface();
 		 semantic.setDocument(semantic.read(file));
 		 Map<Integer, List<List<String>>> doc = semantic.getDocument();

@@ -5,9 +5,6 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import edu.oregonstate.data.EecbCharSeq;
-import edu.oregonstate.data.EecbEntityMention;
-import edu.oregonstate.data.EecbEventMention;
 import edu.oregonstate.data.SrlAnnotation;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -59,102 +56,6 @@ public class SrlResultIncorporation {
 	}
 	
 	/**
-	 * match two sentence and its id
-	 * <p>
-	 * here we just use the simple match, iterate the two sentence find
-	 * 
-	 * @param lRawText
-	 * @param sentenceidToSentence
-	 * @return Map<Integer, Integer> the former is the sentence id in the raw text, and the later is the sentence id in the 
-	 *								 transformed result
-	 */
-	private void matchSentence(List<String> lRawText) {
-		// we need to make sure there exists one-one correspondence between the original text and output sentence
-		assert lRawText.size() == sentenceidToSentence.size();
-		for (int i = 0; i < lRawText.size(); i++) {
-			String sentence = lRawText.get(i);
-			char[] chars = sentence.toCharArray();
-			int textLength = chars.length;
-			StringBuilder originalSentencewithoutSpace = new StringBuilder();
-			for (int j = 0; j < textLength; j++) {
-				char character = chars[j];
-				String charac = Character.toString(character);
-				if (!charac.equals(" "))	originalSentencewithoutSpace.append(charac);
-			}
-			String originalsent = originalSentencewithoutSpace.toString().trim();
-			for (Integer key : sentenceidToSentence.keySet()) {
-				List<String> tokens = sentenceidToSentence.get(key);
-				// concatenate the tokens together
-				StringBuilder sb = new StringBuilder();
-				for (int j = 0; j < tokens.size(); j++) {
-					sb.append(tokens.get(j));
-				}
-				String sent = sb.toString().trim();
-				if (originalsent.contains(sent)) {
-					matchResult.put(i, key);
-					break;
-				}
-			}
-		}
-		
-		/**ensure that every sentence has its corresponding SRL annotations*/
-		assert matchResult.size() == lRawText.size();
-	}
-	
-	/**
-	 * align the SRL result with the document to make sure that the event has the according arguments
-	 * there is  mis-match between the true arguments and the result outputted by SRL
-	 * so we need to look at byteStart and byteEnd instead of token. Because different tokenization method
-	 * has different tokenization results
-	 * 
-	 * @param document
-	 * @param matchResult
-	 */
-	public void alignSRL(List<String> lRawText, HashMap<String, EecbEventMention> events ) {
-		/** get the match result */
-		matchSentence(lRawText);
-		
-		// in order to distinguish from the gold mention id
-		int idoffset = 50000;
-		for (String key : events.keySet()) {
-			EecbEventMention eventMention = events.get(key);
-			int sentenceID = eventMention.sentenceID();
-			EecbCharSeq anchor = eventMention.getAnchor();
-			int start = anchor.getByteStart();
-			int end = anchor.getByteEnd();
-			int correspondingID = matchResult.get(sentenceID);
-			Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> srlResult = extentsWithArgumentRoles.get(correspondingID);
-			// for each predicate in the sentence
-			for (SrlAnnotation predicate : srlResult.keySet()) {
-				int predicateStart = predicate.getStartOffset();
-				int predicateEnd = predicate.getEndOffset();
-				if ((predicateStart == start) && (predicateEnd == end)) {
-					Map<String, List<SrlAnnotation>> arguments = srlResult.get(predicate);
-					if (arguments.size() == 0) continue;
-					
-					for (String argKey : arguments.keySet()) {
-						List<SrlAnnotation> argument = arguments.get(argKey);
-						StringBuilder sb = new StringBuilder();
-						for (SrlAnnotation token : argument) {
-							String word = token.getText();
-							sb.append(word + " ");
-						}
-						//String mentionText = sb.toString().trim();
-						int starOffset = argument.get(0).getStartOffset();
-						int endOffset = argument.get(argument.size() - 1).getEndOffset();
-						EecbCharSeq extent = new EecbCharSeq(sb.toString().trim(), starOffset, endOffset, sentenceID);
-						EecbEntityMention em = new EecbEntityMention(Integer.toString(idoffset), extent, null, sentenceID);
-						eventMention.addArg(em, argKey);
-						idoffset++;
-					}
-					// do not need to go through all the documents, just once
-					break;
-				}
-			}
-		}
-	}
-	
-	/**
 	 * match the sentence for allPredictedMentions
 	 * 
 	 * @param allPredictedMentions
@@ -189,6 +90,37 @@ public class SrlResultIncorporation {
 		}
 	}
 	
+	public static int[] convertByteOffset(String sentence, int startIndex, int endIndex) {
+		int astartIndex = 0;
+		int aendIndex = 0;
+		
+		int offset = 0;
+		char[] chars = sentence.toCharArray();
+		int textLength = chars.length;
+		String[] characters = new String[chars.length];
+		for (int i = 0; i < textLength; i++) {
+			char character = chars[i];
+			characters[i] = Character.toString(character);
+		}
+		
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < textLength; i++) {
+			String character = characters[i];
+			if ((offset >= startIndex) && (offset < endIndex) ) {
+				if (offset == startIndex) astartIndex = i;
+				if (offset == (endIndex-1)) aendIndex = i+1;
+				if (offset == startIndex && (character.equals(" "))) continue;
+				sb.append(character);
+			}
+			if (!character.equals(" ")) offset = offset + 1;
+		}
+		
+		int[] byteoffset = new int[2];
+		byteoffset[0] = astartIndex;
+		byteoffset[1] = aendIndex;
+		return byteoffset;
+	}
+	
 	/**
 	 * align the predict mention with the srl result
 	 * at first: match the sentence
@@ -218,12 +150,22 @@ public class SrlResultIncorporation {
 						
 						for (String argKey : arguments.keySet()) {
 							List<SrlAnnotation> argument = arguments.get(argKey);
-							StringBuilder sb = new StringBuilder();
-							for (SrlAnnotation token : argument) {
-								String word = token.getText();
-								sb.append(word + " ");
+							
+							// match the id
+							int argumentStart = argument.get(0).getStartOffset();
+							int argumentEnd = argument.get(argument.size() - 1).getEndOffset();
+							for (int k = 0; k < allPredictedMentions.get(i).size(); k++) {
+								Mention mentionMatch = allPredictedMentions.get(i).get(k);
+								int mentionMatchStart = mentionMatch.getByteStartOffset();
+								int mentionMatchEnd = mentionMatch.getByteEndOffset();
+								
+								if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd)) {
+									mention.setArgument(argKey, mentionMatch);
+									mentionMatch.setPredicte(mention);
+									mentionMatch.SRLrole = argKey;
+									break;
+								}
 							}
-							mention.setArgument(argKey, sb.toString());
 						}
 						// do not need to go through all the documents, just once
 						break;

@@ -159,25 +159,7 @@ public class EecbReader extends EgenericDataSetReader {
 		    	        "ANCHOR",
 		    	        null);
 		    	
-		    	Set<String> roleSet = eecbEventMention.getRoles();
-		        List<String> roles = new ArrayList<String>();
-		        for(String role: roleSet) roles.add(role);
 		        List<ExtractionObject> convertedArgs = new ArrayList<ExtractionObject>();
-
-		        for(String role: roles){
-		          EecbEntityMention arg = eecbEventMention.getArg(role);
-		          int extEnd = arg.getExtent().getTokenEnd();
-			    	if (extEnd > sentence.size()) {
-			    		extEnd = sentence.size();
-			    	}
-			    	
-			    	Span extent = new Span(arg.getExtent().getTokenStart(), extEnd);
-			    	EntityMention convertedMention = new EntityMention(arg.getId(), sentence, extent, null, "", "", "");
-			        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
-		          ExtractionObject o = convertedMention;
-		          
-		          convertedArgs.add(o);
-		        }
 		    	
 		        int extEnd = eecbEventMention.getExtent().getTokenEnd() - offset + 1;
 		    	int extStart = eecbEventMention.getExtent().getTokenStart() - offset;

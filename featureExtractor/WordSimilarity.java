@@ -46,9 +46,6 @@ public class WordSimilarity {
 	public WordSimilarity(String path) {
 		this.filePath = path;
 		datas = new ArrayList<SimWord>();
-		System.out.println("Initialize the word similarity dictionary......");
-		
-		System.out.println("Finsih initialization of the word similarity dictionary");
 	}
 	
 	// get top-ten words

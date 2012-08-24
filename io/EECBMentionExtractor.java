@@ -37,6 +37,7 @@ import edu.stanford.nlp.ling.CoreAnnotations.IndexAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.NamedEntityTagAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.UBlockAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.UtteranceAnnotation;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -55,10 +56,11 @@ import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 public class EECBMentionExtractor extends EmentionExtractor {
 	private EecbReader eecbReader;
 	private String topicPath;
+	private int baseID;
 	protected int fileIndex = 0;
 	protected ArrayList<String> files;
 	
-	private static Logger logger = CRC_MAIN.logger;
+	private static Logger logger;
 	
 	private static class EntityComparator implements Comparator<EntityMention> {
 	    public int compare(EntityMention m1, EntityMention m2){
@@ -72,10 +74,10 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	
 	private static class EventComparator implements Comparator<EventMention> {
 		public int compare(EventMention m1, EventMention m2){
-		    if(m1.getExtentTokenStart() > m2.getExtentTokenStart()) return 1;
-		    else if(m1.getExtentTokenStart() < m2.getExtentTokenStart()) return -1;
-		    else if(m1.getExtentTokenEnd() > m2.getExtentTokenEnd()) return -1;
-		    else if(m1.getExtentTokenEnd() < m2.getExtentTokenEnd()) return 1;
+		    if(m1.getAnchor().getExtentTokenEnd() > m2.getAnchor().getExtentTokenEnd()) return 1;
+		    else if(m1.getAnchor().getExtentTokenEnd() < m2.getAnchor().getExtentTokenEnd()) return -1;
+		    else if(m1.getAnchor().getExtentTokenEnd() > m2.getAnchor().getExtentTokenEnd()) return -1;
+		    else if(m1.getAnchor().getExtentTokenEnd() < m2.getAnchor().getExtentTokenEnd()) return 1;
 		    else return 0;
 		}
 	}
@@ -83,9 +85,11 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
 		super(dict, semantics);
 		stanfordProcessor = loadStanfordProcessor(props);
-		topicPath = props.getProperty(EECB_Constants.EECB_PROP, GlobalConstantVariables.CORPUS_PATH) + "/" + topic + "/";
+		baseID = 1000000 * Integer.parseInt(topic);
+		topicPath = props.getProperty(EECB_Constants.EECB_PROP, GlobalConstantVariables.WHOLE_CORPUS_PATH) + "/" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
+		logger = Logger.getLogger(CRC_MAIN.class.getName());
 		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
 		sort(files);   // Output [1.eecb, 2.eecb, 3.eecb, 4.eecb, 5.eecb]
 	}
@@ -139,8 +143,9 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
-		    // Plus the srl Annotation to the extracted mention 
-		    allPredictedMentions = mentionFinder.extractPredictedMentions(anno, -1, dictionaries);
+		    int maxID = 1000000 * Integer.parseInt(topic);
+		    // Plus the srl Annotation to the extracted mention // set the mention id here 
+		    allPredictedMentions = mentionFinder.extractPredictedMentions(anno, maxID, dictionaries);
 		    
 		    /** according to the extraction result, print the original document with different annotation */
 		    printRawDoc(sentences, allPredictedMentions, false);
@@ -151,7 +156,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 			System.exit(1);
 		}
 		
-		MentionExtractor dcorfMentionExtractor = new MentionExtractor(dictionaries, semantics);		
+		MentionExtractor dcorfMentionExtractor = new MentionExtractor(dictionaries, semantics);
+		dcorfMentionExtractor.setCurrentDocumentID(topic);
 		Document document = dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
 		document.extractGoldCorefClusters();
 		return document;
@@ -215,6 +221,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	    if(gold) logger.fine("New DOC: (GOLD MENTIONS) ==================================================");
 	    else logger.fine("New DOC: (Predicted Mentions) ==================================================");
 	    logger.fine(doc.toString());
+	    //System.out.println(doc.toString());
 	  }
 	
 	/**
@@ -249,7 +256,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	        //men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
 	        men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
 	        String[] parseCorefID = e.getCorefID().split("-");
-	        men.goldCorefClusterID = Integer.parseInt(parseCorefID[parseCorefID.length-1].substring(1));
+	        men.goldCorefClusterID = Integer.parseInt(parseCorefID[parseCorefID.length-1].substring(1)) + baseID;
 	        men.originalRef = -1;
 	        
 	        for(int j=allGoldMentions.size()-1 ; j>=0 ; j--){
@@ -282,6 +289,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		        men.dependency = s.get(CollapsedDependenciesAnnotation.class);
 		        men.startIndex = e.getExtentTokenStart();
 		        men.endIndex = e.getExtentTokenEnd();
+		        men.isVerb = true;
 
 		        String[] parseID = e.getObjectId().split("-");
 		        //men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
@@ -295,7 +303,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		        	CorefClusterID += "000";
 		        }
 		        
-		        men.goldCorefClusterID = Integer.parseInt(CorefClusterID);
+		        men.goldCorefClusterID = Integer.parseInt(CorefClusterID) + baseID;
 		        men.originalRef = -1;
 		        
 		        for(int j=allGoldMentions.size()-1 ; j>=0 ; j--){

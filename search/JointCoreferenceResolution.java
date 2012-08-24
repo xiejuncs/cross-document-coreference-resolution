@@ -1,47 +1,40 @@
 package edu.oregonstate.search;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 
 import Jama.Matrix;
-import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.CorefCluster;
-import edu.stanford.nlp.dcoref.Mention;
-import edu.stanford.nlp.stats.Counter;
-import edu.stanford.nlp.dcoref.Dictionaries;
+import edu.oregonstate.EventCoreference;
 import edu.oregonstate.features.Feature;
-import edu.oregonstate.training.Train;
+import edu.stanford.nlp.dcoref.CorefCluster;
+import edu.stanford.nlp.dcoref.CorefScorer;
+import edu.stanford.nlp.dcoref.Dictionaries;
+import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.dcoref.ScorerBCubed;
+import edu.stanford.nlp.dcoref.ScorerMUC;
+import edu.stanford.nlp.dcoref.ScorerPairwise;
+import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
+import edu.stanford.nlp.stats.Counter;
 
 /**
- * 
- * According to the description in section 3.4 of the paper
- * 
- * we use a single linear regression to model cluster merge oeprations 
- * between both verbal and nominal clusters. Intuitively, the liner regression 
- * models the quality of the merge operation, i.e., a score larger than 0.5 indicates that more 
- * than half of the mention pairs introduced by this merge are correct. 
- * <b>NOTE</b>
- * In each iteration, we perform the merge operation that has the highest score. Once two clusters
- * are merged, we regenerate all the mention features to reflect the current clusters.
- * We stop when no merging operation with an overall benefit is found.
+ * Algorithm 1 in the paper
  * 
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class IterativeResolution {
-
+public class JointCoreferenceResolution {
 	private List<CorefCluster> clusters;
 	private Document mdocument;
 	private Dictionaries mDictionary;
 	private Matrix mModel;
 
-	public IterativeResolution(Document document, Dictionaries dictionary, Matrix model) {
+	public JointCoreferenceResolution(Document document, Dictionaries dictionary, Matrix model) {
 		mdocument = document;
 		mDictionary = dictionary;
 		clusters = new ArrayList<CorefCluster>();
@@ -78,38 +71,7 @@ public class IterativeResolution {
 	public void merge(Dictionaries dictionary) {
 		Map<String, Double> scoreMap = new HashMap<String, Double>();
 		fillScore(scoreMap);
-		
 		while(scoreMap.size() > 0) {
-			// generate the training examples
-			List<String> keys = new ArrayList<String>();
-			for (String key : scoreMap.keySet()) {
-				keys.add(key);
-			}
-			for (int i = 0; i < keys.size(); i++) {
-				String[] key = keys.get(i).split("-");
-				CorefCluster ci = clusters.get(Integer.parseInt(key[0]));
-				CorefCluster cj = clusters.get(Integer.parseInt(key[1]));
-				Counter<String> features = Feature.getFeatures(mdocument, ci, cj, false, dictionary); // get the feature
-				Set<Mention> toMentions = ci.getCorefMentions();
-				Set<Mention> fromMentions = cj.getCorefMentions();
-				double correct = 0.0;
-				double total = toMentions.size() * fromMentions.size();
-				Map<Integer, Mention> goldCorefClusters = mdocument.allGoldMentions;
-				for (Mention toMention : toMentions) {
-					for (Mention fromMention : fromMentions) {
-						if (goldCorefClusters.containsKey(toMention.mentionID) && goldCorefClusters.containsKey(fromMention.mentionID)) {
-							if (goldCorefClusters.get(toMention.mentionID).goldCorefClusterID == goldCorefClusters.get(fromMention.mentionID).goldCorefClusterID) {
-				    			correct += 1.0;
-				    		}
-						}
-					}
-				}
-				
-				double quality = correct/total;
-				String record = Train.buildString(features, quality);
-				Train.writeTextFile(Train.currentOutputFileName, record);
-			}
-			
 			String index = compare_hashMap(scoreMap);
 			String[] indexs = index.split("-");
 			CorefCluster c1 = clusters.get(Integer.parseInt(indexs[0]));
@@ -130,6 +92,21 @@ public class IterativeResolution {
 			scoreMap = new HashMap<String, Double>();
 			fillScore(scoreMap);
 		}
+		
+		// Print the score
+		if(EventCoreference.printScore){
+	    	CorefScorer mucscore = new ScorerMUC();
+	    	mucscore.calculateScore(mdocument);
+	    	mucscore.printF1(EventCoreference.logger, true);
+	    	
+	    	CorefScorer score = new ScorerBCubed(BCubedType.Bconll);
+	    	score.calculateScore(mdocument);
+	    	score.printF1(EventCoreference.logger, true);
+	    	
+	    	CorefScorer pairscore = new ScorerPairwise();
+	    	pairscore.calculateScore(mdocument);
+	    	pairscore.printF1(EventCoreference.logger, true);
+	    }
 	}
 	
 	/*Compare HashMap to get the index with the maximum value*/
@@ -163,5 +140,5 @@ public class IterativeResolution {
 		}
 		return sum;
 	}
-
+	
 }

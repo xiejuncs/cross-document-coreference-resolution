@@ -9,12 +9,12 @@ package edu.oregonstate.example;
 public class Tokenization {
 
 	public static void main(String[] args) {
-		String text = "Word comes from People magazine and other celebrity news outlets that Tara Reid, 33, who starred in ``American Pie'' and appeared on U.S. TV show ``Scrubs,'' has entered the Promises Treatment Center in Malibu, California - the same facility that in the past has been the rehab facility of choice for many a Hollywood star.";
-		
+		//String text = "Bettie Page, the 1950s pinup and bondage model who provided more than a half-century of inspiration for everybody from Madonna to the Suicide Girls to artist Olivia De Berardinis (as well as having her image used on all sorts of merchandise), died yesterday in Los Angeles at the age of 85.";
+		String text = "BettiePage,the1950spinupandbondagemodelwhoprovidedmorethanahalf-centuryofinspirationforeverybodyfromMadonnatotheSuicideGirlstoartistOliviaDeBerardinis(aswellashavingherimageusedonallsortsofmerchandise),diedyesterdayinLosAngelesattheageof85.";
 		
 		// 52 61
-		int astartIndex = 70;
-		int aendIndex = 156;
+		int astartIndex = 225;
+		int aendIndex = 235;
 		/*
 		int startIndex = 72;
 		int endIndex = 95;
@@ -42,6 +42,7 @@ public class Tokenization {
 		System.out.println(sb.toString());
 		System.out.println(sb.toString().length());
 		*/
+		System.out.println(text.length());
 		System.out.println(text.substring(astartIndex, aendIndex));
 		System.out.println(text.substring(astartIndex, aendIndex).length());
 	}
