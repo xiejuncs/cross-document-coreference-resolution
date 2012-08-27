@@ -73,7 +73,7 @@ public class SrlResultIncorporation {
 				String word = label.getString(TextAnnotation.class);
 				sborigi.append(word);
 			}
-			String originalsent = sborigi.toString().trim();
+			String originalsent = sborigi.toString().trim().replace("\\", "");
 			for (Integer key : sentenceidToSentence.keySet()) {
 				List<String> tokens = sentenceidToSentence.get(key);
 				// concatenate the tokens together
@@ -81,7 +81,7 @@ public class SrlResultIncorporation {
 				for (int j = 0; j < tokens.size(); j++) {
 					sb.append(tokens.get(j));
 				}
-				String sent = sb.toString().trim();
+				String sent = sb.toString().trim().replace("\\", "");
 				if (originalsent.contains(sent)) {
 					matchResult.put(i, key);
 					break;
@@ -131,6 +131,7 @@ public class SrlResultIncorporation {
 	public void alignSRL(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 		
+		// iterate e
 		for (int i = 0; i < allPredictedMentions.size(); i++) {
 			int sentenceID = i;
 			boolean contains = matchResult.containsKey(sentenceID);
@@ -159,7 +160,9 @@ public class SrlResultIncorporation {
 								int mentionMatchStart = mentionMatch.getByteStartOffset();
 								int mentionMatchEnd = mentionMatch.getByteEndOffset();
 								
-								if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd)) {
+								// it is very tricky here, I need to experiment for a while
+								// if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd))
+								if ((argumentStart == mentionMatchStart) && (mentionMatchEnd == argumentEnd)) {
 									mention.setArgument(argKey, mentionMatch);
 									mentionMatch.setPredicte(mention);
 									mentionMatch.SRLrole = argKey;
@@ -174,7 +177,7 @@ public class SrlResultIncorporation {
 			}
 		}
 		
+		
 	}
-	
 	
 }

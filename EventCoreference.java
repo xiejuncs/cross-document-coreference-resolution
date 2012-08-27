@@ -1,6 +1,7 @@
 package edu.oregonstate;
 
 import java.io.FileInputStream;
+import java.util.Calendar;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -152,6 +153,8 @@ public class EventCoreference {
 	 */
 	public static void main(String[] args) throws Exception {
 		System.out.println("Start........................");
+		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+		logger.fine(timeStamp);
 		EventCoreference ec = new EventCoreference();
 		// delete the intermediate results
 	    CRC_MAIN.deleteResult(GlobalConstantVariables.RESULT_PATH);
@@ -204,7 +207,18 @@ public class EventCoreference {
     	
     	CRC_MAIN.printModel(model, Feature.featuresName);
     	
-		
+    	System.out.println("do post processing");
+    	ec.corefSystem.postProcessing(ec.corpus);
+    	
+    	CorefScorer postmucscore = new ScorerMUC();
+    	postmucscore.calculateScore(ec.corpus);
+    	postmucscore.printF1(logger, true);
+    	
+    	CorefScorer postpairscore = new ScorerPairwise();
+    	postpairscore.calculateScore(ec.corpus);
+    	postpairscore.printF1(logger, true);
+    	
+    	logger.info("Done: ===================================================");
 		System.out.println("End.........................");
 	}
 	
