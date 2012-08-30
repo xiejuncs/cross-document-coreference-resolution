@@ -19,5 +19,7 @@ public class GlobalConstantVariables {
 	public static final String WORD_NET_CONFIGURATION_PATH = "corpus/file_properties.xml";
 	public static final String RESULT_PATH = "corpus/RESULT/";
 	public static final String SRL_PATH = "corpus/srloutput/";
+	public static final String TOKENS_PATH = "corpus/tokens/";
+	public static final String TOKENS_OUTPUT_PATH = "corpus/tokenoutput/";
 	
 }

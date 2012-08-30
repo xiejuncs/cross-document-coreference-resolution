@@ -56,6 +56,8 @@ public class IterativeResolution {
 			clusters.add(cluster);
 		}
 	}
+
+		
 	
 	private void fillScore(Map<String, Double> scoreMap) {
 		// compute the pair of the entities

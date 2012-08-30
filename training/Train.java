@@ -42,7 +42,7 @@ public class Train {
 	private double mCoefficient;
 	private double mLamda;
 	private String[] outputFileNames = {"one.csv", "two.csv", "three.csv", "four.csv", "five.csv", "six.csv", "seven.csv", "eight.csv", "nine.csv", "ten.csv", "initial.csv"};
-	public static String currentOutputFileName;
+	public static String currentOutputFileName = "";
 	
 	public Train( EventCoreference ec, String[] topics, int epoch, double coefficient, double lamda) {
 		this.ec = ec;
@@ -62,7 +62,7 @@ public class Train {
 			currentOutputFileName = GlobalConstantVariables.RESULT_PATH + outputFileNames[i];
 			// all mentions in one doc cluster
 			for (String topic : mTopics) {
-				System.out.println("begin to process topic 1................");
+				System.out.println("begin to process topic" + topic+ "................");
 				try {
 					Document document = ec.getDocument(topic);
 				    ec.corefSystem.coref(document);
@@ -73,7 +73,7 @@ public class Train {
 					e.printStackTrace();
 					System.exit(1);
 				}
-				System.out.println("end to process topic 1................");
+				System.out.println("end to process topic" + topic+ "................");
 			}
 			
 			LinearRegression lr = new LinearRegression(currentOutputFileName, mCoefficient);

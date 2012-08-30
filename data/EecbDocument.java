@@ -20,8 +20,10 @@ import edu.oregonstate.training.Train;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetEndAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
@@ -260,6 +262,7 @@ public class EecbDocument extends EecbElement {
 		
 		// read the EecbTokens
         List<List<EecbToken>> sentences = tokenizeAndSegmentSentences(mRawText);
+        
         mSentences = sentences;
         for (List<EecbToken> sentence : sentences) {
         	for (EecbToken token : sentence) {
@@ -585,6 +588,7 @@ public class EecbDocument extends EecbElement {
 		    pipeline.annotate(seAnno);
 		    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
 		    for(CoreMap ses : seSentences) {
+		    	boolean newline = true;
 		    	for (int j = 0; j < ses.get(TokensAnnotation.class).size(); j++) {
 		    		CoreLabel token = ses.get(TokensAnnotation.class).get(j);
 		    		String word = token.getString(TextAnnotation.class);
@@ -592,12 +596,49 @@ public class EecbDocument extends EecbElement {
 		    		int end = token.get(CharacterOffsetEndAnnotation.class);
 		    		EecbToken eecbToken = new EecbToken(word, "", "", start, end, i);
 		    		sentence.add(eecbToken);
+		    		
+		    		//if (j == (ses.get(TokensAnnotation.class).size() - 1)) newline = false;
+		    		//String tokens = createTokens(j, token, newline);
+		    		//Train.writeTextFile(GlobalConstantVariables.TOKENS_PATH + mPrefix + ".tokens", tokens);
 		    	}
 		    }
 		    sentences.add(sentence);
 		}
 		
 		return sentences;
+	}
+	
+	/**
+	 * according to the specification of http://barcelona.research.yahoo.net/dokuwiki/doku.php?id=conll2008:format
+	 * output the tokens for the Semantic Role Labeling Software in order to create the result
+	 * 
+	 * @param j
+	 * @param token
+	 * @return
+	 */
+	public String createTokens(int j, CoreLabel token, boolean newline) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(j+1);
+		sb.append("\t");
+		String word = token.getString(TextAnnotation.class).replace("\\", "");
+		sb.append(word + "\t");
+		String lemma = token.getString(LemmaAnnotation.class).replace("\\", "");
+		if (lemma == "") lemma = "_";
+		sb.append(lemma + "\t");
+		sb.append("_\t");
+		String pos = token.getString(PartOfSpeechAnnotation.class);
+		sb.append(pos + "\t");
+		sb.append(word + "\t");
+		sb.append(lemma + "\t");
+		sb.append(pos + "\t");
+		sb.append("0\t");
+		sb.append("_");
+		if (newline)	{
+			sb.append("\n");
+		} else {
+			sb.append("\n\n");
+		}
+		return sb.toString();
 	}
 	
 	// according to every coref ID, and add the entity mention into the document

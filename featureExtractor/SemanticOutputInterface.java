@@ -302,6 +302,7 @@ public class SemanticOutputInterface {
 			 System.out.println(id);
 			 System.out.println(tokens);
 			 System.out.println(extentWithArgumentRoles);
+			 System.out.println("\n");
 			 extentsWithArgumentRoles.put(id , extentWithArgumentRoles);
 			 sentenceidToSentence.put(id, tokens);
 		 }

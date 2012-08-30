@@ -48,6 +48,7 @@ public class EventCoreference {
 	public SieveCoreferenceSystem corefSystem;
 	public LexicalizedParser parser;
 	public static boolean printScore = false;
+	public boolean linearregression = true;
 	
 	// set all configuration
 	public EventCoreference() {
@@ -63,7 +64,7 @@ public class EventCoreference {
 		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 		props.put("dcoref.eecb", GlobalConstantVariables.WHOLE_CORPUS_PATH);
 		props.put("dcoref.score", "true");
-		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
+		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch, PronounMatch");
 	}
 	
 	public void setCorefSystem() {
@@ -161,12 +162,20 @@ public class EventCoreference {
 	    String[] topics = CRC_MAIN.getTopics(GlobalConstantVariables.WHOLE_CORPUS_PATH);
 		
 	    // train the model
-	    Train train = new Train( ec, topics, 10, 1.0, 0.7);
-	    Matrix initialmodel = train.assignInitialWeights();
-	    Matrix model = train.train(initialmodel);
+	    //Train train = new Train( ec, topics, 10, 1.0, 0.7);
+	    //Matrix initialmodel = train.assignInitialWeights();
+	    //System.out.println("Output tokens");
+	    //long start = System.currentTimeMillis();
+	    //long end = start + 100*1000; // 60 seconds * 1000 ms/sec
+	    //while (System.currentTimeMillis() < end)
+	    //{
+
+	    //}
+	    
+	    //Matrix model = train.train(initialmodel);
 	    
 	    for (String topic : topics) {
-	    	System.out.println("begin to process topic 1................");
+	    	System.out.println("begin to process topic" + topic + "................");
 	    	// apply high preicision sieves phase
 	    	Document topicDocument = ec.getDocument(topic);
 	    	ec.corefSystem.coref(topicDocument);
@@ -175,18 +184,25 @@ public class EventCoreference {
 		        ec.corefSystem.printF1(true);
 		        System.out.println("\n");
 		    }
+
 	    	
 	    	// iterative event/entity co-reference
-	    	JointCoreferenceResolution ir = new JointCoreferenceResolution(topicDocument, ec.corefSystem.dictionaries(), model);
-		    ir.merge(ec.corefSystem.dictionaries());
+	    	// flag variable : linearregression, if true, then do replicate the Stanford's experiment,
+	    	// if not, then learn a heuristic function
+	    	//if (ec.linearregression) {
+	    	//	JointCoreferenceResolution ir = new JointCoreferenceResolution(topicDocument, ec.corefSystem.dictionaries(), model);
+	    	//	ir.merge(ec.corefSystem.dictionaries());
+	    	//} else {
+	    		
+	    	//}
 		    
 		    // pronoun sieves
-		    DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-		    ec.corefSystem.coreference(topicDocument, pronounSieve);
+		    //DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
+		    //ec.corefSystem.coreference(topicDocument, pronounSieve);
 		    
 		    // add the four fields into the corpus data structure
 		    ec.add(topicDocument);
-		    System.out.println("end to process topic 1................");
+		    System.out.println("end to process topic" + topic + "................");
 	    }
 		
 	    // evaluate
@@ -205,7 +221,7 @@ public class EventCoreference {
     	pairscore.calculateScore(ec.corpus);
     	pairscore.printF1(logger, true);
     	
-    	CRC_MAIN.printModel(model, Feature.featuresName);
+    	//CRC_MAIN.printModel(model, Feature.featuresName);
     	
     	System.out.println("do post processing");
     	ec.corefSystem.postProcessing(ec.corpus);
