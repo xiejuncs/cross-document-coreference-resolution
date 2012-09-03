@@ -55,116 +55,11 @@ public class CRC_MAIN {
 	public static LexicalizedParser parser;
 	public static boolean printScore = false;
 	
-	
 	public static LexicalizedParser makeParser(Properties props) {
 	    int maxLen = Integer.parseInt(props.getProperty(Constants.PARSER_MAXLEN_PROP, "100"));
 	    String[] options = {"-maxLength", Integer.toString(maxLen)};
 	    LexicalizedParser parser = LexicalizedParser.loadModel(props.getProperty(Constants.PARSER_MODEL_PROP, DefaultPaths.DEFAULT_PARSER_MODEL), options);
 	    return parser;
-	}
-	
-	/**
-	 * Stick to my own implementation, not think about converting to ACE 2005 style
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) throws Exception {
-		logger.info("Start: ============================================================");
-		
-		//The configuration for EECB corpus, 
-		props = new Properties();
-		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-		props.put("dcoref.eecb", GlobalConstantVariables.CORPUS_PATH);
-		props.put("dcoref.score", "true");
-		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
-		
-		// the initialization of corefSystem
-		corefSystem = new SieveCoreferenceSystem(props);
-	    parser = makeParser(props);
-		
-		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
-		
-		/** initialize logger */
-	    FileHandler fh;
-	    try {
-	      String logFileName = props.getProperty(Constants.LOG_PROP, "log.txt");
-	      if(logFileName.endsWith(".txt")) {
-	        logFileName = logFileName.substring(0, logFileName.length()-4) +"_"+ timeStamp+".txt";
-	      } else {
-	        logFileName = logFileName + "_"+ timeStamp+".txt";
-	      }
-	      fh = new FileHandler(logFileName, false);
-	      logger.addHandler(fh);
-	      logger.setLevel(Level.FINE);
-	      fh.setFormatter(new LogFormatter());
-	    } catch (SecurityException e) {
-	      System.err.println("ERROR: cannot initialize logger!");
-	      throw e;
-	    } catch (IOException e) {
-	      System.err.println("ERROR: cannot initialize logger!");
-	      throw e;
-	    }
-	    
-	    logger.fine(timeStamp);
-	    logger.fine(props.toString());
-	    Constants.printConstants(logger);
-	    
-	    // delete the intermediate results
-	    deleteResult(GlobalConstantVariables.RESULT_PATH);
-	    String[] topics = getTopics(GlobalConstantVariables.CORPUS_PATH);
-	    EventCoreference ec = new EventCoreference();
-	    // train the model
-	    Train train = new Train(ec, topics, 10, 1.0, 0.7);
-	    Matrix initialmodel = train.assignInitialWeights();
-	    Matrix model = train.train(initialmodel);
-	    
-	    for (String topic : topics) {
-		    // Parse one document at a time, and do single-doc coreference resolution in each
-		    Document document = getDocument(topic);
-		    //document.extractGoldCorefClusters();
-		    corefSystem.coref(document); 
-		    if(corefSystem.doScore()){
-		        //Identifying possible coreferring mentions in the corpus along with any recall/precision errors with gold corpus
-		    	corefSystem.printTopK(logger, document, corefSystem.semantics());
-
-		        logger.fine("pairwise score for this doc: ");
-		        System.out.println("pairwise score for this doc: ");
-		        corefSystem.getScoreSingleDoc().get(corefSystem.getSieves().length-1).printF1(logger);
-		        logger.fine("accumulated score: ");
-		        System.out.println("accumulated score: ");
-		        corefSystem.printF1(true);
-		        logger.fine("\n");
-		    }
-		    
-		    printScore = true;
-		    // Get the coref Clusters from the document, and then apply the iterative event/entity coreference
-		    JointCoreferenceResolution ir = new JointCoreferenceResolution(document, corefSystem.dictionaries(), model);
-		    ir.merge(corefSystem.dictionaries());
-		 
-		    // TODO Pronoun part
-		    DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-		    corefSystem.coreference(document, pronounSieve);
-		    
-		    if(CRC_MAIN.printScore){
-		    	
-		    	CorefScorer score = new ScorerBCubed(BCubedType.Bconll);
-		    	score.calculateScore(document);
-		    	score.printF1(CRC_MAIN.logger, true);
-		    	
-		    	corefSystem.postProcessing(document);
-		    	
-		    	CorefScorer mucscore = new ScorerMUC();
-		    	mucscore.calculateScore(document);
-		    	mucscore.printF1(CRC_MAIN.logger, true);
-		    	
-		    	CorefScorer pairscore = new ScorerPairwise();
-		    	pairscore.calculateScore(document);
-		    	pairscore.printF1(CRC_MAIN.logger, true);
-		    }
-	    }
-	    
-	    printModel(model, Feature.featuresName);
-	    logger.info("Done: ===================================================");
 	}
 	
 	public static void printModel(Matrix model, String[] featureName) {

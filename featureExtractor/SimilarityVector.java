@@ -33,6 +33,7 @@ public class SimilarityVector {
 	 * @return cosine similarity
 	 */
 	public static double getCosineSimilarity(SimilarityVector c1, SimilarityVector c2) {
+		if (c1.mcounter.size() == 0 || c2.mcounter.size() == 0) return 0;
 		Counter<String> counter1 = c1.mcounter;
 		Counter<String> counter2 = c2.mcounter;
 		HashMap<String, Double> hcounter1 = convertCounter(counter1);

@@ -25,72 +25,22 @@ import edu.oregonstate.util.GlobalConstantVariables;
  */
 public class WordSimilarity {
 	private String filePath;
-	private List<SimWord> datas;
- 	
-	/** represent each similarity word */
-	public static class SimWord {
-		String token;
-		Double value;
-		
-		public SimWord(String token, Double value) {
-			this.token = token;
-			this.value = value;
-		}
-		
-		@Override
-		public String toString() {
-			return token;
-		}
-	}
+	public Map<String, List<String>> datas;
 	
 	public WordSimilarity(String path) {
 		this.filePath = path;
-		datas = new ArrayList<SimWord>();
-	}
-	
-	// get top-ten words
-	public List<SimWord> getData(String query) {
-		initialize(query);
-		sort(datas);
-		int n = 10;
-		List<SimWord> toptenList = new ArrayList<SimWord>();
-		if (datas.size() < 10) return toptenList;
-		for (int i = 0; i < 10; i++) {
-			toptenList.add(datas.get(i));
-		}
-		return toptenList;
-	}
-	
-	private static boolean more(SimWord v, SimWord w) {
-		return (v.value).compareTo((w.value)) > 0;
-	}
-	
-	private static void exch(List<SimWord> names, int i, int j ){
-        SimWord t = names.get(i);
-        names.set(i, names.get(j));
-        names.set(j, t);
-	}
-	
-	private static void sort(List<SimWord> names) {
-        int N = names.size();
-        for (int i = 0; i < N; i++ ) {
-                int min = i;
-                for (int j = i+1; j < N; j++) {
-                        if (more(names.get(j), names.get(min))) min = j;
-                }
-                exch(names, i, min);
-        }
+		datas = new HashMap<String, List<String>>();
 	}
 	
 	public static void main(String[] args) {
 		WordSimilarity wordSimilarity = new WordSimilarity(GlobalConstantVariables.WORD_SIMILARITY_PATH);
-		List<SimWord> words = wordSimilarity.getData("home");
-		words.add(new SimWord("home", 0.0));
-		System.out.println(words);
+		wordSimilarity.initialize();
+		Map<String, List<String>> datas = wordSimilarity.datas;
+		System.out.println(datas.get("of"));
 	}
 	
 	/** initialize the word similarity dictionary */
-	private void initialize(String query) {
+	public void initialize() {
 		try {
 			FileInputStream fstream = new FileInputStream(filePath);
 			DataInputStream in = new DataInputStream(fstream);
@@ -98,17 +48,29 @@ public class WordSimilarity {
 			
 			String strLine;
 			Boolean pass = true;
+			String currentIndex = "";
+			List<String> mentionWords = new ArrayList<String>();
+			int i = 0;
 			while ((strLine = br.readLine()) != null) {
-				if (strLine.startsWith("(" + query)) {
+				if (strLine.startsWith("(")) {
 					pass = false;
+					String[] words = strLine.split(" ");
+					currentIndex = words[0].substring(1);
+					mentionWords = new ArrayList<String>();
+					mentionWords.add(currentIndex);
+					i = 1;
 				}
 				if (pass) continue;
-				if (!strLine.startsWith("(") && !strLine.startsWith(")")) {
+				if (!strLine.startsWith("(") && !strLine.startsWith(")") && i < 11) {
 					String[] words = strLine.split("\t");
-					SimWord simword = new SimWord(words[0], Double.parseDouble(words[1]));
-					datas.add(simword);
+					mentionWords.add(words[0]);
+					i += 1;
 				}
-				if (strLine.startsWith(")") && !pass) break;
+				
+				if (i == 10) {
+					datas.put(currentIndex, mentionWords);
+					pass = true;
+				}
 			}
 			
 			br.close();

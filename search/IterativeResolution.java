@@ -57,8 +57,6 @@ public class IterativeResolution {
 		}
 	}
 
-		
-	
 	private void fillScore(Map<String, Double> scoreMap) {
 		// compute the pair of the entities
 		for (int i = 0; i < (clusters.size() - 1); i++) {

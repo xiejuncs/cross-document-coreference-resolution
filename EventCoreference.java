@@ -2,30 +2,28 @@ package edu.oregonstate;
 
 import java.io.FileInputStream;
 import java.util.Calendar;
-import java.util.Properties;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
+import net.didion.jwnl.JWNL;
 import Jama.Matrix;
 
+import edu.oregonstate.featureExtractor.WordSimilarity;
 import edu.oregonstate.features.Feature;
-import edu.oregonstate.io.EECBMentionExtractor;
-import edu.oregonstate.io.EmentionExtractor;
+import edu.oregonstate.score.ScorerCEAF;
+import edu.oregonstate.search.BestBeamSearch;
 import edu.oregonstate.search.JointCoreferenceResolution;
 import edu.oregonstate.training.Train;
-import edu.oregonstate.util.EECB_Constants;
+import edu.oregonstate.training.TrainHeuristicFunction;
 import edu.oregonstate.util.GlobalConstantVariables;
-import edu.stanford.nlp.dcoref.Constants;
-import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.ScorerBCubed;
 import edu.stanford.nlp.dcoref.ScorerMUC;
 import edu.stanford.nlp.dcoref.ScorerPairwise;
-import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
 import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
-import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
-import edu.stanford.nlp.pipeline.DefaultPaths;
 
 /**
  * The main entry point for cross document coreference resolution
@@ -44,73 +42,27 @@ import edu.stanford.nlp.pipeline.DefaultPaths;
 public class EventCoreference {
 	public static final Logger logger = Logger.getLogger(EventCoreference.class.getName());
 	public Document corpus;
-	public Properties props;
-	public SieveCoreferenceSystem corefSystem;
-	public LexicalizedParser parser;
+	public static Map<String, List<String>> datas;
+	
 	public static boolean printScore = false;
 	public boolean linearregression = true;
+	public boolean beamsearch = false;
 	
 	// set all configuration
 	public EventCoreference() {
 		corpus = new Document();
-		setProperties();
-		setCorefSystem();
-		parser = makeParser(props);
+	    configureJWordNet();
 	}
 	
-	public void setProperties() {
-		//The configuration for EECB corpus, 
-		props = new Properties();
-		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-		props.put("dcoref.eecb", GlobalConstantVariables.WHOLE_CORPUS_PATH);
-		props.put("dcoref.score", "true");
-		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch, PronounMatch");
-	}
-	
-	public void setCorefSystem() {
+	public void configureJWordNet() {
 		try {
-			corefSystem = new SieveCoreferenceSystem(props);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(1);
+			System.out.println("begin configure WORDNET");
+			JWNL.initialize(new FileInputStream(GlobalConstantVariables.WORD_NET_CONFIGURATION_PATH));
+			System.out.println("finish configure WORDNET");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.exit(-1);
 		}
-	}
-
-	public LexicalizedParser makeParser(Properties props) {
-	    int maxLen = Integer.parseInt(props.getProperty(Constants.PARSER_MAXLEN_PROP, "100"));
-	    String[] options = {"-maxLength", Integer.toString(maxLen)};
-	    LexicalizedParser parser = LexicalizedParser.loadModel(props.getProperty(Constants.PARSER_MODEL_PROP, DefaultPaths.DEFAULT_PARSER_MODEL), options);
-	    return parser;
-	}
-	
-	public Document getDocument(String topic) throws Exception {
-		EmentionExtractor mentionExtractor = null;
-	    mentionExtractor = new EECBMentionExtractor(topic, parser, corefSystem.dictionaries(), props, corefSystem.semantics());
-	    
-	    assert mentionExtractor != null;
-	    if (!EECB_Constants.USE_GOLD_MENTIONS) {
-	    	// Set mention finder
-	    	String mentionFinderClass = props.getProperty(Constants.MENTION_FINDER_PROP);
-	    	if (mentionFinderClass != null) {
-	            String mentionFinderPropFilename = props.getProperty(Constants.MENTION_FINDER_PROPFILE_PROP);
-	            CorefMentionFinder mentionFinder;
-	            if (mentionFinderPropFilename != null) {
-	              Properties mentionFinderProps = new Properties();
-	              mentionFinderProps.load(new FileInputStream(mentionFinderPropFilename));
-	              mentionFinder = (CorefMentionFinder) Class.forName(mentionFinderClass).getConstructor(Properties.class).newInstance(mentionFinderProps);
-	            } else {
-	              mentionFinder = (CorefMentionFinder) Class.forName(mentionFinderClass).newInstance();
-	            }
-	            mentionExtractor.setMentionFinder(mentionFinder);
-	    	}
-	    	if (mentionExtractor.mentionFinder == null) {
-	           System.out.println("No mention finder specified, but not using gold mentions");
-	    	}
-	    }
-	    // Parse one document at a time, and do single-doc coreference resolution in each
-	    Document document = mentionExtractor.inistantiate(topic);
-	    
-	    return document;
 	}
 	
 	public void addCorefCluster(Document document) {
@@ -156,49 +108,64 @@ public class EventCoreference {
 		System.out.println("Start........................");
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		logger.fine(timeStamp);
+		
+		WordSimilarity wordSimilarity = new WordSimilarity(GlobalConstantVariables.WORD_SIMILARITY_PATH);
+		wordSimilarity.initialize();
+		datas = wordSimilarity.datas;
+		
 		EventCoreference ec = new EventCoreference();
+		
+		//TODO
+		// configuration part, set ec.linearregression, ec.beamsearch variable and ec.printScore
+		
+		assert ec.linearregression != ec.beamsearch;
+		int beamWidth = 5;
 		// delete the intermediate results
 	    CRC_MAIN.deleteResult(GlobalConstantVariables.RESULT_PATH);
 	    String[] topics = CRC_MAIN.getTopics(GlobalConstantVariables.WHOLE_CORPUS_PATH);
-		
-	    // train the model
-	    //Train train = new Train( ec, topics, 10, 1.0, 0.7);
-	    //Matrix initialmodel = train.assignInitialWeights();
-	    //System.out.println("Output tokens");
-	    //long start = System.currentTimeMillis();
-	    //long end = start + 100*1000; // 60 seconds * 1000 ms/sec
-	    //while (System.currentTimeMillis() < end)
-	    //{
-
-	    //}
 	    
-	    //Matrix model = train.train(initialmodel);
+	    Matrix model = new Matrix(Feature.featuresName.length + 1, 1);
+	    // train the model
+	    if (ec.linearregression) {
+	    	Train train = new Train( topics, 10, 1.0, 0.7);
+	    	Matrix initialmodel = train.assignInitialWeights();
+	    	model = train.train(initialmodel);
+	    }
+	    
+	    if (ec.beamsearch) {
+	    	TrainHeuristicFunction thf = new TrainHeuristicFunction(10, topics, model, beamWidth, true);
+	    	model = thf.train();
+	    }
 	    
 	    for (String topic : topics) {
 	    	System.out.println("begin to process topic" + topic + "................");
 	    	// apply high preicision sieves phase
-	    	Document topicDocument = ec.getDocument(topic);
-	    	ec.corefSystem.coref(topicDocument);
-	    	if(ec.corefSystem.doScore()){
+	    	CorefSystem cs = new CorefSystem();
+	    	Document topicDocument = cs.getDocument(topic);
+	    	cs.corefSystem.coref(topicDocument);
+	    	if(cs.corefSystem.doScore()){
 		        System.out.println("accumulated score: \n");
-		        ec.corefSystem.printF1(true);
+		        cs.corefSystem.printF1(true);
 		        System.out.println("\n");
 		    }
 
-	    	
 	    	// iterative event/entity co-reference
 	    	// flag variable : linearregression, if true, then do replicate the Stanford's experiment,
 	    	// if not, then learn a heuristic function
-	    	//if (ec.linearregression) {
-	    	//	JointCoreferenceResolution ir = new JointCoreferenceResolution(topicDocument, ec.corefSystem.dictionaries(), model);
-	    	//	ir.merge(ec.corefSystem.dictionaries());
-	    	//} else {
-	    		
-	    	//}
+	    	if (ec.linearregression) {
+	    		JointCoreferenceResolution ir = new JointCoreferenceResolution(topicDocument, cs.corefSystem.dictionaries(), model);
+	    		ir.merge(cs.corefSystem.dictionaries());
+	    	}
+	    	
+	    	// structured perceptron without bias, just set bias as 0
+	    	if (ec.beamsearch) {
+	    		BestBeamSearch beamSearch = new BestBeamSearch(topicDocument, cs.corefSystem.dictionaries(), model, beamWidth);
+	    		beamSearch.search();
+	    	}
 		    
 		    // pronoun sieves
-		    //DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-		    //ec.corefSystem.coreference(topicDocument, pronounSieve);
+		    DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
+		    cs.corefSystem.coreference(topicDocument, pronounSieve);
 		    
 		    // add the four fields into the corpus data structure
 		    ec.add(topicDocument);
@@ -212,6 +179,10 @@ public class EventCoreference {
     	score.calculateScore(ec.corpus);
     	score.printF1(logger, true);
     	
+    	CorefScorer ceafscore = new ScorerCEAF();
+    	ceafscore.calculateScore(ec.corpus);
+    	ceafscore.printF1(logger, true);	
+
     	//corefSystem.postProcessing(document);
     	CorefScorer mucscore = new ScorerMUC();
     	mucscore.calculateScore(ec.corpus);
@@ -221,10 +192,13 @@ public class EventCoreference {
     	pairscore.calculateScore(ec.corpus);
     	pairscore.printF1(logger, true);
     	
-    	//CRC_MAIN.printModel(model, Feature.featuresName);
+    	if (ec.linearregression) {
+    		CRC_MAIN.printModel(model, Feature.featuresName);
+    	}
     	
     	System.out.println("do post processing");
-    	ec.corefSystem.postProcessing(ec.corpus);
+    	CorefSystem cs = new CorefSystem();
+    	cs.corefSystem.postProcessing(ec.corpus);
     	
     	CorefScorer postmucscore = new ScorerMUC();
     	postmucscore.calculateScore(ec.corpus);
@@ -234,6 +208,16 @@ public class EventCoreference {
     	postpairscore.calculateScore(ec.corpus);
     	postpairscore.printF1(logger, true);
     	
+    	
+
+	// Average of MUC, B^{3} and CEAF-\phi_{4}.
+	double conllF1 = (score.getF1() + ceafscore.getF1() + postmucscore.getF1()) / 3;    
+	System.out.println("conllF1:     " + conllF1 );
+	
+	CorefScorer postceafscore = new ScorerCEAF();
+	postceafscore.calculateScore(ec.corpus);
+	postceafscore.printF1(logger, true);
+	
     	logger.info("Done: ===================================================");
 		System.out.println("End.........................");
 	}
