@@ -16,6 +16,7 @@ import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.dcoref.ScorerBCubed;
 import edu.stanford.nlp.dcoref.ScorerMUC;
 import edu.stanford.nlp.dcoref.ScorerPairwise;
@@ -56,6 +57,9 @@ public class JointCoreferenceResolution {
 			for (int j = 0; j < i; j++) {
 				CorefCluster c1 = clusters.get(i);
 				CorefCluster c2 = clusters.get(j);
+				Mention formerRep = c1.getRepresentativeMention();
+				Mention latterRep = c2.getRepresentativeMention();
+				if (formerRep.isPronominal() == true || latterRep.isPronominal() == true) continue;
 				Counter<String> features = Feature.getFeatures(mdocument, c1, c2, false, mDictionary); // get the feature size
 				double value = calculateScore(features);
 				if (value > 0.5) {
@@ -92,21 +96,6 @@ public class JointCoreferenceResolution {
 			scoreMap = new HashMap<String, Double>();
 			fillScore(scoreMap);
 		}
-		
-		// Print the score
-		if(EventCoreference.printScore){
-	    	CorefScorer mucscore = new ScorerMUC();
-	    	mucscore.calculateScore(mdocument);
-	    	mucscore.printF1(EventCoreference.logger, true);
-	    	
-	    	CorefScorer score = new ScorerBCubed(BCubedType.Bconll);
-	    	score.calculateScore(mdocument);
-	    	score.printF1(EventCoreference.logger, true);
-	    	
-	    	CorefScorer pairscore = new ScorerPairwise();
-	    	pairscore.calculateScore(mdocument);
-	    	pairscore.printF1(EventCoreference.logger, true);
-	    }
 	}
 	
 	/*Compare HashMap to get the index with the maximum value*/

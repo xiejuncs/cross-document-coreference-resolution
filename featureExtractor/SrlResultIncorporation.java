@@ -7,8 +7,11 @@ import java.util.HashMap;
 
 import edu.oregonstate.data.SrlAnnotation;
 import edu.stanford.nlp.dcoref.Mention;
+import edu.stanford.nlp.dcoref.RuleBasedCorefMentionFinder;
 import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.CoreAnnotations.IndexAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
+import edu.stanford.nlp.trees.Tree;
 
 /**
  * Incorporate the SRL result from Semantic Parsing software into EECB co-reference resolution
@@ -21,18 +24,20 @@ import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
  */
 public class SrlResultIncorporation {
 	private String resultPath;
-	private SemanticOutputInterface semantic;
+	private SRLExtraction semantic;
 	private Map<Integer, List<String>> sentenceidToSentence;
-	private Map<Integer, Map<SrlAnnotation, Map<String, List<SrlAnnotation>>>> extentsWithArgumentRoles;
+	private Map<Integer, Map<Mention, Map<String, Mention>>> extentsWithArgumentRoles;
 	private Map<Integer, Integer> matchResult;
+	private RuleBasedCorefMentionFinder rule;
 	
 	public SrlResultIncorporation(String path) {
 		this.resultPath = path;
-		semantic = new SemanticOutputInterface();
+		semantic = new SRLExtraction();
 		sentenceidToSentence = new HashMap<Integer, List<String>>();
-		extentsWithArgumentRoles = new HashMap<Integer, Map<SrlAnnotation,Map<String,List<SrlAnnotation>>>>();
+		extentsWithArgumentRoles = new HashMap<Integer, Map<Mention,Map<String,Mention>>>();
 		matchResult = new HashMap<Integer, Integer>();
 		initialize();
+		rule = new RuleBasedCorefMentionFinder(); 
 	}
 	
 	/**
@@ -44,7 +49,7 @@ public class SrlResultIncorporation {
         Map<Integer, List<List<String>>> doc = semantic.getDocument();
         for (Integer id : doc.keySet()) {
                 List<List<String>> sentence = doc.get(id);
-                Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> extentWithArgumentRoles = semantic.extractExtent(sentence);
+                Map<Mention, Map<String, Mention>> extentWithArgumentRoles = semantic.extractExtent(sentence);
                 if (extentWithArgumentRoles.size() == 0) continue;
                 List<String> tokens = new ArrayList<String>();
                 for (List<String> data : sentence) {
@@ -90,35 +95,11 @@ public class SrlResultIncorporation {
 		}
 	}
 	
-	public static int[] convertByteOffset(String sentence, int startIndex, int endIndex) {
-		int astartIndex = 0;
-		int aendIndex = 0;
-		
-		int offset = 0;
-		char[] chars = sentence.toCharArray();
-		int textLength = chars.length;
-		String[] characters = new String[chars.length];
-		for (int i = 0; i < textLength; i++) {
-			char character = chars[i];
-			characters[i] = Character.toString(character);
-		}
-		
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < textLength; i++) {
-			String character = characters[i];
-			if ((offset >= startIndex) && (offset < endIndex) ) {
-				if (offset == startIndex) astartIndex = i;
-				if (offset == (endIndex-1)) aendIndex = i+1;
-				if (offset == startIndex && (character.equals(" "))) continue;
-				sb.append(character);
-			}
-			if (!character.equals(" ")) offset = offset + 1;
-		}
-		
-		int[] byteoffset = new int[2];
-		byteoffset[0] = astartIndex;
-		byteoffset[1] = aendIndex;
-		return byteoffset;
+	private void findHead(Mention argument, Tree root, List<CoreLabel> sentence) {
+		Tree head = rule.findSyntacticHead(argument, root, sentence);
+		argument.headIndex = ((CoreLabel) head.label()).get(IndexAnnotation.class)-1;
+		argument.headWord = sentence.get(argument.headIndex);
+		argument.headString = argument.headWord.get(TextAnnotation.class).toLowerCase();
 	}
 	
 	/**
@@ -128,7 +109,7 @@ public class SrlResultIncorporation {
 	 * 
 	 * @param allPredictedMentions
 	 */
-	public void alignSRL(List<List<Mention>> allPredictedMentions) {
+	public void alignSRL1(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 		
 		// iterate e
@@ -137,32 +118,34 @@ public class SrlResultIncorporation {
 			boolean contains = matchResult.containsKey(sentenceID);
 			if (!contains) continue;
 			int correspondingID = matchResult.get(sentenceID);
-			Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> srlResult = extentsWithArgumentRoles.get(correspondingID);
+			Map<Mention, Map<String, Mention>> srlResult = extentsWithArgumentRoles.get(correspondingID);
+			Tree root = allPredictedMentions.get(i).get(0).contextParseTree;
+			List<CoreLabel> sentence = allPredictedMentions.get(i).get(0).sentenceWords;
 			for (int j = 0; j < allPredictedMentions.get(i).size(); j++) {
 				Mention mention = allPredictedMentions.get(i).get(j);
-				int start = mention.getByteStartOffset();
-				int end = mention.getByteEndOffset();
-				for (SrlAnnotation predicate : srlResult.keySet()) {
-					int predicateStart = predicate.getStartOffset();
-					int predicateEnd = predicate.getEndOffset();
+				int start = mention.startIndex;
+				int end = mention.endIndex;
+				for (Mention predicate : srlResult.keySet()) {
+					int predicateStart = predicate.startIndex;
+					int predicateEnd = predicate.endIndex;
 					if ((predicateStart == start) && (predicateEnd == end)) {
-						Map<String, List<SrlAnnotation>> arguments = srlResult.get(predicate);
+						Map<String, Mention> arguments = srlResult.get(predicate);
 						if (arguments.size() == 0) continue;
 						
 						for (String argKey : arguments.keySet()) {
-							List<SrlAnnotation> argument = arguments.get(argKey);
+							Mention argument = arguments.get(argKey);
 							
 							// match the id
-							int argumentStart = argument.get(0).getStartOffset();
-							int argumentEnd = argument.get(argument.size() - 1).getEndOffset();
+							int argumentStart = argument.startIndex;
+							int argumentEnd = argument.endIndex;
+							argument.originalSpan = sentence.subList(argumentStart, argumentEnd);
+							
+							findHead(argument, root, sentence);
+							
 							for (int k = 0; k < allPredictedMentions.get(i).size(); k++) {
 								Mention mentionMatch = allPredictedMentions.get(i).get(k);
-								int mentionMatchStart = mentionMatch.getByteStartOffset();
-								int mentionMatchEnd = mentionMatch.getByteEndOffset();
-								
-								// it is very tricky here, I need to experiment for a while
-								// if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd))
-								if ((argumentStart == mentionMatchStart) && (mentionMatchEnd == argumentEnd)) {
+
+								if (mentionMatch.headString.equals(argument.headString)) {
 									mention.setArgument(argKey, mentionMatch);
 									mentionMatch.setPredicte(mention);
 									mentionMatch.SRLrole = argKey;
@@ -176,8 +159,65 @@ public class SrlResultIncorporation {
 				}
 			}
 		}
+	}
+	
+
+	public void alignSRL(List<List<Mention>> allPredictedMentions) {
+		matchSenten(allPredictedMentions);
 		
-		
+		// iterate e
+		for (int i = 0; i < allPredictedMentions.size(); i++) {
+			int sentenceID = i;
+			boolean contains = matchResult.containsKey(sentenceID);
+			if (!contains) continue;
+			int correspondingID = matchResult.get(sentenceID);
+			Map<Mention, Map<String, Mention>> srlResult = extentsWithArgumentRoles.get(correspondingID);
+			for (int j = 0; j < allPredictedMentions.get(i).size(); j++) {
+				Mention mention = allPredictedMentions.get(i).get(j);
+				int start = mention.startIndex;
+				int end = mention.endIndex;
+				for (Mention predicate : srlResult.keySet()) {
+					int predicateStart = predicate.startIndex;
+					int predicateEnd = predicate.endIndex;
+					if ((predicateStart == start) && (predicateEnd == end)) {
+						Map<String, Mention> arguments = srlResult.get(predicate);
+						if (arguments.size() == 0) continue;
+						
+						for (String argKey : arguments.keySet()) {
+							Mention argument = arguments.get(argKey);
+							
+							// match the id
+							int argumentStart = argument.startIndex;
+							int argumentEnd = argument.endIndex;
+							for (int k = 0; k < allPredictedMentions.get(i).size(); k++) {
+								Mention mentionMatch = allPredictedMentions.get(i).get(k);
+								int mentionMatchStart = mentionMatch.startIndex;
+								int mentionMatchEnd = mentionMatch.endIndex;
+								
+								// it is very tricky here, I need to experiment for a while
+								// if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd))
+								if (!argKey.equals("AM-LOC")) {
+								if ((argumentStart == mentionMatchStart) && (mentionMatchEnd == argumentEnd)) {
+									mention.setArgument(argKey, mentionMatch);
+									mentionMatch.setPredicte(mention);
+									mentionMatch.SRLrole = argKey;
+									break;
+								}} else {
+									if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd)) {
+										mention.setArgument(argKey, mentionMatch);
+										mentionMatch.setPredicte(mention);
+										mentionMatch.SRLrole = argKey;
+										break;
+								}
+							}
+						}
+						// do not need to go through all the documents, just once
+						break;
+					}
+				}
+			}
+		}
+	}
 	}
 	
 }

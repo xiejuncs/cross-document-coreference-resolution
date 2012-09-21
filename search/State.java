@@ -1,7 +1,10 @@
 package edu.oregonstate.search;
 
-import java.util.List;
-import java.util.ArrayList;
+import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * represent the state  
@@ -9,38 +12,31 @@ import java.util.ArrayList;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class State<T> {
+public class State<T> implements Serializable {
 	
-	// every state consists of a set of CorefClusters, in order to make it generic   
-	private List<T> state;
+	private static final long serialVersionUID = 8666265337578515592L;
+	// every state consists of a set of CorefClusters, in order to make it generic
+	private Map<Integer, T> state;
 	private boolean isGoal;
 
 	public State() {
-		state = new ArrayList<T>();
+		state = new HashMap<Integer, T>();
 		isGoal = false;
 	}
 	
-	public void detele(int i) {
-		state.remove(i);
-	}
-	
-	public void add(T element) {
-		state.add(element);
-	}
-
-	public void addAll(List<T> elements) {
-		state.addAll(elements);
+	public void add(Integer i, T element) {
+		state.put(i, element);
 	}
 
 	public T get(int i) {
 		return state.get(i);
-	}	 	 
+	}
 
 	public void remove(int i) {
 		state.remove(i);
 	} 
 
-	public List<T> getState() {
+	public Map<Integer, T> getState() {
 		return state;
 	}
 	
@@ -52,19 +48,18 @@ public class State<T> {
 		return isGoal;
 	}
 	
+	// This one needs to be take cared
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof State) {
 			@SuppressWarnings("unchecked")
 			State<T> s = (State<T>) obj;
-			List<T> sList = s.state;
+			Map<Integer, T> sList = s.state;
 			if (sList.size() == state.size()) {
-				for (int i = 0; i < sList.size(); i++) {
-					if (!state.get(i).equals(sList.get(i))) {
-						return false;
-					}
-				}
-				return true;
+				Set<T> objValues = new HashSet<T>(s.getState().values());
+				Set<T> stateValues = new HashSet<T>(state.values());
+				boolean equal = objValues.equals(stateValues);
+				return equal;
 			} else {
 				return false;
 			}

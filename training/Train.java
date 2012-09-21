@@ -61,7 +61,7 @@ public class Train {
 			currentOutputFileName = GlobalConstantVariables.RESULT_PATH + outputFileNames[i];
 			// all mentions in one doc cluster
 			for (String topic : mTopics) {
-				System.out.println("begin to process topic" + topic+ "................");
+				System.out.println("Linear regreession begin to process topic " + topic+ "................");
 				try {
 					CorefSystem cs = new CorefSystem();
 					Document document = cs.getDocument(topic);
@@ -73,7 +73,7 @@ public class Train {
 					e.printStackTrace();
 					System.exit(1);
 				}
-				System.out.println("end to process topic" + topic+ "................");
+				System.out.println("Linear regression end to process topic " + topic+ "................");
 			}
 			
 			// <b>NOTE</b>: change this part in order to incorporate all 0 instances
@@ -153,14 +153,6 @@ public class Train {
 				e.printStackTrace();
 				System.exit(1);
 			}
-			
-			// wait for a while
-			long start = System.currentTimeMillis();
-			long end = start + 10*1000; // 60 seconds * 1000 ms/sec
-			while (System.currentTimeMillis() < end)
-			{
-
-			}
 		}
 		
 		LinearRegression lr = new LinearRegression(currentOutputFileName, mCoefficient);
@@ -173,18 +165,18 @@ public class Train {
 	// put features and quality together in order to create a string for output
 	public static String buildString(Counter<String> features, double quality) {
 		StringBuilder sb = new StringBuilder();
-		//boolean add = false;
+		boolean add = false;
 		for (String feature : Feature.featuresName){
 			double value = features.getCount(feature);
-			//if (value > 0.0) add = true;
+			if (value > 0.0) add = true;
 			sb.append(value + ",");
 		}
 		sb.append(quality + "\n");
-		//if (add) {
+		if (add) {
 			return sb.toString();
-		//} else {
-			//return "";
-		//}
+		} else {
+			return "";
+		}
 	}
 	
 	// write the string to file

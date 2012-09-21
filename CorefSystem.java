@@ -26,19 +26,24 @@ public class CorefSystem {
 	public SieveCoreferenceSystem corefSystem;
 	public LexicalizedParser parser;
 	
+	// call the constructor with parameters
 	public CorefSystem() {
-		setProperties();
+		this(GlobalConstantVariables.SIEVE_STRING);
+	}
+	
+	public CorefSystem(String sieve) {
+		setProperties(sieve);
 		setCorefSystem();
 		parser = makeParser(props);
 	}
 	
-	public void setProperties() {
+	public void setProperties(String sieve) {
 		//The configuration for EECB corpus, 
 		props = new Properties();
 		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 		props.put("dcoref.eecb", GlobalConstantVariables.WHOLE_CORPUS_PATH);
 		props.put("dcoref.score", "true");
-		props.put("dcoref.sievePasses", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
+		props.put("dcoref.sievePasses", sieve);
 	}
 	
 	public void setCorefSystem() {

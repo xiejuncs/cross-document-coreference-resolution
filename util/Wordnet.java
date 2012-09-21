@@ -48,16 +48,14 @@ public class Wordnet {
 		configureJWordNet();
 		List<String> cluster1 = new ArrayList<String>();
 		List<String> cluster2 = new ArrayList<String>();
-		cluster1.add("hit");
-		cluster1.add("strike");
-		cluster2.add("strike");
-		cluster2.add("join");
-		cluster2.add("say");
+		cluster1.add("London");
+		cluster2.add("London");
 		Set<String> synos = new HashSet<String>();
 	
 		try {
 			for (String word : cluster1) {
 				IndexWord indexWord = Dictionary.getInstance().getIndexWord(POS.VERB, word);
+				if (indexWord == null) continue;
 				Synset[] senses = indexWord.getSenses();
 				for (int i = 0; i < senses.length; i++) {
 					for (String word1 : cluster2) {

@@ -23,6 +23,9 @@ public class SrlAnnotation {
 	/** head dependency */
 	int parentPosition;
 	
+	/*mention headWord*/
+	String headString;
+	
 	/**predicate*/
 	String predicate;
 
@@ -33,8 +36,15 @@ public class SrlAnnotation {
 	  this.parentPosition = parentPosition;
 	  this.start = start;
 	  this.end = end;
-
-	} // AnnotationImpl
+	}	
+	
+	public void setHead(String headString) {
+		this.headString = headString;
+	}
+	
+	public String getHead() {
+		return this.headString;
+	}
 	
 	/** The ID of the annotation. */
 	public String getId()

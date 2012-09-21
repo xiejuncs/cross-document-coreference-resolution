@@ -5,13 +5,16 @@ import java.io.FileReader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Queue;
 import java.util.Set;
 
 import edu.oregonstate.data.SrlAnnotation;
+import edu.oregonstate.featureExtractor.SemanticOutputInterface.Node;
+import edu.stanford.nlp.dcoref.Mention;
+
 
 /**
  * Interface for Semantic parsing: PropBank--NomBank frames output.
@@ -33,7 +36,8 @@ import edu.oregonstate.data.SrlAnnotation;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class SemanticOutputInterface {
+public class SRLExtraction {
+
 	private Map<Integer, List<List<String>>> document;
 	private Map<Node, List<Node>> nodes;
 	private List<Integer> headsPosition;
@@ -47,7 +51,7 @@ public class SemanticOutputInterface {
 	 * 
 	 * @param path
 	 */
-	public SemanticOutputInterface() {
+	public SRLExtraction() {
 		document = new HashMap<Integer, List<List<String>>>();
 	}
 
@@ -58,7 +62,7 @@ public class SemanticOutputInterface {
 	public Map<Integer, List<List<String>>> getDocument() {
 		return this.document;
 	}
-
+	
 	/**
 	 * Search data structure
 	 * 
@@ -80,7 +84,7 @@ public class SemanticOutputInterface {
             return "(" + data + ")";
         }
     }
-    
+	
 	/**
 	 * use breadth-first search algorithm to extract the extent of the specific head 
 	 * @param s
@@ -121,16 +125,9 @@ public class SemanticOutputInterface {
             nodes.put(n1, list);
         }
     }
-	
-    /**
-     * According to the headPosition, find all mention span
-     * 
-     * @param headPosition
-     * @param tokens
-     * @return
-     */
-	public List<SrlAnnotation> find(int headPosition, List<SrlAnnotation> tokens) {
-		List<SrlAnnotation> span = new ArrayList<SrlAnnotation>();
+    
+    public Mention find(int headPosition, List<SrlAnnotation> tokens) {
+    	Mention span = new Mention();
 		int startIndex = 0;
 		int endIndex = 0;
 		List<Integer> spans = new ArrayList<Integer>();
@@ -138,37 +135,20 @@ public class SemanticOutputInterface {
 		startIndex = Collections.min(spans);
 		endIndex = Collections.max(spans);
 		assert endIndex > startIndex;
-		StringBuilder sb = new StringBuilder();
-		for (int i = startIndex; i <= endIndex; i++) {
-			span.add(tokens.get(i));
-		}
+		span.startIndex = startIndex;
+		span.endIndex = endIndex + 1;
 		return span;
 	}
-	
-	/**
-	 * According to the head positions of identified nouns and verbs, we extract the A0 and A1 arguments from the output
-	 * <p>
-	 * For example
-	 * With the passing of the years, the Sixties working-class wonder boy has metamorphosed into a very cross pensioner.
-	 * there are two roles annotated from software, A1 and A2. The head of A1 is boy, and the head of A2 is into.
-	 * According to the output head dependency, we want to extract the extent of A1 is "the Sixties working-class wonder boy"
-	 * While, the extent of A2 is "into a very cross pensioner".
-	 * 
-	 * @param sentence List<List<String>> 
-	 * @return return the argument extents (mainly A0 and A1) of verbs or nouns in this sentence
-	 */
-	public Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> extractExtent(List<List<String>> sentence) {
-		// Get all tokens of the sentence
-		List<SrlAnnotation> annotations = new ArrayList<SrlAnnotation>();
-		int offset = 0;
+    
+    public Map<Mention, Map<String, Mention>> extractExtent(List<List<String>> sentence) {
+    	List<SrlAnnotation> annotations = new ArrayList<SrlAnnotation>();
 		for (int i = 0; i < sentence.size(); i++) {
 			List<String> data = sentence.get(i);
 			
 			String token = data.get(1);
 			String id = data.get(0);
-			int length = token.length();
-			int start = offset;
-			int end = start + length;
+			int start = Integer.parseInt(id);
+			int end = start + 1;
 			String predicate = data.get(10);
 			String position = data.get(8);
 			int pos = 0;
@@ -179,11 +159,8 @@ public class SemanticOutputInterface {
 			}
 			
 			SrlAnnotation anno = new SrlAnnotation(id, token, predicate, pos, start, end);
-			offset = end;	// increment the offset
 			annotations.add(anno);
 		}
-		
-		//System.out.println(annotations);
 		
 		/** find how many predicates annotated by the semantic role labeling software*/
 		List<Integer> predicates = new ArrayList<Integer>();
@@ -235,27 +212,28 @@ public class SemanticOutputInterface {
 			addEdge(outputNode.get(parent), outputNode.get(i));
 		}
 		
-		// find the extent for each arguments of each predicates
-		Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> semanticRoles = new HashMap<SrlAnnotation, Map<String,List<SrlAnnotation>>>();
+		Map<Mention, Map<String, Mention>> semanticRoles = new HashMap<Mention, Map<String,Mention>>();
 		for (Integer index : arguments.keySet()) {
 			SrlAnnotation annotation = annotations.get(index);
-			String word = annotation.getText();
+			Mention anno = new Mention();
+			anno.startIndex = annotation.getStartOffset();
+			anno.endIndex = annotation.getEndOffset();
 			Map<String, Integer> roles = arguments.get(index);
-			Map<String, List<SrlAnnotation>> semRoles = new HashMap<String, List<SrlAnnotation>>();
+			Map<String, Mention> semRoles = new HashMap<String, Mention>();
 			for (String role : roles.keySet()) {
 				int headPosition = roles.get(role);
-				List<SrlAnnotation> span = find(headPosition, annotations);
+				Mention span = find(headPosition, annotations);
 				// find its yield according to headsPosition
 				semRoles.put(role, span);
 			}
 			
-			semanticRoles.put(annotation, semRoles);
+			semanticRoles.put(anno, semRoles);
 		}
-		
-		return semanticRoles;
-	}
-	
-	/**
+    	
+    	return semanticRoles;
+    }
+
+    /**
 	 * An Example on how to use this interface class. The input argument is the semantic parsing output result
 	 * for example: test.output
 	 * 1	With	with	with	IN	IN	_	_	13	13	ADV	ADV	_	_	_	_	AM-ADV
@@ -283,15 +261,15 @@ public class SemanticOutputInterface {
 	 */
 	public static void main(String[] args) {		
 		 String file = "corpus/srloutput/1.output";
-		 SemanticOutputInterface semantic = new SemanticOutputInterface();
+		 SRLExtraction semantic = new SRLExtraction();
 		 semantic.setDocument(semantic.read(file));
 		 Map<Integer, List<List<String>>> doc = semantic.getDocument();
 		 
-		 Map<Integer, Map<SrlAnnotation, Map<String, List<SrlAnnotation>>>> extentsWithArgumentRoles = new HashMap<Integer, Map<SrlAnnotation,Map<String,List<SrlAnnotation>>>>();
+		 Map<Integer, Map<Mention, Map<String, Mention>>> extentsWithArgumentRoles = new HashMap<Integer, Map<Mention,Map<String,Mention>>>();
 		 Map<Integer, List<String>> sentenceidToSentence = new HashMap<Integer, List<String>>();
 		 for (Integer id : doc.keySet()) {
 			 List<List<String>> sentence = doc.get(id);
-			 Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> extentWithArgumentRoles = semantic.extractExtent(sentence);
+			 Map<Mention, Map<String, Mention>> extentWithArgumentRoles = semantic.extractExtent(sentence);
 			 if (extentWithArgumentRoles.size() == 0) continue;
 			 List<String> tokens = new ArrayList<String>();
 			 for (List<String> data : sentence) {
@@ -304,8 +282,6 @@ public class SemanticOutputInterface {
 			 extentsWithArgumentRoles.put(id , extentWithArgumentRoles);
 			 sentenceidToSentence.put(id, tokens);
 		 }
-		 
-		 System.out.println(sentenceidToSentence.size());
 	}
 	
 	/**
@@ -342,4 +318,5 @@ public class SemanticOutputInterface {
         }
         return datas;
 	}
+	
 }

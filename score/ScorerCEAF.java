@@ -44,7 +44,7 @@ public class ScorerCEAF extends CorefScorer {
 	}
 
 	// calculate the simialrity	
-	private double similarity(CorefCluster responseCluster, CorefCluster referenceCluster) {
+	public double similarity(CorefCluster responseCluster, CorefCluster referenceCluster) {
 		Set<Mention> responseMentions = responseCluster.corefMentions;
 		Set<Mention> referenceMentions = referenceCluster.corefMentions;
 		List<Integer> responseMentionIDs = new ArrayList<Integer>();
@@ -64,10 +64,10 @@ public class ScorerCEAF extends CorefScorer {
 	} 
 
 	// calculate the cost function
-	private double scoreHelper(Map<Integer, CorefCluster> reference, Map<Integer, CorefCluster> response) {
+	public double scoreHelper(Map<Integer, CorefCluster> reference, Map<Integer, CorefCluster> response) {
 		double cost = 0.0;
+		if (reference.size() == 0 || response.size() == 0) return 0.0;
 		int size = reference.size() >= response.size() ? reference.size() : response.size();
-		if (size == 0) return 0.0;
 		double[][] scores = new double[size][size];
 		double max = 1.0;
 		for (double[] score : scores) {
@@ -106,7 +106,7 @@ public class ScorerCEAF extends CorefScorer {
 	 */
 	protected void calculateRecall(Document doc){
 		Map<Integer, CorefCluster> response = doc.corefClusters;
-                Map<Integer, CorefCluster> reference = doc.goldCorefClusters;
+        Map<Integer, CorefCluster> reference = doc.goldCorefClusters;
 		recallNumSum = scoreHelper(reference, response);
 		recallDenSum = scoreHelper(reference, reference);
 	}

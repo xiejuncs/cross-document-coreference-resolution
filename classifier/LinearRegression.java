@@ -6,6 +6,8 @@ import java.io.BufferedReader;
 import java.util.List;
 import java.util.ArrayList;
 
+import edu.oregonstate.util.GlobalConstantVariables;
+
 /**
  * A class to train and evaluate Linear Regression models with L2-Regularization
  * 
@@ -214,7 +216,7 @@ public class LinearRegression {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LinearRegression lr = new LinearRegression(args[0], Double.parseDouble(args[1]));
+		LinearRegression lr = new LinearRegression(GlobalConstantVariables.RESULT_PATH + "one.csv", 1.0);
 		try {
 			Matrix training = lr.readMatrix(lr.trainingFile);
 			/** get the actual features, meanwhile add a N*1 column vector with value being all 1 as the first column of the features */

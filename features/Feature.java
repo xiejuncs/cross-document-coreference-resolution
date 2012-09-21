@@ -20,16 +20,7 @@ public class Feature {
 
 	// used in generating features
 	public static boolean USE_DISAGREE = false;
-	// all feature set for just two arguments, remember that the first feature of the linear regression is 1
-	/*public static String[] featuresName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", 
-											"SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", "SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", 
-											"SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", "SRLPRED-A0-PROPER", 
-											"SRLPRED-A1-PROPER", "SRLPRED-A0-NOMINAL", "SRLPRED-A1-NOMINAL", "NUMBER-PROPER", "GENDER-PROPER", "ANIMACY-PROPER", 
-											"NETYPE-PROPER", "NUMBER-NOMINAL", "GENDER-NOMINAL", "ANIMACY-NOMINAL", 
-											"NETYPE-NOMINAL", "SRLROLES-A2", "SRLROLES-A2-PROPER", "SRLROLES-A2-NOMINAL", 
-											"SRLROLES-AM-LOC", "SRLROLES-AM-LOC-PROPER", "SRLROLES-AM-LOC-NOMINAL", "SRLPRED-AM-LOC-PROPER", 
-											"SRLPRED-AM-LOC-NOMINAL", "SRLPRED-A2-PROPER", "SRLPRED-A2-NOMINAL", "SYNONYM"};*/
-	
+	public static boolean SRL_INDICATOR = true;
 	public static String[] featuresName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
 		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
 		"SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", "SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", 
@@ -88,7 +79,7 @@ public class Feature {
 			}
 		}
 		Mention formerRep = former.getRepresentativeMention();
-		Mention latterRep = latter.getRepresentativeMention(); 
+		Mention latterRep = latter.getRepresentativeMention();
 		boolean isVerb = latterRep.isVerb || formerRep.isVerb;
 
 		String mentionType = "";
@@ -131,8 +122,6 @@ public class Feature {
 			}
 		}
 
-		
-
 		for(String feature : formerCentroid.keySet()) {
 			if(!latterCentroid.containsKey(feature)) {
 				continue;
@@ -150,11 +139,6 @@ public class Feature {
 				for(String f : featureSet1){
 					overlap += centFeature1.getCount(f)* centFeature2.getCount(f);
 				}
-				
-				// Add by Jun Xie
-				boolean SRL_INDICATOR = true;
-				if (feature.startsWith("SRLAGREECOUNT")) SRL_INDICATOR = false;
-				// Add by Jun Xie
 				
 				if(SRL_INDICATOR) {
 					if(featureSet1.size() > 0) {

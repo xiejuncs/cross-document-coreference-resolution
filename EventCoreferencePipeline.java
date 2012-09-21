@@ -7,13 +7,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import net.didion.jwnl.JWNL;
-import Jama.Matrix;
-
 import edu.oregonstate.featureExtractor.WordSimilarity;
-import edu.oregonstate.features.Feature;
 import edu.oregonstate.score.ScorerCEAF;
-import edu.oregonstate.search.JointCoreferenceResolution;
-import edu.oregonstate.training.Train;
 import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
@@ -21,25 +16,14 @@ import edu.stanford.nlp.dcoref.ScorerBCubed;
 import edu.stanford.nlp.dcoref.ScorerMUC;
 import edu.stanford.nlp.dcoref.ScorerPairwise;
 import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
-import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 
-/**
- * The main entry point for cross document coreference resolution
- * 
- * <p>
- * The dataset is EECB 1.0, which is annotated by the Stanford NLP group on the basis of ECB 
- * corpus created by Bejan and Harabagiu (2010).
- * The idea of the paper, Joint Entity and Event Coreference Resolution across Documents, 
- * is to model entity and event jointly in an iterative way.
- * 
- * <p>
- * @author Jun Xie (xie@eecs.oregonstate.edu)
- *
- */
+public class EventCoreferencePipeline {
 
-public class EventCoreference {
-	// print score
-	public static final Logger logger = Logger.getLogger(EventCoreference.class.getName());
+	public static final Logger logger = Logger.getLogger(EventCoreferencePipeline.class.getName());
+	
+	// in order to compare the result with the Stanford system
+	public static String sieve = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, " +
+								 "StrictHeadMatch4, RelaxedHeadMatch, PronounMatch";
 	
 	// for scoring
 	public Document corpus;
@@ -48,9 +32,11 @@ public class EventCoreference {
 	public static Map<String, List<String>> datas;
 	
 	// set all configuration
-	public EventCoreference() {
+	public EventCoreferencePipeline() {
 		corpus = new Document();
-	    configureJWordNet();
+		if (GlobalConstantVariables.REPLICATE_STANFORD_EXPERIMENT) {
+			configureJWordNet();
+		}
 	}
 	
 	public void configureJWordNet() {
@@ -106,20 +92,19 @@ public class EventCoreference {
 		datas = wordSimilarity.datas;
 	}
 	
-	/*
-	 * Algorithm 1 : Joint co-reference resolution
-	 * parameters : for linear regression model, the number of iterations
-	 * 				for search, the number of beam width
-	 */
 	public static void main(String[] args) throws Exception {
 		System.out.println("Start........................");
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		logger.fine(timeStamp);
 		
 		configureWordSimilarity();
-		EventCoreference ec = new EventCoreference();
+		EventCoreferencePipeline ec = new EventCoreferencePipeline();
 		
-		String[] parameters = {"10-1"};
+		// beam search width : 100; the maximum number of expansion: 200
+		// if the noOfIteration is Integer.MAX_VALUE, then we just need to reach the gold state
+		// 200 maybe not enough for reaching the gold state
+		GlobalConstantVariables.OWN_EXPERIMENT = true;
+		String[] parameters = {"50-1"};
 		
 	    CRC_MAIN.deleteResult(GlobalConstantVariables.RESULT_PATH);  // delete the intermediate results
 	    String[] topics = CRC_MAIN.getTopics(GlobalConstantVariables.WHOLE_CORPUS_PATH);
@@ -127,33 +112,13 @@ public class EventCoreference {
 	    // Execute how many experiments
 	    for (String parameter : parameters) {
 	    	System.out.println("Configuration parameters :" + parameter);
-	    	String[] paras = parameter.split("-");
-	    	String noOfIteration = paras[0];
-	    	String width = paras[1];
 	    	
-	    	Matrix model = new Matrix(Feature.featuresName.length + 1, 1);
-		    // train the model
-
-		    Train train = new Train( topics, Integer.parseInt(noOfIteration), Double.parseDouble(width), 0.7);
-		    Matrix initialmodel = train.assignInitialWeights();
-		    model = train.train(initialmodel);
-
 		    for (String topic : topics) {
 		    	System.out.println("begin to process topic" + topic + "................");
 		    	// apply high preicision sieves phase
-		    	CorefSystem cs = new CorefSystem();
+		    	CorefSystem cs = new CorefSystem(EventCoreferencePipeline.sieve);
 		    	Document topicDocument = cs.getDocument(topic);
 		    	cs.corefSystem.coref(topicDocument);
-
-		    	// iterative event/entity co-reference
-		    	// flag variable : linearregression, if true, then do replicate the Stanford's experiment,
-		    	// if not, then learn a heuristic function
-		    	JointCoreferenceResolution ir = new JointCoreferenceResolution(topicDocument, cs.corefSystem.dictionaries(), model);
-		    	ir.merge(cs.corefSystem.dictionaries());
-
-			    // pronoun sieves
-			    DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-			    cs.corefSystem.coreference(topicDocument, pronounSieve);
 			    
 			    // add the four fields into the corpus data structure
 			    ec.add(topicDocument);
@@ -179,7 +144,8 @@ public class EventCoreference {
 	    	pairscore.calculateScore(ec.corpus);
 	    	pairscore.printF1(logger, true);
 	    	
-	    	CRC_MAIN.printModel(model, Feature.featuresName);
+	    	double conllF11 = (score.getF1() + ceafscore.getF1() + mucscore.getF1()) / 3;    
+	    	System.out.println("conllF1:     " + conllF11 );
 	    	
 	    	System.out.println("do post processing");
 	    	CorefSystem cs = new CorefSystem();
@@ -194,14 +160,8 @@ public class EventCoreference {
 	    	postpairscore.printF1(logger, true);
 
 	    	// Average of MUC, B^{3} and CEAF-\phi_{4}.
-	    	double conllF1 = (score.getF1() + ceafscore.getF1() + postmucscore.getF1()) / 3;    
+	    	double conllF1 = (score.getF1() + ceafscore.getF1() + postmucscore.getF1()) / 3;
 	    	System.out.println("conllF1:     " + conllF1 );
-		
-	    	/*
-	    	CorefScorer postceafscore = new ScorerCEAF();
-	    	postceafscore.calculateScore(ec.corpus);
-	    	postceafscore.printF1(logger, true);
-			*/
 		
 	    	logger.info("Done: ===================================================");
 			System.out.println("End.........................");

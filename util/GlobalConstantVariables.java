@@ -18,5 +18,9 @@ public class GlobalConstantVariables {
 	public static final String WORD_NET_CONFIGURATION_PATH = "corpus/file_properties.xml";
 	public static final String RESULT_PATH = "corpus/RESULT/";
 	public static final String TOKENS_OUTPUT_PATH = "corpus/tokenoutput/";
+	public static String SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch";
+	
+	public static boolean OWN_EXPERIMENT = false;
+	public static boolean REPLICATE_STANFORD_EXPERIMENT = false;	
 	
 }

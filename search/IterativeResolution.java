@@ -57,38 +57,51 @@ public class IterativeResolution {
 		}
 	}
 
-	private void fillScore(Map<String, Double> scoreMap) {
+	private void fillScore(Map<String, Double> scoreMap, boolean condition) {
 		// compute the pair of the entities
 		for (int i = 0; i < (clusters.size() - 1); i++) {
 			for (int j = 0; j < i; j++) {
 				CorefCluster c1 = clusters.get(i);
 				CorefCluster c2 = clusters.get(j);
+				Mention formerRep = c1.getRepresentativeMention();
+				Mention latterRep = c2.getRepresentativeMention();
+				if (formerRep.isPronominal() == true || latterRep.isPronominal() == true) continue;
 				Counter<String> features = Feature.getFeatures(mdocument, c1, c2, false, mDictionary); // get the feature size
 				double value = calculateScore(features);
-				if (value > 0.5) {
+				if (condition && value > 0.5) {
+					scoreMap.put(Integer.toString(i) + "-" + Integer.toString(j), value);
+				}
+				
+				if (!condition) {
 					scoreMap.put(Integer.toString(i) + "-" + Integer.toString(j), value);
 				}
 			}
 		}
 	}
+
 	
 	/**
 	 * iterative entity/event resolution
 	 */
 	public void merge(Dictionaries dictionary) {
 		Map<String, Double> scoreMap = new HashMap<String, Double>();
-		fillScore(scoreMap);
+		fillScore(scoreMap, true);
 		
 		while(scoreMap.size() > 0) {
 			// generate the training examples
+			Map<String, Double> allScores = new HashMap<String, Double>();
+			fillScore(allScores, false);
 			List<String> keys = new ArrayList<String>();
-			for (String key : scoreMap.keySet()) {
+			for (String key : allScores.keySet()) {
 				keys.add(key);
 			}
 			for (int i = 0; i < keys.size(); i++) {
 				String[] key = keys.get(i).split("-");
 				CorefCluster ci = clusters.get(Integer.parseInt(key[0]));
 				CorefCluster cj = clusters.get(Integer.parseInt(key[1]));
+				Mention formerRep = ci.getRepresentativeMention();
+				Mention latterRep = cj.getRepresentativeMention();
+				if (formerRep.isPronominal() == true || latterRep.isPronominal() == true) continue;
 				Counter<String> features = Feature.getFeatures(mdocument, ci, cj, false, dictionary); // get the feature
 				Set<Mention> toMentions = ci.getCorefMentions();
 				Set<Mention> fromMentions = cj.getCorefMentions();
@@ -128,7 +141,7 @@ public class IterativeResolution {
 				clusters.add(cluster);
 			}
 			scoreMap = new HashMap<String, Double>();
-			fillScore(scoreMap);
+			fillScore(scoreMap, true);
 		}
 	}
 	
