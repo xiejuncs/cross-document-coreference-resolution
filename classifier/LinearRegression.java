@@ -6,7 +6,7 @@ import java.io.BufferedReader;
 import java.util.List;
 import java.util.ArrayList;
 
-import edu.oregonstate.util.GlobalConstantVariables;
+import edu.oregonstate.CDCR;
 
 /**
  * A class to train and evaluate Linear Regression models with L2-Regularization
@@ -39,9 +39,12 @@ public class LinearRegression {
 
 			String line;
 			while ((line = reader.readLine()) != null) {
+				if (line.equals("")) {
+					continue;
+				}
 				String fields[] = line.split(",");
 				double data[] = new double[fields.length];
-				for (int i = 0; i < fields.length; ++i) {
+				for (int i = 0; i < fields.length; i++) {
 					data[i] = Double.parseDouble(fields[i]);
 				}
 				data_array.add(data);
@@ -117,7 +120,6 @@ public class LinearRegression {
 	 * @return weight m * 1
 	 */
 	private Matrix trainLinearRegressionModel(Matrix data, Matrix targets, Double lambda) {
-		int row = data.getRowDimension();
 		int column = data.getColumnDimension();
 		Matrix identity = Matrix.identity(column, column);
 		identity.times(lambda);
@@ -216,7 +218,7 @@ public class LinearRegression {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LinearRegression lr = new LinearRegression(GlobalConstantVariables.RESULT_PATH + "one.csv", 1.0);
+		LinearRegression lr = new LinearRegression(CDCR.resultPath + "one.csv", 1.0);
 		try {
 			Matrix training = lr.readMatrix(lr.trainingFile);
 			/** get the actual features, meanwhile add a N*1 column vector with value being all 1 as the first column of the features */

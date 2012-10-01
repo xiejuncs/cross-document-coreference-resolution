@@ -1,10 +1,12 @@
-package edu.oregonstate.util;
+package edu.oregonstate.featureExtractor;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.io.FileInputStream;
 import java.util.Set;
 import java.util.HashSet;
+
+import edu.oregonstate.util.Constants;
 
 import net.didion.jwnl.JWNL;
 import net.didion.jwnl.JWNLException;
@@ -74,7 +76,7 @@ public class Wordnet {
 
 	public static void configureJWordNet() {
 		try {
-			JWNL.initialize(new FileInputStream(GlobalConstantVariables.WORD_NET_CONFIGURATION_PATH));
+			JWNL.initialize(new FileInputStream(Constants.WORD_NET_CONFIGURATION_PATH));
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(-1);

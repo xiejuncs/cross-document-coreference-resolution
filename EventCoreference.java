@@ -11,10 +11,11 @@ import Jama.Matrix;
 
 import edu.oregonstate.featureExtractor.WordSimilarity;
 import edu.oregonstate.features.Feature;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.score.ScorerCEAF;
 import edu.oregonstate.search.JointCoreferenceResolution;
 import edu.oregonstate.training.Train;
-import edu.oregonstate.util.GlobalConstantVariables;
+import edu.oregonstate.util.Constants;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.ScorerBCubed;
@@ -56,7 +57,7 @@ public class EventCoreference {
 	public void configureJWordNet() {
 		try {
 			System.out.println("begin configure WORDNET");
-			JWNL.initialize(new FileInputStream(GlobalConstantVariables.WORD_NET_CONFIGURATION_PATH));
+			JWNL.initialize(new FileInputStream(Constants.WORD_NET_CONFIGURATION_PATH));
 			System.out.println("finish configure WORDNET");
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -101,7 +102,7 @@ public class EventCoreference {
 	}
 	
 	public static void configureWordSimilarity() {
-		WordSimilarity wordSimilarity = new WordSimilarity(GlobalConstantVariables.WORD_SIMILARITY_PATH);
+		WordSimilarity wordSimilarity = new WordSimilarity(Constants.WORD_SIMILARITY_PATH);
 		wordSimilarity.initialize();
 		datas = wordSimilarity.datas;
 	}
@@ -121,8 +122,8 @@ public class EventCoreference {
 		
 		String[] parameters = {"10-1"};
 		
-	    CRC_MAIN.deleteResult(GlobalConstantVariables.RESULT_PATH);  // delete the intermediate results
-	    String[] topics = CRC_MAIN.getTopics(GlobalConstantVariables.WHOLE_CORPUS_PATH);
+	    //ResultOutput.deleteResult(Constants.RESULT_PATH);  // delete the intermediate results
+	    String[] topics = ResultOutput.getTopics(Constants.WHOLE_CORPUS_PATH);
 	    
 	    // Execute how many experiments
 	    for (String parameter : parameters) {
@@ -179,7 +180,6 @@ public class EventCoreference {
 	    	pairscore.calculateScore(ec.corpus);
 	    	pairscore.printF1(logger, true);
 	    	
-	    	CRC_MAIN.printModel(model, Feature.featuresName);
 	    	
 	    	System.out.println("do post processing");
 	    	CorefSystem cs = new CorefSystem();

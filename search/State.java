@@ -17,11 +17,11 @@ public class State<T> implements Serializable {
 	private static final long serialVersionUID = 8666265337578515592L;
 	// every state consists of a set of CorefClusters, in order to make it generic
 	private Map<Integer, T> state;
-	private boolean isGoal;
+	private int id;
 
 	public State() {
 		state = new HashMap<Integer, T>();
-		isGoal = false;
+		id = 0;
 	}
 	
 	public void add(Integer i, T element) {
@@ -40,12 +40,12 @@ public class State<T> implements Serializable {
 		return state;
 	}
 	
-	public void setGoal(boolean goal) {
-		isGoal = goal;
+	public void setID(int val) {
+		this.id = val;
 	}
 	
-	public boolean getGoal() {
-		return isGoal;
+	public int getID() {
+		return this.id;
 	}
 	
 	// This one needs to be take cared

@@ -8,8 +8,9 @@ import java.util.logging.Logger;
 
 import net.didion.jwnl.JWNL;
 import edu.oregonstate.featureExtractor.WordSimilarity;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.score.ScorerCEAF;
-import edu.oregonstate.util.GlobalConstantVariables;
+import edu.oregonstate.util.Constants;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.ScorerBCubed;
@@ -34,7 +35,7 @@ public class EventCoreferencePipeline {
 	// set all configuration
 	public EventCoreferencePipeline() {
 		corpus = new Document();
-		if (GlobalConstantVariables.REPLICATE_STANFORD_EXPERIMENT) {
+		if (CDCR.replicateStanford) {
 			configureJWordNet();
 		}
 	}
@@ -42,7 +43,7 @@ public class EventCoreferencePipeline {
 	public void configureJWordNet() {
 		try {
 			System.out.println("begin configure WORDNET");
-			JWNL.initialize(new FileInputStream(GlobalConstantVariables.WORD_NET_CONFIGURATION_PATH));
+			JWNL.initialize(new FileInputStream(Constants.WORD_NET_CONFIGURATION_PATH));
 			System.out.println("finish configure WORDNET");
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -87,7 +88,7 @@ public class EventCoreferencePipeline {
 	}
 	
 	public static void configureWordSimilarity() {
-		WordSimilarity wordSimilarity = new WordSimilarity(GlobalConstantVariables.WORD_SIMILARITY_PATH);
+		WordSimilarity wordSimilarity = new WordSimilarity(Constants.WORD_SIMILARITY_PATH);
 		wordSimilarity.initialize();
 		datas = wordSimilarity.datas;
 	}
@@ -103,11 +104,10 @@ public class EventCoreferencePipeline {
 		// beam search width : 100; the maximum number of expansion: 200
 		// if the noOfIteration is Integer.MAX_VALUE, then we just need to reach the gold state
 		// 200 maybe not enough for reaching the gold state
-		GlobalConstantVariables.OWN_EXPERIMENT = true;
 		String[] parameters = {"50-1"};
 		
-	    CRC_MAIN.deleteResult(GlobalConstantVariables.RESULT_PATH);  // delete the intermediate results
-	    String[] topics = CRC_MAIN.getTopics(GlobalConstantVariables.WHOLE_CORPUS_PATH);
+	    //ResultOutput.deleteResult(Constants.RESULT_PATH);  // delete the intermediate results
+	    String[] topics = ResultOutput.getTopics(Constants.WHOLE_CORPUS_PATH);
 	    
 	    // Execute how many experiments
 	    for (String parameter : parameters) {

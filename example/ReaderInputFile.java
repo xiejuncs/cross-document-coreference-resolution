@@ -1,4 +1,4 @@
-package edu.oregonstate.io;
+package edu.oregonstate.example;
 
 import java.io.File;
 import edu.oregonstate.util.*;

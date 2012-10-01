@@ -79,7 +79,7 @@ public class BestBeamSearch {
 		for (Integer key : mDocument.corefClusters.keySet()) {
 			CorefCluster cluster = mDocument.corefClusters.get(key);
 			mClusters.add(cluster);
-			initialState.add(cluster);
+			initialState.add(cluster.clusterID, cluster);
 		}
 	
 	}

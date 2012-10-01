@@ -1,21 +1,17 @@
 package edu.oregonstate.training;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
 
 import edu.stanford.nlp.dcoref.Mention;
+import edu.oregonstate.CDCR;
 import edu.oregonstate.CorefSystem;
-import edu.oregonstate.EventCoreference;
 import edu.oregonstate.classifier.LinearRegression;
 import edu.oregonstate.features.Feature;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.IterativeResolution;
-import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.stats.Counter;
@@ -31,8 +27,8 @@ import Jama.Matrix;
  *
  */
 public class Train {
-	public static final Logger logger = Logger.getLogger(EventCoreference.class.getName());
-	
+
+	//TODO
 	// clusters results, right now, I just use the original corpus
 	// Later time, I will use clustering result using EM variant where the 
 	// the initial points (and the number of clusters) are selected from the clusters
@@ -49,19 +45,19 @@ public class Train {
 		mEpoch = epoch;
 		mCoefficient = coefficient;
 		mLamda = lamda;
-		currentOutputFileName = GlobalConstantVariables.RESULT_PATH + outputFileNames[10];
+		currentOutputFileName = CDCR.resultPath + outputFileNames[10];
 	}
 	
-	// main method for training the linear regression model, in the current time, I use four roles now
+	/** main method for training the linear regression model, in the current time, use four roles now */
 	public Matrix train(Matrix initialWeight) {
 		Matrix model = initialWeight;
 		// training data for linear regression
 		for (int i = 0; i < mEpoch; i++) {
-			logger.info("Start train the model:"+ i +"th iteration ============================================================");
-			currentOutputFileName = GlobalConstantVariables.RESULT_PATH + outputFileNames[i];
-			// all mentions in one doc cluster
+			ResultOutput.writeTextFile(CDCR.outputFileName, "Start train the model:"+ i +"th iteration ============================================================");
+			currentOutputFileName = CDCR.resultPath + outputFileNames[i];
+			/** all mentions in one doc cluster */
 			for (String topic : mTopics) {
-				System.out.println("Linear regreession begin to process topic " + topic+ "................");
+				ResultOutput.writeTextFile(CDCR.outputFileName, "Linear regreession begin to process topic " + topic+ "................");
 				try {
 					CorefSystem cs = new CorefSystem();
 					Document document = cs.getDocument(topic);
@@ -73,7 +69,7 @@ public class Train {
 					e.printStackTrace();
 					System.exit(1);
 				}
-				System.out.println("Linear regression end to process topic " + topic+ "................");
+				ResultOutput.writeTextFile(CDCR.outputFileName, "Linear regression end to process topic " + topic+ "................");
 			}
 			
 			// <b>NOTE</b>: change this part in order to incorporate all 0 instances
@@ -84,7 +80,7 @@ public class Train {
 			Matrix comodel = model.times(mLamda);
 			model = new Matrix(comodel.getRowDimension(), comodel.getColumnDimension());
 			model = comodel.plus(coupdateModel);
-			logger.info("Finish train the model:"+ i +"th iteration ===================================================");
+			ResultOutput.writeTextFile(CDCR.outputFileName, "Finish train the model:"+ i +"th iteration ===================================================");
 		}
 		
 		return model;
@@ -98,10 +94,11 @@ public class Train {
 	 * @return the initial weight set
 	 */
 	public Matrix assignInitialWeights() {
-		System.out.println("Start train the initial model: ============================================================");
+		ResultOutput.writeTextFile(CDCR.outputFileName, "Start train the initial model: ============================================================");
 	
 		// all mentions in one doc cluster
 		for (String topic : mTopics) {
+			ResultOutput.writeTextFile(CDCR.outputFileName, "begin to process topic " + topic+ "................");
 			try {
 				// generate training data for Entity
 				CorefSystem cs = new CorefSystem();
@@ -145,49 +142,22 @@ public class Train {
 							}
 			    		}
 			    		double quality = correct / total;
-			    		String record = buildString(features, quality);
-			    		writeTextFile(currentOutputFileName, record);
+			    		String record = ResultOutput.buildString(features, quality);
+			    		ResultOutput.writeTextFilewithoutNewline(currentOutputFileName, record);
 			    	}
 			    } 
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
+			ResultOutput.writeTextFile(CDCR.outputFileName, "end to process topic " + topic+ "................");
 		}
 		
 		LinearRegression lr = new LinearRegression(currentOutputFileName, mCoefficient);
 		Matrix initialModel = lr.calculateWeight();
 		
-		System.out.println("Finish train the initial model: ===================================================");
+		ResultOutput.writeTextFile(CDCR.outputFileName, "Finish train the initial model: ===================================================");
 		return initialModel;
-	}
-
-	// put features and quality together in order to create a string for output
-	public static String buildString(Counter<String> features, double quality) {
-		StringBuilder sb = new StringBuilder();
-		boolean add = false;
-		for (String feature : Feature.featuresName){
-			double value = features.getCount(feature);
-			if (value > 0.0) add = true;
-			sb.append(value + ",");
-		}
-		sb.append(quality + "\n");
-		if (add) {
-			return sb.toString();
-		} else {
-			return "";
-		}
-	}
-	
-	// write the string to file
-	public static void writeTextFile(String fileName, String s) {
-	    try {
-	    	BufferedWriter out = new BufferedWriter(new FileWriter(fileName, true));
-	        out.write(s);
-	        out.close();
-	    } catch (IOException e) {
-	      e.printStackTrace();
-	    } 
 	}
 	
 }

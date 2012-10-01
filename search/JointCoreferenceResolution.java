@@ -1,26 +1,16 @@
 package edu.oregonstate.search;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import Jama.Matrix;
-import edu.oregonstate.EventCoreference;
 import edu.oregonstate.features.Feature;
 import edu.stanford.nlp.dcoref.CorefCluster;
-import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
-import edu.stanford.nlp.dcoref.ScorerBCubed;
-import edu.stanford.nlp.dcoref.ScorerMUC;
-import edu.stanford.nlp.dcoref.ScorerPairwise;
-import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
 import edu.stanford.nlp.stats.Counter;
 
 /**
@@ -29,26 +19,10 @@ import edu.stanford.nlp.stats.Counter;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class JointCoreferenceResolution {
-	private List<CorefCluster> clusters;
-	private Document mdocument;
-	private Dictionaries mDictionary;
-	private Matrix mModel;
+public class JointCoreferenceResolution extends IterativeResolution {
 
 	public JointCoreferenceResolution(Document document, Dictionaries dictionary, Matrix model) {
-		mdocument = document;
-		mDictionary = dictionary;
-		clusters = new ArrayList<CorefCluster>();
-		mModel = model;
-		initialize();
-	}
-	
-	/** initialize the clusters */
-	private void initialize() {
-		for (Integer key : mdocument.corefClusters.keySet()) {
-			CorefCluster cluster = mdocument.corefClusters.get(key);
-			clusters.add(cluster);
-		}
+		super(document, dictionary, model);
 	}
 	
 	private void fillScore(Map<String, Double> scoreMap) {
@@ -72,6 +46,7 @@ public class JointCoreferenceResolution {
 	/**
 	 * iterative entity/event resolution
 	 */
+	@Override
 	public void merge(Dictionaries dictionary) {
 		Map<String, Double> scoreMap = new HashMap<String, Double>();
 		fillScore(scoreMap);
@@ -96,38 +71,6 @@ public class JointCoreferenceResolution {
 			scoreMap = new HashMap<String, Double>();
 			fillScore(scoreMap);
 		}
-	}
-	
-	/*Compare HashMap to get the index with the maximum value*/
-	public String compare_hashMap(Map<String, Double> scores) {
-		Collection<Double> c = scores.values();
-		Double maxvalue = Collections.max(c);
-		String maxIndex = "";
-		
-		Set<String> scores_set = scores.keySet();
-		Iterator<String> scores_it = scores_set.iterator();
-		while(scores_it.hasNext()) {
-			String id = scores_it.next();
-			Double value = scores.get(id);
-			if (value == maxvalue) {
-				maxIndex = id;
-				break;
-			}
-		}
-		return maxIndex;
-	}
-	
-	// according to the how many features not how many value is larger than 0
-	private double calculateScore(Counter<String> features) {
-		double sum = 0.0;
-		for (int i = 0; i < mModel.getRowDimension(); i++) {
-			if (i == 0) {
-				sum += mModel.get(i, 0);
-			} else {
-				sum += features.getCount(Feature.featuresName[i-1]) * mModel.get(i, 0);
-			}
-		}
-		return sum;
 	}
 	
 }

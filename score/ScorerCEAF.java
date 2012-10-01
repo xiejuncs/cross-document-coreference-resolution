@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
 
-
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
@@ -20,7 +19,7 @@ import edu.stanford.nlp.dcoref.Mention;
  * entities (i.e. a set of mentions) to measure the goodness of each possible alignment. The best mapping is
  * used for calculating CEAF precision, recall and F-measure.
  * 
- * There are two types similarity metric, called phi3 and phi4
+ * There are two types similarity metric, called phi3 and phi4. We implemented the phi4 case.
  * 
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *

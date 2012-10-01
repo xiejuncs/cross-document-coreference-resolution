@@ -4,14 +4,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.Map;
 
-import edu.oregonstate.CRC_MAIN;
 import edu.oregonstate.EgenericDataSetReader;
 import edu.oregonstate.data.EecbCharSeq;
 import edu.oregonstate.data.EecbDocument;
+import edu.oregonstate.data.EecbTopic;
 import edu.oregonstate.data.EecbEntity;
 import edu.oregonstate.data.EecbEntityMention;
 import edu.oregonstate.data.EecbEventMention;
@@ -46,7 +43,7 @@ public class EecbReader extends EgenericDataSetReader {
 	
 	public EecbReader(StanfordCoreNLP processor, boolean preprocess) {
 		super(processor, preprocess, false, true);
-		logger = Logger.getLogger(CRC_MAIN.class.getName());
+		logger = Logger.getLogger(EecbReader.class.getName());
 	    // run quietly by default
 	    logger.setLevel(Level.SEVERE);
 	}
@@ -66,40 +63,26 @@ public class EecbReader extends EgenericDataSetReader {
 		}
 		List<CoreMap> allSentences = new ArrayList<CoreMap>();
 		Annotation corpus = new Annotation("");
-		allSentences.addAll(readDocument(files, topic, corpus));
+		allSentences.addAll(readTopic(files, topic, corpus));
 		AnnotationUtils.addSentences(corpus, allSentences);
 		return corpus;
 	}
 	
-	/**
-	 * Get the extent of the mention according to the extentTokenSpan
-	 * 
-	 * @param sentence
-	 * @param extentTokenSpan
-	 * @return
-	 */
-	public static String getExtentString(CoreMap sentence, Span extentTokenSpan) {
-	    List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
-	    StringBuilder sb = new StringBuilder();
-	    for (int i = extentTokenSpan.start(); i < extentTokenSpan.end(); i ++){
-	      CoreLabel token = tokens.get(i);
-	      if(i > extentTokenSpan.start()) sb.append(" ");
-	      sb.append(token.word());
-	    }
-	    return sb.toString();
-	}	
+	public Annotation read(String singleDocument) {
+		if (singleDocument == null) {
+			new RuntimeException("Therea are no file....");
+		}
+		List<CoreMap> allSentences = new ArrayList<CoreMap>();
+		Annotation corpus = new Annotation("");
+		allSentences.addAll(readDocument(singleDocument, corpus));
+		AnnotationUtils.addSentences(corpus, allSentences);
+		return corpus;
+	}
 	
-	/**
-	 * READ the document and transform to the CoreLabel
-	 * 
-	 * @param files list of documents included in specific topic
-	 * @param corpus the annotation got 
-	 * @return
-	 */
-	private List<CoreMap> readDocument(List<String> files, String topic, Annotation corpus) {
+	private List<CoreMap> readDocument(String documentIdentifier, Annotation corpus) {
 		List<CoreMap> results = new ArrayList<CoreMap>();
-		EecbDocument eecbDocument = new EecbDocument(topic, files);
-		eecbDocument.parse();
+	    EecbDocument eecbDocument = new EecbDocument(documentIdentifier);
+	    eecbDocument.parse();
 		
 		String docID = eecbDocument.getId();
 		
@@ -133,6 +116,113 @@ public class EecbReader extends EgenericDataSetReader {
 		    	String corefID = "";
 		    	for (String entityID : eecbDocument.getKeySetEntities()) {
 		    		EecbEntity e = eecbDocument.getEntity(entityID);
+		    		if (e.getMentions().contains(eecbEntityMention)) {
+		    			corefID = entityID;
+		    			break;
+		    		}
+		    	}
+		    
+		    	int extEnd = eecbEntityMention.getExtent().getTokenEnd() - offset + 1;
+		    	int extStart = eecbEntityMention.getExtent().getTokenStart() - offset;
+		    	
+		    	Span extent = new Span(extStart, extEnd);
+		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, extent, null, "", "", "");
+		    	convertedMention.setCorefID(corefID);
+		        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
+		        AnnotationUtils.addEntityMention(sentence, convertedMention);
+		    }
+		    
+		    // convert EventMentions
+		    for (EecbEventMention eecbEventMention : eventMentions) {
+		    	EecbCharSeq anchor = eecbEventMention.getAnchor();
+		    	ExtractionObject anchorObject = new ExtractionObject(
+		    			eecbEventMention.getId() + "-anchor",
+		    	        sentence,
+		    	        new Span(anchor.getTokenStart(), anchor.getTokenEnd()),
+		    	        "ANCHOR",
+		    	        null);
+		    	
+		        List<ExtractionObject> convertedArgs = new ArrayList<ExtractionObject>();
+		    	
+		        int extEnd = eecbEventMention.getExtent().getTokenEnd() - offset + 1;
+		    	int extStart = eecbEventMention.getExtent().getTokenStart() - offset;
+		        
+		        Span extent = new Span(extStart, extEnd);
+		    	EventMention convertedMention = new EventMention(eecbEventMention.getId(), sentence, extent, "", "", anchorObject, convertedArgs, null); // 
+		    	if(convertedMention != null){
+		            logger.info("CONVERTED EVENT MENTION: " + convertedMention);
+		            AnnotationUtils.addEventMention(sentence, convertedMention);
+		        }
+		    }
+		    
+		    results.add(sentence);
+		    offset += tokens.size();
+		}
+		return results;
+	}
+	
+	/**
+	 * Get the extent of the mention according to the extentTokenSpan
+	 * 
+	 * @param sentence
+	 * @param extentTokenSpan
+	 * @return
+	 */
+	public static String getExtentString(CoreMap sentence, Span extentTokenSpan) {
+	    List<CoreLabel> tokens = sentence.get(CoreAnnotations.TokensAnnotation.class);
+	    StringBuilder sb = new StringBuilder();
+	    for (int i = extentTokenSpan.start(); i < extentTokenSpan.end(); i ++){
+	      CoreLabel token = tokens.get(i);
+	      if(i > extentTokenSpan.start()) sb.append(" ");
+	      sb.append(token.word());
+	    }
+	    return sb.toString();
+	}	
+	
+	/**
+	 * READ the document and transform to the CoreLabel
+	 * 
+	 * @param files list of documents included in specific topic
+	 * @param corpus the annotation got 
+	 * @return
+	 */
+	private List<CoreMap> readTopic(List<String> files, String topic, Annotation corpus) {
+		List<CoreMap> results = new ArrayList<CoreMap>();
+		EecbTopic eecbTopic = new EecbTopic(topic, files);
+		eecbTopic.parse();
+		
+		String docID = eecbTopic.getId();
+		
+		// because tokenset is different from the the acutal tokenize 
+		int offset = 0;
+		for (int sentenceIndex = 0; sentenceIndex < eecbTopic.getSentenceCount(); sentenceIndex++ ) {
+			List<EecbToken> tokens = eecbTopic.getSentence(sentenceIndex);
+			List<CoreLabel> words = new ArrayList<CoreLabel>();
+			StringBuffer textContent = new StringBuffer();
+			for (int i = 0; i < tokens.size(); i++) {
+				CoreLabel l = new CoreLabel();
+				l.setWord(tokens.get(i).getLiteral());
+		        l.set(CoreAnnotations.TextAnnotation.class, l.word());
+		        l.set(CharacterOffsetBeginAnnotation.class, tokens.get(i).getByteStart());
+		        l.set(CharacterOffsetEndAnnotation.class, tokens.get(i).getByteEnd());
+		        words.add(l);
+		        if(i > 0) textContent.append(" ");
+		        textContent.append(tokens.get(i).getLiteral());
+			}
+			
+			CoreMap sentence = new Annotation(textContent.toString());
+		    sentence.set(CoreAnnotations.DocIDAnnotation.class, docID);
+		    sentence.set(CoreAnnotations.TokensAnnotation.class, words);
+		    logger.info("Reading sentence: \"" + textContent + "\"");
+		    
+		    List<EecbEntityMention> entityMentions = eecbTopic.getEntityMentions(sentenceIndex);
+		    List<EecbEventMention> eventMentions = eecbTopic.getEventMentions(sentenceIndex);
+		    
+		    // convert entity mentions
+		    for (EecbEntityMention eecbEntityMention : entityMentions) {
+		    	String corefID = "";
+		    	for (String entityID : eecbTopic.getKeySetEntities()) {
+		    		EecbEntity e = eecbTopic.getEntity(entityID);
 		    		if (e.getMentions().contains(eecbEntityMention)) {
 		    			corefID = entityID;
 		    			break;

@@ -16,6 +16,7 @@ import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.Counter;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.oregonstate.features.Feature;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.training.Train;
 
 /**
@@ -36,11 +37,11 @@ import edu.oregonstate.training.Train;
  */
 public class IterativeResolution {
 
-	private List<CorefCluster> clusters;
-	private Document mdocument;
-	private Dictionaries mDictionary;
-	private Matrix mModel;
-
+	protected List<CorefCluster> clusters;
+	protected Document mdocument;
+	protected Dictionaries mDictionary;
+	protected Matrix mModel;
+	
 	public IterativeResolution(Document document, Dictionaries dictionary, Matrix model) {
 		mdocument = document;
 		mDictionary = dictionary;
@@ -50,11 +51,43 @@ public class IterativeResolution {
 	}
 	
 	/** initialize the clusters */
-	private void initialize() {
+	protected void initialize() {
 		for (Integer key : mdocument.corefClusters.keySet()) {
 			CorefCluster cluster = mdocument.corefClusters.get(key);
 			clusters.add(cluster);
 		}
+	}
+	
+	/*Compare HashMap to get the index with the maximum value*/
+	protected String compare_hashMap(Map<String, Double> scores) {
+		Collection<Double> c = scores.values();
+		Double maxvalue = Collections.max(c);
+		String maxIndex = "";
+		
+		Set<String> scores_set = scores.keySet();
+		Iterator<String> scores_it = scores_set.iterator();
+		while(scores_it.hasNext()) {
+			String id = scores_it.next();
+			Double value = scores.get(id);
+			if (value == maxvalue) {
+				maxIndex = id;
+				break;
+			}
+		}
+		return maxIndex;
+	}
+	
+	// according to the how many features not how many value is larger than 0
+	protected double calculateScore(Counter<String> features) {
+		double sum = 0.0;
+		for (int i = 0; i < mModel.getRowDimension(); i++) {
+			if (i == 0) {
+				sum += mModel.get(i, 0);
+			} else {
+				sum += features.getCount(Feature.featuresName[i-1]) * mModel.get(i, 0);
+			}
+		}
+		return sum;
 	}
 
 	private void fillScore(Map<String, Double> scoreMap, boolean condition) {
@@ -119,8 +152,8 @@ public class IterativeResolution {
 				}
 				
 				double quality = correct/total;
-				String record = Train.buildString(features, quality);
-				Train.writeTextFile(Train.currentOutputFileName, record);
+				String record = ResultOutput.buildString(features, quality);
+				ResultOutput.writeTextFilewithoutNewline(Train.currentOutputFileName, record);
 			}
 			
 			String index = compare_hashMap(scoreMap);
@@ -145,36 +178,4 @@ public class IterativeResolution {
 		}
 	}
 	
-	/*Compare HashMap to get the index with the maximum value*/
-	public String compare_hashMap(Map<String, Double> scores) {
-		Collection<Double> c = scores.values();
-		Double maxvalue = Collections.max(c);
-		String maxIndex = "";
-		
-		Set<String> scores_set = scores.keySet();
-		Iterator<String> scores_it = scores_set.iterator();
-		while(scores_it.hasNext()) {
-			String id = scores_it.next();
-			Double value = scores.get(id);
-			if (value == maxvalue) {
-				maxIndex = id;
-				break;
-			}
-		}
-		return maxIndex;
-	}
-	
-	// according to the how many features not how many value is larger than 0
-	private double calculateScore(Counter<String> features) {
-		double sum = 0.0;
-		for (int i = 0; i < mModel.getRowDimension(); i++) {
-			if (i == 0) {
-				sum += mModel.get(i, 0);
-			} else {
-				sum += features.getCount(Feature.featuresName[i-1]) * mModel.get(i, 0);
-			}
-		}
-		return sum;
-	}
-
 }

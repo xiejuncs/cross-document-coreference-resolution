@@ -1,6 +1,5 @@
 package edu.oregonstate;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -107,24 +106,27 @@ public class EgenericDataSetReader {
 			convertToCoreLabels(kid);
 	}
 	
+	/**
+	 * For EECB topic
+	 * 
+	 * @param files
+	 * @param topic
+	 * @return
+	 * @throws Exception
+	 */
 	public Annotation read(List<String> files, String topic) throws Exception {
 		return null;
 	}
 	
-	/** a string for CoreLabel */
-	public static String sentenceToString(List<CoreLabel> tokens) {
-		StringBuilder os = new StringBuilder();
-		
-		if (tokens != null) {
-			boolean first = true;
-			for (CoreLabel token : tokens) {
-				if (! first) os.append(" ");
-				os.append(token.word());
-				first = false;
-			}
-		}
-		
-		return os.toString();
+	/**
+	 * For EECB document
+	 * 
+	 * @param documentIdentifier
+	 * @return
+	 * @throws Exception
+	 */
+	public Annotation read(String documentIdentifier) throws Exception {
+		return null;
 	}
 	
 }

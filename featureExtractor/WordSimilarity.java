@@ -3,16 +3,12 @@ package edu.oregonstate.featureExtractor;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-
-import edu.oregonstate.util.GlobalConstantVariables;
 
 /**
  * extract the top-ten most-similar words in Dekang Lin's similarity thesaurus for all the nouns/adjectives/verbs in a 
@@ -30,13 +26,6 @@ public class WordSimilarity {
 	public WordSimilarity(String path) {
 		this.filePath = path;
 		datas = new HashMap<String, List<String>>();
-	}
-	
-	public static void main(String[] args) {
-		WordSimilarity wordSimilarity = new WordSimilarity(GlobalConstantVariables.WORD_SIMILARITY_PATH);
-		wordSimilarity.initialize();
-		Map<String, List<String>> datas = wordSimilarity.datas;
-		System.out.println(datas.get("of"));
 	}
 	
 	/** initialize the word similarity dictionary */
