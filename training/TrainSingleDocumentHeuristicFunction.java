@@ -183,7 +183,7 @@ public class TrainSingleDocumentHeuristicFunction {
 				offset += 1;
 			}
 		}
-		ResultOutput.writeTextFile(CDCR.outputFileName, "before create children: total of clusters : " + (size - 1));
+		ResultOutput.writeTextFile(CDCR.outputFileName, "after create children: total of clusters : " + (size - 1));
 		//Cloner cloner = new Cloner();
 		//Map<Integer, CorefCluster> copyClusters = cloner.deepClone(clusters);
 		// split
@@ -339,7 +339,6 @@ public class TrainSingleDocumentHeuristicFunction {
 		State<CorefCluster> initialState = new State<CorefCluster>();
 		State<CorefCluster> goalState = new State<CorefCluster>();
 		initialize(document, initialState, goalState);
-		goalState.setGoal(true);
 		closedList.put(1, initialState);
 		beam.put(1, initialState);
 		boolean breakWhile = false;
@@ -507,7 +506,7 @@ public class TrainSingleDocumentHeuristicFunction {
 						cs.corefSystem.coref(document);
 						ResultOutput.writeTextFile(CDCR.outputFileName, "Number of Clusters After Stanford's System Preprocess of " + topic + "-" + file.substring(0, file.length() - 5) + " : " + document.corefClusters.size());
 						ResultOutput.writeTextFile(CDCR.outputFileName, "Stanford System merges " + (document.allGoldMentions.size() - document.corefClusters.size()) + " mentions");
-						System.out.println(type.toString());
+						//System.out.println(type.toString());
 						ResultOutput.writeTextFile(CDCR.outputFileName, type.toString());
 						String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 						String prefix = mExpasion + "-" + mBeamWidth + "-" + type.toString() + "-" + topic + "-" + file.substring(0, file.length() - 5) + "-";
