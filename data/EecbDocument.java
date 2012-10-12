@@ -84,7 +84,7 @@ public class EecbDocument extends EecbElement {
 		String[] paras = id.split("-");
 		String topic = paras[0];
 		String document = paras[1];
-		baseID = 1000000 * Integer.parseInt(topic) + 100000 * Integer.parseInt(document);
+		baseID = 1000000 * Integer.parseInt(topic) + 10000 * Integer.parseInt(document);
 		
 		mEntities = new HashMap<String, EecbEntity>();
 		mEntityMentions = new HashMap<String, EecbEntityMention>();

@@ -1,12 +1,14 @@
 package edu.oregonstate.util;
 
+import java.io.File;
+
 public class Constants {
 
 	// the corpus for debug
-	public static final String DEBUG_CORPUS_PATH = "../corpus/EECB1/data/";
+	public static final String DEBUG_CORPUS_PATH = "../corpus/EECB1.0/data/";
 	
 	// the mention annotation for debug
-	public static final String DEBUG_MENTION_ANNOTATION_PATH = "../corpus/mentions-within.txt";
+	public static final String DEBUG_MENTION_ANNOTATION_PATH = "../corpus/mentions-backup.txt";
 	
 	// the corpus for running the whole experiment
 	public static final String WHOLE_CORPUS_PATH = "../corpus/EECB1.0/data/";
@@ -27,7 +29,8 @@ public class Constants {
 	public static final String WORD_NET_CONFIGURATION_PATH = "../corpus/file_properties.xml";
 	
 	// store the serilize and deserize result
-	public static final String RESULT_PATH = "../corpus/RESULT/";
+	//public static final String RESULT_PATH = "../corpus/RESULT/";
+	public static final String RESULT_PATH = "../corpus/CROSS-RESULT/";
 	
 	/** Temporary result folder in order to further analysis */
 	public static final String TEMPORY_RESULT_PATH = "../corpus/TEMPORYRESUTl/";
@@ -53,4 +56,6 @@ public class Constants {
 	
 	/** store the intermediate result created during creating the adjacent states */
 	public static final String ADJACENT_INTERMEDIATE_RESULT_PATH = "../corpus/ADJACENT-INTERMEDIATE-RESULT/";
+	
+	public static final String STOPWORD_PATH = "../corpus/english.stop";
 }

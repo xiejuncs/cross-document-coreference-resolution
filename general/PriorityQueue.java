@@ -1,6 +1,5 @@
-package edu.oregonstate.data;
+package edu.oregonstate.general;
 
-import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.List;
@@ -10,14 +9,12 @@ import java.io.Serializable;
 /**
  * A priority queue based on a binary heap.  Note that this implementation does
  * not efficiently support containment, removal, or element promotion
- * (decreaseKey) -- these methods are therefore not yet implemented.  It is a maximum
- * priority queue, so next() gives the highest-priority object.
+ * (decreaseKey) -- these methods are therefore not yet implemented.
  *
  * @author Dan Klein
  */
 public class PriorityQueue <E> implements Iterator<E>, Serializable, Cloneable {
-  private static final long serialVersionUID = 8677265337578515592L;
-	
+  private static final long serialVersionUID = 1L;
   int size;
   int capacity;
   List<E> elements;
@@ -87,11 +84,11 @@ public class PriorityQueue <E> implements Iterator<E>, Serializable, Cloneable {
   }
 
   protected void removeFirst() {
-     if (size < 1) return;
-     swap(0, size - 1);
-     size--;
-     elements.remove(size);
-     heapifyDown(0);
+    if (size < 1) return;
+    swap(0, size - 1);
+    size--;
+    elements.remove(size);
+    heapifyDown(0);
   }
 
   /**
@@ -185,14 +182,12 @@ public class PriorityQueue <E> implements Iterator<E>, Serializable, Cloneable {
     PriorityQueue<E> pq = clone();
     StringBuilder sb = new StringBuilder("[");
     int numKeysPrinted = 0;
-    NumberFormat f = NumberFormat.getInstance();
-    f.setMaximumFractionDigits(2);
     while (numKeysPrinted < maxKeysToPrint && pq.hasNext()) {
       double priority = pq.getPriority();
       E element = pq.next();
       sb.append(element.toString());
       sb.append(" : ");
-      sb.append(f.format(priority));
+      sb.append(priority);
       if (numKeysPrinted < size() - 1)
         sb.append(", ");
       numKeysPrinted++;
@@ -201,6 +196,24 @@ public class PriorityQueue <E> implements Iterator<E>, Serializable, Cloneable {
       sb.append("...");
     sb.append("]");
     return sb.toString();
+  }
+
+  /**
+   * Returns a counter whose keys are the elements in this priority queue, and
+   * whose counts are the priorities in this queue.  In the event there are
+   * multiple instances of the same element in the queue, the counter's count
+   * will be the sum of the instances' priorities.
+   *
+   */
+  public Counter asCounter() {
+    PriorityQueue<E> pq = clone();
+    Counter<E> counter = new Counter<E>();
+    while (pq.hasNext()) {
+      double priority = pq.getPriority();
+      E element = pq.next();
+      counter.incrementCount(element, priority);
+    }
+    return counter;
   }
 
   /**
@@ -224,12 +237,51 @@ public class PriorityQueue <E> implements Iterator<E>, Serializable, Cloneable {
     this(15);
   }
 
-  public PriorityQueue(int capacity) {
+  protected int getLegalCapacity(int capacity){
     int legalCapacity = 0;
     while (legalCapacity < capacity) {
       legalCapacity = 2 * legalCapacity + 1;
     }
-    grow(legalCapacity);
+    return legalCapacity;
+  }
+
+  public PriorityQueue(int capacity) {
+    grow(getLegalCapacity(capacity));
+  }
+
+  protected boolean isPowerOfTwo(int num){
+    while(num > 1){
+      if(num %  2 != 0) return false;
+      num /= 2;
+    }
+    return true;
+  }
+
+  public void trim(int newsize){
+
+    if(newsize >= size()) return;
+
+    if(!isPowerOfTwo(newsize+1)) {
+      System.err.println("size must be of form (2^n)-1");
+      throw new UnsupportedOperationException();
+    }
+   
+    capacity = newsize;
+
+    List<E> newelems = new ArrayList<E>(newsize);
+    double[] newpriorities = new double[newsize];
+
+    for(int i = 0; i < newsize; i++){
+      double pri = getPriority();
+      E elem = next();
+      newelems.add(elem);
+      newpriorities[i] = pri;
+    }
+
+    elements = newelems;
+    priorities = newpriorities;
+    capacity = newsize;
+    size = newsize;
   }
 
   public static void main(String[] args) {
@@ -237,23 +289,40 @@ public class PriorityQueue <E> implements Iterator<E>, Serializable, Cloneable {
     System.out.println(pq);
     pq.add("one",1);
     System.out.println(pq);
-    pq.add("three",0/0);
+    pq.add("three",3);
     System.out.println(pq);
     pq.add("one",1.1);
     System.out.println(pq);
     pq.add("two",2);
     System.out.println(pq);
     System.out.println(pq.toString(2));
-    System.out.println(pq.size);
-    //while (pq.hasNext()) {
+    while (pq.hasNext()) {
       System.out.println(pq.next());
-    //}
-      System.out.println(pq.size);
-      System.out.println(pq.next());
-      System.out.println(pq.size);
-      System.out.println(pq.next());
-      System.out.println(pq.size);
-      System.out.println(pq.next());
-      System.out.println(pq.size);
+    }
+
+    PriorityQueue<Integer> pq2 = new PriorityQueue<Integer>();
+    for(int i =1; i <= 32; i++){
+      pq2.add(i,i);
+    }
+    //pq2.trim(100);
+    System.out.println("\n"+pq2);
+    pq2.trim(31);
+    System.out.println("\n"+pq2);
+    //pq2.trim(9);
+    //System.out.println("\n"+pq2);
+    pq2.trim(7);
+    System.out.println("\n"+pq2);
+
+  for(int i=-10; i < -5; i++){
+    pq2.add(i,i);
+  }
+
+  for(int i = 64; i < 69; i++){
+    pq2.add(i,i);
+  }
+
+  pq2.trim(15);
+  System.out.println("\n"+pq2+"\t"+pq2.size());
+  
   }
 }

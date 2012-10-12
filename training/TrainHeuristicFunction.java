@@ -1,17 +1,15 @@
 package edu.oregonstate.training;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import Jama.Matrix;
@@ -101,6 +99,7 @@ public class TrainHeuristicFunction {
 		return (1 - sum);
 	}
 	
+	/** calculate the precision and recall for a given document and type */
 	private double[] calculatePrecision(Document document, ScoreType type) {
 		double sum = 0.0;
 		CorefScorer score;
@@ -155,8 +154,8 @@ public class TrainHeuristicFunction {
 	// do not define neighbors, just serialize the newindex to id.ser, and then in the update phase, deserize it to a state
 	// for each state, get its successor states
 	// there are two actions, one is Merge, one is Split
-	private Map<Integer, String> adj(State<CorefCluster> index) {
-		Map<Integer, String> actions = new HashMap<Integer, String>();
+	private Set<String> adj(State<CorefCluster> index) {
+		Set<String> actions = new HashSet<String>();
 		Map<Integer, CorefCluster> clusters = index.getState();
 		List<Integer> ids = new ArrayList<Integer>();
 		for (Integer key : clusters.keySet()) {
@@ -167,18 +166,23 @@ public class TrainHeuristicFunction {
 		System.out.println("total of clusters : " + size);
 		// merge
 		for (int i = 0; i < (size - 1); i++) {
+			Integer i_id = ids.get(i);
+			CorefCluster icluster = clusters.get(i_id);
+			int isize = icluster.corefMentions.size();
 			for (int j = 0; j < i; j++) {
-				
-				Integer i_id = ids.get(i);
 				Integer j_id = ids.get(j);
-				String action = i_id + "-" + j_id;
-				System.out.println(action);
-				actions.put(offset, action);
-				offset += 1;
+				CorefCluster jcluster = clusters.get(j_id);
+				int jsize = jcluster.corefMentions.size();
+				if (isize == 1 && jsize == 1) {
+					String action = i_id + "-" + j_id + "-" + offset;
+					actions.add(action);
+					offset += 1;
+				}
 			}
 		}
 		ResultOutput.writeTextFile(CDCR.outputFileName, "after create children: total of clusters : " + (size - 1));
-		System.out.println("1");
+		ResultOutput.writeTextFile(CDCR.outputFileName, "the number of candidate sets :" + actions.size());
+		System.out.println("the number of candidate sets :" + actions.size());
 		return actions;
 	}
 	
@@ -230,20 +234,22 @@ public class TrainHeuristicFunction {
 	 * @param initialState
 	 * @param goalState
 	 */
-	public void initialize(Document document, State<CorefCluster> initialState, State<CorefCluster> goalState) {
+	public void initialize(Document document, State<CorefCluster> initialState) {
 		for (Integer key : document.corefClusters.keySet()) {
 			CorefCluster cluster = document.corefClusters.get(key);
-			ResultOutput.serialize(cluster, key, edu.oregonstate.util.Constants.RESULT_PATH);
-			CorefCluster cpCluster = ResultOutput.deserialize(key.toString() + ".ser", edu.oregonstate.util.Constants.RESULT_PATH, true);
-			initialState.add(key, cpCluster);
+			//ResultOutput.serialize(cluster, key, edu.oregonstate.util.Constants.RESULT_PATH);
+			//CorefCluster cpCluster = ResultOutput.deserialize(key.toString() + ".ser", edu.oregonstate.util.Constants.RESULT_PATH, true);
+			initialState.add(key, cluster);
 		}
 		
+		/*
 		for (Integer key : document.goldCorefClusters.keySet()) {
 			CorefCluster cluster = document.goldCorefClusters.get(key);
 			ResultOutput.serialize(cluster, key, edu.oregonstate.util.Constants.RESULT_PATH);
 			CorefCluster cpCluster = ResultOutput.deserialize(key.toString() + ".ser", edu.oregonstate.util.Constants.RESULT_PATH, true);
 			goalState.add(key, cpCluster);
 		}
+		*/
 	}
 	
 	public void setNextDocument(Document documentState, State<CorefCluster> state) {
@@ -253,6 +259,19 @@ public class TrainHeuristicFunction {
 			for (Mention m : cluster.corefMentions) {
 				int mentionID = m.mentionID;
 				Mention correspondingMention = documentState.allPredictedMentions.get(mentionID);
+				int clusterid = id;
+				correspondingMention.corefClusterID = clusterid;
+			}
+		}
+	}
+	
+	/** update the corefIDs of predictedMentions */
+	public void updatePredictedMentions(Document document) {
+		for (Integer id : document.corefClusters.keySet()) {
+			CorefCluster cluster = document.corefClusters.get(id);
+			for (Mention m : cluster.corefMentions) {
+				int mentionID = m.mentionID;
+				Mention correspondingMention = document.allPredictedMentions.get(mentionID);
 				int clusterid = id;
 				correspondingMention.corefClusterID = clusterid;
 			}
@@ -301,9 +320,18 @@ public class TrainHeuristicFunction {
 		return isGoal;
 	}
 	
+	private boolean isGoalState1(Document document, ScoreType type) {
+		boolean isGoal = false;
+    	double[] scores = calculatePrecision(document, type);
+    	double score = scores[0];
+		if (score == 1.0) {
+			isGoal = true;
+		}
+		return isGoal;
+	}
+	
 	/**
-	 * beam search
-	 * using the serialized and deserialized to avoid the memory overhead
+	 * beam search (consider the greedy search first)
 	 * 
 	 * @param document
 	 * @param type
@@ -314,17 +342,17 @@ public class TrainHeuristicFunction {
 		Map<Integer, State<CorefCluster>> closedList = new HashMap<Integer, State<CorefCluster>>();
 		Map<Integer, State<CorefCluster>> beam = new HashMap<Integer, State<CorefCluster>>();
 		State<CorefCluster> initialState = new State<CorefCluster>();
-		State<CorefCluster> goalState = new State<CorefCluster>();
-		initialize(document, initialState, goalState);
+		initialize(document, initialState);
 		closedList.put(1, initialState);
 		beam.put(1, initialState);
 		boolean breakWhile = false;
 		int i = 0;
 		while(beam.size() != 0) {
-			Map<Integer, String> set = new HashMap<Integer, String>();
+			//Map<Integer, String> set = new HashMap<Integer, String>();
 			ResultOutput.deleteResult(edu.oregonstate.util.Constants.ADJACENT_INTERMEDIATE_RESULT_PATH);
 			Integer index = 1;
 			State<CorefCluster> indexState = new State<CorefCluster>();
+			System.out.println("the size of beam is :" + beam.size());
 			for (Integer id : beam.keySet()) {
 				index = id;
 				State<CorefCluster> state = beam.get(id);
@@ -346,11 +374,11 @@ public class TrainHeuristicFunction {
 			if (breakWhile) break;
 			ResultOutput.writeTextFile(CDCR.outputFileName, "action " + i);
 			System.out.println(type.toString() + " loss function : action " + i);
-			Document documentStateState = new Document();
-			add(document, documentStateState);
-			setNextDocument(documentStateState,indexState);
+			//Document documentStateState = new Document();
+			//add(document, documentStateState);
+			//setNextDocument(documentStateState,indexState);
 			
-			double[] localScores = calculatePrecision(documentStateState, type);
+			double[] localScores = calculatePrecision(document, type);
 			double localScore = localScores[0];
 			System.out.println(localScore);
 			ResultOutput.writeTextFile(CDCR.outputFileName, "local " + type.toString() + " F1 Score: " + Double.toString(localScore));
@@ -363,28 +391,45 @@ public class TrainHeuristicFunction {
 			String beforetimeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 			ResultOutput.writeTextFile(CDCR.outputFileName, beforetimeStamp);
 			System.out.println(beforetimeStamp);
-			Map<Integer, String> actions = adj(indexState);
+			
+			/** get the candidate lists*/
+			Set<String> actions = adj(indexState);
+			
 			String aftertimeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 			ResultOutput.writeTextFile(CDCR.outputFileName, aftertimeStamp);
 			System.out.println(aftertimeStamp);
 			
 			closedList.put(index, indexState);
 			//set.remove(index);
-			beam = new TreeMap<Integer, State<CorefCluster>>();
+			beam = new HashMap<Integer, State<CorefCluster>>();
 			PriorityQueue<String> pq = new PriorityQueue<String>();
 			
-			for (Integer id : actions.keySet()) {
-				State<CorefCluster> neighbor = ResultOutput.deserialize(index.toString() + ".ser", edu.oregonstate.util.Constants.ADJACENT_INTERMEDIATE_RESULT_PATH, false);
-				String action = actions.get(id);
-				String[] ids = action.split("-");
-				Integer i_id = Integer.parseInt(toString());
-				Integer j_id = Integer.parseInt(ids[1]);
-				CorefCluster iCluster = neighbor.getState().get(i_id);
-				CorefCluster jCluster = neighbor.getState().get(j_id);
-				mergeClusters(iCluster, jCluster);
-				neighbor.getState().remove(j_id);
+			try {
+			
+			int actionSize = actions.size();
+			int increment = 0;
+			for (String action : actions) {
+				increment += 1;
+				System.out.println("the remaining action " + (actionSize - increment));
+				String beforetimeStamp1 = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+				System.out.println(beforetimeStamp1);
 				
-				boolean isgoal = isGoalState(document, neighbor, type);
+				//State<CorefCluster> neighbor = ResultOutput.deserialize(index.toString() + ".ser", edu.oregonstate.util.Constants.ADJACENT_INTERMEDIATE_RESULT_PATH, false);
+				String[] ids = action.split("-");
+				Integer i_id = Integer.parseInt(ids[0]);
+				Integer j_id = Integer.parseInt(ids[1]);
+				Map<Integer, CorefCluster> corefClusters = document.corefClusters;
+				CorefCluster iCluster = corefClusters.get(i_id);
+				CorefCluster jCluster = corefClusters.get(j_id);
+				ResultOutput.serialize(iCluster, i_id, edu.oregonstate.util.Constants.ADJACENT_INTERMEDIATE_RESULT_PATH);
+				CorefCluster cpCluster = ResultOutput.deserialize(i_id + ".ser", edu.oregonstate.util.Constants.ADJACENT_INTERMEDIATE_RESULT_PATH, true);
+				mergeClusters(cpCluster, jCluster);
+				document.corefClusters.put(i_id, cpCluster);
+				document.corefClusters.remove(j_id);
+				
+				updatePredictedMentions(document);
+				
+				boolean isgoal = isGoalState1(document, type);
 				if (isgoal) {
 					ResultOutput.writeTextFile(CDCR.outputFileName, "\n=====================================");
 					ResultOutput.writeTextFile(CDCR.outputFileName, "reach gold state");
@@ -395,19 +440,30 @@ public class TrainHeuristicFunction {
 					break;
 				}
 				
-				Document documentState = new Document();
-            	add(document, documentState);
-            	setNextDocument(documentState, neighbor);
-            	double[] scores = calculatePrecision(documentState, type);
+				//Document documentState = new Document();
+            	//add(document, documentState);
+            	//setNextDocument(documentState, neighbor);
+            	double[] scores = calculatePrecision(document, type);
             	double score = scores[0];
             	pq.add(action, score);
+            	
+            	document.corefClusters.put(i_id, iCluster);
+            	document.corefClusters.put(j_id, jCluster);
+            	
+            	updatePredictedMentions(document);
+            	
+            	String aftertimeStamp1 = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+    			System.out.println(aftertimeStamp1);
+			} } catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 			if (breakWhile) break;
 			while ((pq.size() > 0 ) && (mBeamWidth > beam.size())) {
 				String action = pq.next();
 				State<CorefCluster> initial = ResultOutput.deserialize(index.toString() + ".ser", edu.oregonstate.util.Constants.ADJACENT_INTERMEDIATE_RESULT_PATH, false);
 				String[] ids = action.split("-");
-				Integer i_id = Integer.parseInt(toString());
+				Integer i_id = Integer.parseInt(ids[0]);
 				Integer j_id = Integer.parseInt(ids[1]);
 				CorefCluster iCluster = initial.getState().get(i_id);
 				CorefCluster jCluster = initial.getState().get(j_id);
@@ -416,7 +472,22 @@ public class TrainHeuristicFunction {
 				
 				boolean deplicate = detectDuplicate(closedList, initial);
                 if (!deplicate) {
-                    beam.put(initial.getID(), initial);
+                	CorefCluster cluster_i = document.corefClusters.get(i_id);
+                	CorefCluster cluster_j = document.corefClusters.get(j_id);
+                	mergeClusters(cluster_i, cluster_j);
+                	document.corefClusters.remove(j_id);
+                	
+                	for (Integer id : document.corefClusters.keySet()) {
+            			CorefCluster cluster = document.corefClusters.get(id);
+            			for (Mention m : cluster.corefMentions) {
+            				int mentionID = m.mentionID;
+            				Mention correspondingMention = document.allPredictedMentions.get(mentionID);
+            				int clusterid = id;
+            				correspondingMention.corefClusterID = clusterid;
+            			}
+            		}
+                	
+                    beam.put(Integer.parseInt(ids[2]), initial);
                 }
 			}
 			i+= 1;
@@ -478,8 +549,8 @@ public class TrainHeuristicFunction {
 					cs.corefSystem.coref(document);
 					ResultOutput.writeTextFile(CDCR.outputFileName, "Number of Clusters After Stanford's System Preprocess of " + topic + " : " + document.corefClusters.size());
 					ResultOutput.writeTextFile(CDCR.outputFileName, "Stanford System merges " + (document.allGoldMentions.size() - document.corefClusters.size()) + " mentions");
-					//System.out.println(type.toString());
-					//ResultOutput.writeTextFile(CDCR.outputFileName, type.toString());
+					System.out.println(type.toString());
+					ResultOutput.writeTextFile(CDCR.outputFileName, type.toString());
 					String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 					String prefix = "CROSS-" + mExpasion + "-" + mBeamWidth + "-" + type.toString() + "-" + topic + "-";
 					prefix = prefix.concat(timeStamp);

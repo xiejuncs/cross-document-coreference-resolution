@@ -55,7 +55,7 @@ public class SystemOptions {
 		DEBUG = true;
 		FULL_SIEVE = false;
 		REPLICATE_STANFORD_EXPERIMENT = false;
-		WITHIN_COREFERNECE_RESOLUTION = false;
+		WITHIN_COREFERNECE_RESOLUTION = true;
 		BEAM_SEARCH = true;
 		GOLD_ONLY = true;
 		ALIGN_PREDICTED_GOLD = false;

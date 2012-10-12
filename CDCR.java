@@ -422,7 +422,7 @@ public class CDCR {
         	// Average of MUC, B^{3} and CEAF-\phi_{4}.
         	double conllF1 = (score.getF1() + ceafscore.getF1() + postmucscore.getF1()) / 3;
         	ResultOutput.writeTextFile(CDCR.outputFileName, "conllF1:     " + conllF1);
-    	}    	
+    	}
 	}
 	
 }

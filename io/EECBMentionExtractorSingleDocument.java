@@ -48,7 +48,7 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 		documentID = documentID.substring(0, documentID.length() - 5);
 		documentIdentifier = topic + "-" + documentID;
 		documentPath = singleDocument;
-		baseID = 1000000 * Integer.parseInt(topic) + 100000 * Integer.parseInt(documentID);
+		baseID = 1000000 * Integer.parseInt(topic);
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
 	}

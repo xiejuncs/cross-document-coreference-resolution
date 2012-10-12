@@ -68,4 +68,16 @@ public class State<T> implements Serializable {
 		}
 	}
 	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("state: \n");
+		for (Integer key : state.keySet()) {
+			sb.append(state.get(key).toString() + " \n");
+		}
+		
+		return sb.toString().trim();
+	}
+	
+	
 }
