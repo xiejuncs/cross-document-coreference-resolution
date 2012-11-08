@@ -107,6 +107,12 @@ public class Train {
 			    
 			    // inspect all the pairs of singleton verbal clusters
 			    Map<Integer, CorefCluster> corefClusters = document.corefClusters;
+			    System.out.println("gold cluster: " + document.goldCorefClusters.size());
+			    System.out.println(ResultOutput.printCluster(document.goldCorefClusters));
+			    
+			    System.out.println("coref cluster: " + corefClusters.size());
+			    System.out.println(ResultOutput.printCluster(corefClusters));
+			   
 			    List<CorefCluster> verbSingletonCluster = new ArrayList<CorefCluster>();  // add the singleton verbal cluster
 			    for (Integer clusterid : corefClusters.keySet()) {
 			    	CorefCluster cluster = corefClusters.get(clusterid);
@@ -125,7 +131,7 @@ public class Train {
 			    }
 			    
 			    // generate training data for Event
-			    Map<Integer, Mention> goldCorefClusters = document.allGoldMentions; // use the gold coref cluster to calculate the quality for this merge
+			    Map<Integer, Mention> goldMentions = document.allGoldMentions; // use the gold coref cluster to calculate the quality for this merge
 			    for (int i = 0; i < verbSingletonCluster.size(); i++) {
 			    	for (int j = 0; j < i; j++) {
 			    		CorefCluster ci = verbSingletonCluster.get(i);
@@ -136,8 +142,8 @@ public class Train {
 			    		double correct = 0.0;
 			    		double total = 1.0;
 			    		
-			    		if (goldCorefClusters.containsKey(ciFirstMention.mentionID) && goldCorefClusters.containsKey(cjFirstMention.mentionID)) {
-							if (goldCorefClusters.get(ciFirstMention.mentionID).goldCorefClusterID == goldCorefClusters.get(cjFirstMention.mentionID).goldCorefClusterID) {
+			    		if (goldMentions.containsKey(ciFirstMention.mentionID) && goldMentions.containsKey(cjFirstMention.mentionID)) {
+							if (goldMentions.get(ciFirstMention.mentionID).goldCorefClusterID == goldMentions.get(cjFirstMention.mentionID).goldCorefClusterID) {
 								correct += 1.0;
 							}
 			    		}

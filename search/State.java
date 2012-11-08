@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
+import edu.stanford.nlp.stats.ClassicCounter;
+import edu.stanford.nlp.stats.Counter;
+
 /**
  * represent the state  
  * 
@@ -17,11 +20,25 @@ public class State<T> implements Serializable {
 	private static final long serialVersionUID = 8666265337578515592L;
 	// every state consists of a set of CorefClusters, in order to make it generic
 	private Map<Integer, T> state;
-	private int id;
+	private String id;
+	private Counter<String> mfeatures;
+	private double[] mMetricScore;
+	private double mCostScore;
 
 	public State() {
 		state = new HashMap<Integer, T>();
-		id = 0;
+		id = "";
+		mfeatures = new ClassicCounter<String>();
+		mMetricScore = new double[3];
+		mCostScore = 0.0;
+	}
+	
+	public void setFeatures(Counter<String> featrues) {
+		mfeatures = featrues;
+	}
+	
+	public Counter<String> getFeatures() {
+		return mfeatures;
 	}
 	
 	public void add(Integer i, T element) {
@@ -40,12 +57,28 @@ public class State<T> implements Serializable {
 		return state;
 	}
 	
-	public void setID(int val) {
+	public void setID(String val) {
 		this.id = val;
 	}
 	
-	public int getID() {
+	public String getID() {
 		return this.id;
+	}
+	
+	public void setScore(double[] score) {
+		mMetricScore = score;
+	}
+	
+	public double[] getScore() {
+		return mMetricScore;
+	}
+	
+	public void setCostScore(double score) {
+		mCostScore = score;
+	}
+	
+	public double getCostScore() {
+		return mCostScore;
 	}
 	
 	// This one needs to be take cared
@@ -78,6 +111,5 @@ public class State<T> implements Serializable {
 		
 		return sb.toString().trim();
 	}
-	
 	
 }

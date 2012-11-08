@@ -4,7 +4,7 @@ import edu.oregonstate.cluster.Cluster;
 import edu.oregonstate.cluster.experiment.DissimilarityMeasure;
 import edu.oregonstate.cluster.experiment.EecbDissimilarityMeasure;
 import Jama.Matrix;
-import edu.oregonstate.data.Document;
+import edu.oregonstate.data.EecbClusterDocument;
 /**
  * average link or group average
  * <b>Formula</b>
@@ -23,8 +23,8 @@ public class AverageLinkage implements AgglomerationMethod {
 		int n1 = c1.getDocuments().size();
 		int n2 = c2.getDocuments().size();
 		
-		for (Document d1 : c1.getDocuments()) {
-			for (Document d2 : c2.getDocuments()) {
+		for (EecbClusterDocument d1 : c1.getDocuments()) {
+			for (EecbClusterDocument d2 : c2.getDocuments()) {
 				Matrix m1 = d1.vector;
 				Matrix m2 = d2.vector;
 				dissimilarity += 1 - meausre.cosineSimilarity(m1, m2);

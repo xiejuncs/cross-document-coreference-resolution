@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import edu.oregonstate.data.SrlAnnotation;
+import edu.oregonstate.data.EecbSrlAnnotation;
 import edu.oregonstate.featureExtractor.SemanticOutputInterface.Node;
 import edu.stanford.nlp.dcoref.Mention;
 
@@ -126,7 +126,7 @@ public class SRLExtraction {
         }
     }
     
-    public Mention find(int headPosition, List<SrlAnnotation> tokens) {
+    public Mention find(int headPosition, List<EecbSrlAnnotation> tokens) {
     	Mention span = new Mention();
 		int startIndex = 0;
 		int endIndex = 0;
@@ -141,7 +141,7 @@ public class SRLExtraction {
 	}
     
     public Map<Mention, Map<String, Mention>> extractExtent(List<List<String>> sentence) {
-    	List<SrlAnnotation> annotations = new ArrayList<SrlAnnotation>();
+    	List<EecbSrlAnnotation> annotations = new ArrayList<EecbSrlAnnotation>();
 		for (int i = 0; i < sentence.size(); i++) {
 			List<String> data = sentence.get(i);
 			
@@ -158,14 +158,14 @@ public class SRLExtraction {
 				pos = Integer.parseInt(position) - 1;
 			}
 			
-			SrlAnnotation anno = new SrlAnnotation(id, token, predicate, pos, start, end);
+			EecbSrlAnnotation anno = new EecbSrlAnnotation(id, token, predicate, pos, start, end);
 			annotations.add(anno);
 		}
 		
 		/** find how many predicates annotated by the semantic role labeling software*/
 		List<Integer> predicates = new ArrayList<Integer>();
 		for (int i = 0; i < annotations.size(); i++) {
-			SrlAnnotation annotation = annotations.get(i);
+			EecbSrlAnnotation annotation = annotations.get(i);
 			String pred = annotation.getPredicate();
 			if (pred.equals("_"))	continue;
 			predicates.add(i);
@@ -214,7 +214,7 @@ public class SRLExtraction {
 		
 		Map<Mention, Map<String, Mention>> semanticRoles = new HashMap<Mention, Map<String,Mention>>();
 		for (Integer index : arguments.keySet()) {
-			SrlAnnotation annotation = annotations.get(index);
+			EecbSrlAnnotation annotation = annotations.get(index);
 			Mention anno = new Mention();
 			anno.startIndex = annotation.getStartOffset();
 			anno.endIndex = annotation.getEndOffset();

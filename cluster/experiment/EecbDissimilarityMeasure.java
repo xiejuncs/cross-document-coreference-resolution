@@ -3,7 +3,7 @@ package edu.oregonstate.cluster.experiment;
 import java.util.List;
 
 import Jama.Matrix;
-import edu.oregonstate.data.Document;
+import edu.oregonstate.data.EecbClusterDocument;
 
 /**
  * Jun Xie(xiejuncs@gmail.com)
@@ -13,7 +13,7 @@ public class EecbDissimilarityMeasure implements DissimilarityMeasure {
 	/**
 	 * how to calculate the dis similarity function
 	 */
-	public double computeDissimilarity(List<Document> vectors, int observation1, int observation2) {
+	public double computeDissimilarity(List<EecbClusterDocument> vectors, int observation1, int observation2) {
 		double similarity = 0.0;
 		Matrix obs1 = vectors.get(observation1).vector;
 		Matrix obs2 = vectors.get(observation2).vector;

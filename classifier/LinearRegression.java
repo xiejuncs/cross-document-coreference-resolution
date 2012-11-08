@@ -49,7 +49,8 @@ public class LinearRegression {
 				}
 				data_array.add(data);
 			}
-
+			
+			reader.close();
 			if (data_array.size() > 0) {
 				int cols = data_array.get(0).length;
 				int rows = data_array.size();

@@ -2,7 +2,7 @@ package edu.oregonstate.cluster.experiment;
 
 import java.util.List;
 import Jama.Matrix;
-import edu.oregonstate.data.Document;
+import edu.oregonstate.data.EecbClusterDocument;
 
 /**
  * Computes the dissimilarity between two observations in an experiment.
@@ -11,7 +11,7 @@ import edu.oregonstate.data.Document;
  */
 public interface DissimilarityMeasure {
 
-    public double computeDissimilarity(List<Document> vectors, int observation1, int observation2);
+    public double computeDissimilarity(List<EecbClusterDocument> vectors, int observation1, int observation2);
 
     public double cosineSimilarity(Matrix obs1, Matrix obs2);
 }

@@ -54,7 +54,7 @@ public class CosineSimilarity {
 	/**
 	 * calculate the norm of one feature vector
 	 * 
-	 * @param feature feature of one cluster
+	 * @param feature of one cluster
 	 * @return
 	 */
 	public static Double calculateNorm(HashMap<String, Double> feature) {

@@ -10,7 +10,7 @@ import net.didion.jwnl.JWNL;
 import edu.oregonstate.featureExtractor.WordSimilarity;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.score.ScorerCEAF;
-import edu.oregonstate.util.Constants;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.ScorerBCubed;
@@ -43,7 +43,7 @@ public class EventCoreferencePipeline {
 	public void configureJWordNet() {
 		try {
 			System.out.println("begin configure WORDNET");
-			JWNL.initialize(new FileInputStream(Constants.WORD_NET_CONFIGURATION_PATH));
+			JWNL.initialize(new FileInputStream(EecbConstants.WORD_NET_CONFIGURATION_PATH));
 			System.out.println("finish configure WORDNET");
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -88,7 +88,7 @@ public class EventCoreferencePipeline {
 	}
 	
 	public static void configureWordSimilarity() {
-		WordSimilarity wordSimilarity = new WordSimilarity(Constants.WORD_SIMILARITY_PATH);
+		WordSimilarity wordSimilarity = new WordSimilarity(EecbConstants.WORD_SIMILARITY_PATH);
 		wordSimilarity.initialize();
 		datas = wordSimilarity.datas;
 	}
@@ -107,7 +107,7 @@ public class EventCoreferencePipeline {
 		String[] parameters = {"50-1"};
 		
 	    //ResultOutput.deleteResult(Constants.RESULT_PATH);  // delete the intermediate results
-	    String[] topics = ResultOutput.getTopics(Constants.WHOLE_CORPUS_PATH);
+	    String[] topics = ResultOutput.getTopics(EecbConstants.WHOLE_CORPUS_PATH);
 	    
 	    // Execute how many experiments
 	    for (String parameter : parameters) {

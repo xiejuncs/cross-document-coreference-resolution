@@ -1,5 +1,11 @@
 package edu.oregonstate.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import edu.stanford.nlp.dcoref.CorefScorer;
+import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
+
 /** 
  * Define the global constant in this class:
  * global constant can be file path
@@ -41,11 +47,29 @@ public class SystemOptions {
 	/** do post process */
 	public boolean POST_PROCESS;
 	
-	/** whether to incorporate the SRL result */
-	public boolean SRL_RESULT;
+	/** whether to incorporate the SRL result across the topic */
+	public boolean TOPIC_SRL_RESULT;
+	
+	/** whether to incorporate the SRL result just within the document */
+	public boolean DOCUMENT_SRL_RESULT;
 	
 	/** EecbTopic documentSentence Null case */
 	public boolean ENABLE_NULL;
+	
+	/** output text to SRL software */
+	public boolean OUTPUTTEXT;
+	
+	/** 
+	 * Right now, we have four cases to run
+	 * 1: STANFORDEXPERIMENT
+	 * 2: DIRECTCROSS
+	 * 3: JOINTWITHINCROSS
+	 * 4: WITHINCROSS
+	 */
+	public int EXPERIMENTN;
+
+	public List<ScoreType> scoreTypes;
+	
 	
 	/**
 	 * configuration of the experiments
@@ -54,8 +78,8 @@ public class SystemOptions {
 		// TODO
 		DEBUG = true;
 		FULL_SIEVE = false;
-		REPLICATE_STANFORD_EXPERIMENT = false;
-		WITHIN_COREFERNECE_RESOLUTION = true;
+		REPLICATE_STANFORD_EXPERIMENT = true;
+		WITHIN_COREFERNECE_RESOLUTION = false;
 		BEAM_SEARCH = true;
 		GOLD_ONLY = true;
 		ALIGN_PREDICTED_GOLD = false;
@@ -63,7 +87,15 @@ public class SystemOptions {
 		ALIGN_PREDICTED_GOLD_PARTIAL = false;
 		RESTRICTED = false;
 		POST_PROCESS = false;
-		SRL_RESULT = false;
+		TOPIC_SRL_RESULT = false;
+		DOCUMENT_SRL_RESULT = false;
 		ENABLE_NULL = false;
+		OUTPUTTEXT = false;
+		EXPERIMENTN = 4;
+		scoreTypes = new ArrayList<CorefScorer.ScoreType>();
+		scoreTypes.add(ScoreType.Pairwise);
+		//scoreTypes.add(ScoreType.BCubed);
+		//scoreTypes.add(ScoreType.MUC);
+		//scoreTypes.add(ScoreType.CEAF);
 	}
 }

@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Queue;
 import java.util.Set;
 
-import edu.oregonstate.data.SrlAnnotation;
+import edu.oregonstate.data.EecbSrlAnnotation;
 
 /**
  * Interface for Semantic parsing: PropBank--NomBank frames output.
@@ -129,8 +129,8 @@ public class SemanticOutputInterface {
      * @param tokens
      * @return
      */
-	public List<SrlAnnotation> find(int headPosition, List<SrlAnnotation> tokens) {
-		List<SrlAnnotation> span = new ArrayList<SrlAnnotation>();
+	public List<EecbSrlAnnotation> find(int headPosition, List<EecbSrlAnnotation> tokens) {
+		List<EecbSrlAnnotation> span = new ArrayList<EecbSrlAnnotation>();
 		int startIndex = 0;
 		int endIndex = 0;
 		List<Integer> spans = new ArrayList<Integer>();
@@ -157,9 +157,9 @@ public class SemanticOutputInterface {
 	 * @param sentence List<List<String>> 
 	 * @return return the argument extents (mainly A0 and A1) of verbs or nouns in this sentence
 	 */
-	public Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> extractExtent(List<List<String>> sentence) {
+	public Map<EecbSrlAnnotation, Map<String, List<EecbSrlAnnotation>>> extractExtent(List<List<String>> sentence) {
 		// Get all tokens of the sentence
-		List<SrlAnnotation> annotations = new ArrayList<SrlAnnotation>();
+		List<EecbSrlAnnotation> annotations = new ArrayList<EecbSrlAnnotation>();
 		int offset = 0;
 		for (int i = 0; i < sentence.size(); i++) {
 			List<String> data = sentence.get(i);
@@ -178,7 +178,7 @@ public class SemanticOutputInterface {
 				pos = Integer.parseInt(position) - 1;
 			}
 			
-			SrlAnnotation anno = new SrlAnnotation(id, token, predicate, pos, start, end);
+			EecbSrlAnnotation anno = new EecbSrlAnnotation(id, token, predicate, pos, start, end);
 			offset = end;	// increment the offset
 			annotations.add(anno);
 		}
@@ -188,7 +188,7 @@ public class SemanticOutputInterface {
 		/** find how many predicates annotated by the semantic role labeling software*/
 		List<Integer> predicates = new ArrayList<Integer>();
 		for (int i = 0; i < annotations.size(); i++) {
-			SrlAnnotation annotation = annotations.get(i);
+			EecbSrlAnnotation annotation = annotations.get(i);
 			String pred = annotation.getPredicate();
 			if (pred.equals("_"))	continue;
 			predicates.add(i);
@@ -236,15 +236,15 @@ public class SemanticOutputInterface {
 		}
 		
 		// find the extent for each arguments of each predicates
-		Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> semanticRoles = new HashMap<SrlAnnotation, Map<String,List<SrlAnnotation>>>();
+		Map<EecbSrlAnnotation, Map<String, List<EecbSrlAnnotation>>> semanticRoles = new HashMap<EecbSrlAnnotation, Map<String,List<EecbSrlAnnotation>>>();
 		for (Integer index : arguments.keySet()) {
-			SrlAnnotation annotation = annotations.get(index);
+			EecbSrlAnnotation annotation = annotations.get(index);
 			String word = annotation.getText();
 			Map<String, Integer> roles = arguments.get(index);
-			Map<String, List<SrlAnnotation>> semRoles = new HashMap<String, List<SrlAnnotation>>();
+			Map<String, List<EecbSrlAnnotation>> semRoles = new HashMap<String, List<EecbSrlAnnotation>>();
 			for (String role : roles.keySet()) {
 				int headPosition = roles.get(role);
-				List<SrlAnnotation> span = find(headPosition, annotations);
+				List<EecbSrlAnnotation> span = find(headPosition, annotations);
 				// find its yield according to headsPosition
 				semRoles.put(role, span);
 			}
@@ -287,11 +287,11 @@ public class SemanticOutputInterface {
 		 semantic.setDocument(semantic.read(file));
 		 Map<Integer, List<List<String>>> doc = semantic.getDocument();
 		 
-		 Map<Integer, Map<SrlAnnotation, Map<String, List<SrlAnnotation>>>> extentsWithArgumentRoles = new HashMap<Integer, Map<SrlAnnotation,Map<String,List<SrlAnnotation>>>>();
+		 Map<Integer, Map<EecbSrlAnnotation, Map<String, List<EecbSrlAnnotation>>>> extentsWithArgumentRoles = new HashMap<Integer, Map<EecbSrlAnnotation,Map<String,List<EecbSrlAnnotation>>>>();
 		 Map<Integer, List<String>> sentenceidToSentence = new HashMap<Integer, List<String>>();
 		 for (Integer id : doc.keySet()) {
 			 List<List<String>> sentence = doc.get(id);
-			 Map<SrlAnnotation, Map<String, List<SrlAnnotation>>> extentWithArgumentRoles = semantic.extractExtent(sentence);
+			 Map<EecbSrlAnnotation, Map<String, List<EecbSrlAnnotation>>> extentWithArgumentRoles = semantic.extractExtent(sentence);
 			 if (extentWithArgumentRoles.size() == 0) continue;
 			 List<String> tokens = new ArrayList<String>();
 			 for (List<String> data : sentence) {

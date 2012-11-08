@@ -3,8 +3,10 @@ package edu.oregonstate;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.io.EECBMentionExtractor;
 import edu.oregonstate.io.EmentionExtractor;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Document;
@@ -39,9 +41,9 @@ public class CorefSystem {
 		//The configuration for EECB corpus, 
 		props = new Properties();
 		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-		props.put("dcoref.eecb", CDCR.corpusPath);
+		props.put("dcoref.eecb", ExperimentConstructor.getParameter(EecbConstants.DATASET, "corpusPath"));
 		props.put("dcoref.score", "true");
-		props.put("dcoref.sievePasses", sieve);
+		props.put("dcoref.sievePasses", ExperimentConstructor.getParameter(EecbConstants.DATASET, "sieve"));
 	}
 	
 	protected void setCorefSystem() {

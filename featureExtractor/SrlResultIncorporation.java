@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import edu.oregonstate.data.SrlAnnotation;
+import edu.oregonstate.data.EecbSrlAnnotation;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.dcoref.RuleBasedCorefMentionFinder;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -161,8 +161,72 @@ public class SrlResultIncorporation {
 		}
 	}
 	
-
+	// add the closest left and right mentions into the srl incorporation
+	// we have added the left and right mentions before
 	public void alignSRL(List<List<Mention>> allPredictedMentions) {
+		matchSenten(allPredictedMentions);
+		
+		for (int i = 0; i < allPredictedMentions.size(); i++) {
+			int sentenceID = i;
+			boolean contains = matchResult.containsKey(sentenceID);
+			if (!contains) continue;
+			int correspondingID = matchResult.get(sentenceID);
+			Map<Mention, Map<String, Mention>> srlResult = extentsWithArgumentRoles.get(correspondingID);
+			for (Mention predicate : srlResult.keySet()) {
+				int predicateStart = predicate.startIndex;
+				int predicateEnd = predicate.endIndex;
+				for (Mention mention : allPredictedMentions.get(i)) {
+					boolean matched = false;
+					int start = mention.startIndex;
+					int end = mention.endIndex;
+					
+					if ((predicateStart == start) || (predicateEnd == end)) {
+						Map<String, Mention> arguments = srlResult.get(predicate);
+						if (arguments.size() == 0) continue;
+						
+						for (String argKey : arguments.keySet()) {
+							Mention argument = arguments.get(argKey);
+							
+							// match the id
+							int argumentStart = argument.startIndex;
+							int argumentEnd = argument.endIndex;
+							for (int k = 0; k < allPredictedMentions.get(i).size(); k++) {
+								Mention mentionMatch = allPredictedMentions.get(i).get(k);
+								int mentionMatchStart = mentionMatch.startIndex;
+								int mentionMatchEnd = mentionMatch.endIndex;
+								
+								// it is very tricky here, I need to experiment for a while
+								// if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd))
+								if (!argKey.equals("AM-LOC")) {
+								if ((argumentStart == mentionMatchStart) && (mentionMatchEnd == argumentEnd)) {
+									mention.setArgument(argKey, mentionMatch);
+									mentionMatch.setPredicte(mention);
+									mentionMatch.SRLrole = argKey;
+									matched = true;
+									break;
+								}} else {
+									if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd)) {
+										mention.setArgument(argKey, mentionMatch);
+										mentionMatch.setPredicte(mention);
+										mentionMatch.SRLrole = argKey;
+										matched = true;
+										break;
+								}
+							}
+						}
+						// do not need to go through all the documents, just once
+						break;
+					}
+				}
+					if (matched) break;
+					
+				}
+			}
+		}
+	}
+	
+
+	public void alignSRL2(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 		
 		// iterate e

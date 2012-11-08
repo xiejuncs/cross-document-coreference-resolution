@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import edu.oregonstate.CDCR;
 import edu.oregonstate.io.EmentionExtractor.EntityComparator;
 import edu.oregonstate.io.EmentionExtractor.EventComparator;
-import edu.oregonstate.util.Constants;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
@@ -98,8 +98,8 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 		        	List<Mention> sentence = new ArrayList<Mention>();
 		        	for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
 		        		Mention mention = allGoldMentions.get(i).get(j);
-		        		ResultOutput.serialize(mention, mention.mentionID, Constants.RESULT_PATH);
-		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", Constants.RESULT_PATH, true);
+		        		ResultOutput.serialize(mention, mention.mentionID, EecbConstants.RESULT_PATH);
+		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", EecbConstants.RESULT_PATH, true);
 		        		copyMention.goldCorefClusterID = -1;
 		        		sentence.add(copyMention);
 		        	}

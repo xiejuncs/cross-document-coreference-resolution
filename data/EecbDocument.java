@@ -15,6 +15,9 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import edu.oregonstate.CDCR;
+import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.io.ResultOutput;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -377,7 +380,7 @@ public class EecbDocument extends EecbElement {
 				
 				String[] paras = mID.split("-");
 				String file = paras[1];
-				String filename = CDCR.corpusPath + paras[0] + File.separator + paras[1] + ".eecb";
+				String filename = ExperimentConstructor.getParameter(EecbConstants.DATASET, "corpusPath") + paras[0] + File.separator + paras[1] + ".eecb";
 				BufferedReader br = new BufferedReader(new FileReader(filename));
 				int i = 0;
 				// filename : 1.eecb
@@ -404,6 +407,10 @@ public class EecbDocument extends EecbElement {
 	        }
 	        mRawText = sb.toString().trim();
 	        nRawText = nsb.toString().trim();
+	        
+	        if (CDCR.outputText){
+	        	ResultOutput.writeTextFile(EecbConstants.ADJACENT_INTERMEDIATE_RESULT_PATH + "/" + mPrefix, nRawText);
+	        }
 		}
 		
 		public void parseDocument(){
@@ -535,7 +542,7 @@ public class EecbDocument extends EecbElement {
 		
 		public static HashMap<String, ArrayList<String>> readAnnotation() {
 			HashMap<String, ArrayList<String>> annotation = new HashMap<String, ArrayList<String>>();
-			String mentionPath = CDCR.annotationPath;    // mentions.txt path
+			String mentionPath = (String) ExperimentConstructor.getParameter(EecbConstants.DATASET, "annotationPath");    // mentions.txt path
 			
 			try {
 				BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(mentionPath));

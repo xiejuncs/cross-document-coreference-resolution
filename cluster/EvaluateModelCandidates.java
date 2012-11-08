@@ -146,8 +146,8 @@ public class EvaluateModelCandidates {
 		Matrix metaCentroid = new Matrix(termSize, 1);
 		int n = 0;
 		for (Cluster cluster : subModel) {
-			List<Document> documents = cluster.getDocuments();
-			for(Document document : documents) {
+			List<EecbClusterDocument> documents = cluster.getDocuments();
+			for(EecbClusterDocument document : documents) {
 				metaCentroid = metaCentroid.plus(document.vector);
 			}
 			n = n + documents.size();
@@ -162,11 +162,11 @@ public class EvaluateModelCandidates {
 		double W = 0.0;
 		for (Cluster cluster : subModel) {
 			Matrix centroid = new Matrix(termSize, 1);
-			List<Document> documents = cluster.getDocuments();
-			for (Document document : documents) {
+			List<EecbClusterDocument> documents = cluster.getDocuments();
+			for (EecbClusterDocument document : documents) {
 				centroid = centroid.plus(document.vector);
 			}
-			for (Document document : documents) {
+			for (EecbClusterDocument document : documents) {
 				W += Math.pow(1 - measure.cosineSimilarity(centroid, document.vector), 2);
 			}
 		}
@@ -177,8 +177,8 @@ public class EvaluateModelCandidates {
 		double B = 0.0;
 		for (Cluster cluster : subModel) {
 			Matrix centroid = new Matrix(termSize, 1);
-			List<Document> documents = cluster.getDocuments();
-			for (Document document : documents) {
+			List<EecbClusterDocument> documents = cluster.getDocuments();
+			for (EecbClusterDocument document : documents) {
 				centroid = centroid.plus(document.vector);
 			}
 			B += documents.size() * Math.pow(1 - measure.cosineSimilarity(centroid, metaCentroid), 2);

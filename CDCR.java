@@ -12,21 +12,18 @@ import net.didion.jwnl.JWNL;
 import edu.oregonstate.featureExtractor.WordSimilarity;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.score.ScorerCEAF;
-import edu.oregonstate.search.BestBeamSearch;
+import edu.oregonstate.score.ScorerHelper;
 import edu.oregonstate.search.IterativeResolution;
 import edu.oregonstate.search.JointCoreferenceResolution;
 import edu.oregonstate.training.Train;
 import edu.oregonstate.training.TrainHeuristicFunction;
+import edu.oregonstate.training.TrainHybridCase;
 import edu.oregonstate.training.TrainSingleDocumentHeuristicFunction;
-import edu.oregonstate.util.Constants;
+import edu.oregonstate.util.DocumentMerge;
+import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.SystemOptions;
-import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.ScorerBCubed;
-import edu.stanford.nlp.dcoref.ScorerMUC;
-import edu.stanford.nlp.dcoref.ScorerPairwise;
-import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
+import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 
 /**
@@ -44,15 +41,15 @@ import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
  */
 public class CDCR {
 
-	public static final Logger logger = Logger.getLogger(CDCR.class.getName());
+	private static final Logger logger = Logger.getLogger(CDCR.class.getName());
 	
 	/** Path for the corpus */
 	public static String corpusPath;
 	
-	/** File name for output */
+	/** File name for output: CROSS-RESULT */
 	public static String outputFileName;
 	
-	/** Path for the annotation file*/
+	/** Path for the annotation file */
 	public static String annotationPath;
 	
 	/** Sieve Configuration */
@@ -76,7 +73,7 @@ public class CDCR {
 	/** Align the predicted mentions and gold mentions by making the gold mentions and gold mentions having the equal mentions */
 	public static boolean alignPredictedGoldEqual;
 	
-	/** Aligh the predicted mentions and gold mentions by putting spurious predicted mentions as singleton clusters in gold clusters */
+	/** Align the predicted mentions and gold mentions by putting spurious predicted mentions as singleton clusters in gold clusters */
 	public static boolean alignPredictedGoldPartial;
 	
 	/** the configuration file for WORDNET */
@@ -104,10 +101,21 @@ public class CDCR {
 	public static boolean postProcess;
 	
 	/** whether to incorporate the SRL result */
-	public static boolean incorporateSRLResult;
+	public static boolean incorporateTopicSRLResult;
+	
+	/** whether to incorporate the document srl result */
+	public static boolean incorporateDocumentSRLResult;
 	
 	/** EecbTopic documentSentence Null case */
 	public static boolean enableNull;
+	
+	/** which experiment */
+	private int experiment;
+	
+	/** output text to SRL software */
+	public static boolean outputText;
+	
+	public static List<ScoreType> scoreTypes;
 	
 	public CDCR() {
 		SystemOptions option = new SystemOptions();
@@ -116,36 +124,39 @@ public class CDCR {
 		//
 		// set the path for different knowledge sources
 		//
-		wordnetConfigurationPath = Constants.WORD_NET_CONFIGURATION_PATH;
-		resultPath = Constants.RESULT_PATH;
-		srlPath = Constants.TOKENS_OUTPUT_PATH;
-		wordSimilarityPath = Constants.WORD_SIMILARITY_PATH;
+		wordnetConfigurationPath = EecbConstants.WORD_NET_CONFIGURATION_PATH;
+		resultPath = EecbConstants.RESULT_PATH;
+		srlPath = EecbConstants.TOKENS_OUTPUT_PATH;
+		wordSimilarityPath = EecbConstants.WORD_SIMILARITY_PATH;
 		enableNull = option.ENABLE_NULL;
+		outputText = option.OUTPUTTEXT;
+		experiment = option.EXPERIMENTN;
+		scoreTypes = option.scoreTypes;
 		
 		//
 		// set outputFileName
 		//
-		outputFileName = Constants.TEMPORY_RESULT_PATH + Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+		outputFileName = EecbConstants.TEMPORY_RESULT_PATH + Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		ResultOutput.writeTextFile(outputFileName, Calendar.getInstance().getTime().toString().replaceAll("\\s", "-"));
 	    
 		//
 		// set corpusPath and annotationPath
 		//
 		if (option.DEBUG) {
-			corpusPath = Constants.DEBUG_CORPUS_PATH;
-			annotationPath = Constants.DEBUG_MENTION_ANNOTATION_PATH;
+			corpusPath = EecbConstants.DEBUG_CORPUS_PATH;
+			annotationPath = EecbConstants.DEBUG_MENTION_ANNOTATION_PATH;
 		} else {
-			corpusPath = Constants.WHOLE_CORPUS_PATH;
-			annotationPath = Constants.WHOLE_MENTION_ANNOTATION_PATH;
+			corpusPath = EecbConstants.WHOLE_CORPUS_PATH;
+			annotationPath = EecbConstants.WHOLE_MENTION_ANNOTATION_PATH;
 		}
 		
 		//
 		// set sieve
 		//
 		if (option.FULL_SIEVE) {
-			sieve = Constants.FULL_SIEVE_STRING;
+			sieve = EecbConstants.FULL_SIEVE_STRING;
 		} else {
-			sieve = Constants.PARTIAL_SIEVE_STRING;
+			sieve = EecbConstants.PARTIAL_SIEVE_STRING;
 		}
 		
 		//
@@ -202,48 +213,18 @@ public class CDCR {
 		postProcess = option.POST_PROCESS;
 		
 		//
-		//whether to incorporate the SRL result
+		//whether to incorporate the Topic SRL result
 		//
-		incorporateSRLResult = option.SRL_RESULT;
+		incorporateTopicSRLResult = option.TOPIC_SRL_RESULT;
+		
+		//
+		// whether to incorporate the document SRL result
+		//JWNL.initialize(new FileInputStream(wordnetConfigurationPath));
+		incorporateDocumentSRLResult = option.DOCUMENT_SRL_RESULT;
+		
 	}
 	
-	public void addCorefCluster(Document document) {
-		  for(Integer id : document.corefClusters.keySet()) {
-			  corpus.addCorefCluster(id, document.corefClusters.get(id));
-		  }
-	}
-	
-	public void addGoldCorefCluster(Document document) {
-		for (Integer id : document.goldCorefClusters.keySet()) {
-			corpus.addGoldCorefCluster(id, document.goldCorefClusters.get(id));
-		}
-	}
-	
-	public void addPredictedMention(Document document) {
-		for (Integer id : document.allPredictedMentions.keySet()) {
-			corpus.addPredictedMention(id, document.allPredictedMentions.get(id));
-		}
-	}
-
-	public void addGoldMention(Document document) {
-		for (Integer id : document.allGoldMentions.keySet()) {
-			corpus.addGoldMention(id, document.allGoldMentions.get(id));
-		}
-	}
-	
-	/**
-	 * add four fields to the corpus
-	 * 
-	 * @param document
-	 */
-	public void add(Document document) {
-		addCorefCluster(document);
-		addGoldCorefCluster(document);
-		addPredictedMention(document);
-		addGoldMention(document);
-	}
-	
-	/** configurate the WORDNET */
+	/** configure the WORDNET */
 	public void configureJWordNet() {
 		try {
 			System.out.println("begin configure WORDNET");
@@ -269,160 +250,157 @@ public class CDCR {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		CDCR cdcr = new CDCR();
 		//ResultOutput.deleteResult(resultPath);
+		CDCR cdcr = new CDCR();
 		ResultOutput.writeTextFile(CDCR.outputFileName, "Start..........................");
 		ResultOutput.writeTextFile(CDCR.outputFileName, "\n\n");
+		ResultOutput.printTime();
 		
+		String[] parameters = {"100-2"};
 		String[] topics = ResultOutput.getTopics(corpusPath);
-		/** whether replicate the Stanford experiment or conduct my own experiment*/
-		if (replicateStanford) {
-			ResultOutput.writeTextFile(CDCR.outputFileName, "Replicate stanford experiment");
-			
-			/** train the model and print them out */
-			Train train = new Train( topics, 10, 1.0, 0.7);  // the L2 regularized linear regression configuration
-			Matrix model = new Matrix(Feature.featuresName.length + 1, 1);
-			Matrix initialmodel = train.assignInitialWeights();
-		    ResultOutput.writeTextFile(CDCR.outputFileName, ResultOutput.printModel(initialmodel, Feature.featuresName));
-		    model = train.train(initialmodel);
-		    ResultOutput.writeTextFile(CDCR.outputFileName, ResultOutput.printModel(model, Feature.featuresName));
-		    
-			for (String topic : topics) {
-				//TODO
-				// replicate the Stanford experiment
-				ResultOutput.writeTextFile(CDCR.outputFileName, "begin to process topic" + topic + "................");
-				CorefSystem cs = new CorefSystem();
-				try {
-					Document topicDocument = cs.getDocument(topic);
-					cs.corefSystem.coref(topicDocument);
-					
-					// iterative event/entity co-reference
-			    	// flag variable : linearregression, if true, then do replicate the Stanford's experiment,
-			    	// if not, then learn a heuristic function
-			    	IterativeResolution ir = new JointCoreferenceResolution(topicDocument, cs.corefSystem.dictionaries(), model);
-			    	ir.merge(cs.corefSystem.dictionaries());
-
-				    // pronoun sieves
-				    DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-				    cs.corefSystem.coreference(topicDocument, pronounSieve);
-				    
-				    // add the four fields into the corpus data structure
-				    cdcr.add(topicDocument);
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-				
-				ResultOutput.writeTextFile(CDCR.outputFileName, "end to process topic" + topic + "................");
-			}
-			cdcr.printScore(cdcr.corpus);
-			
-			ResultOutput.writeTextFile(CDCR.outputFileName, "Finish the processing, next state is to evaluation");
-		} else {
-			ResultOutput.writeTextFile(CDCR.outputFileName, "Search guided by the loss function begin.................");
-			String[] parameters = {"30-1"};
-			for (String parameter : parameters) {
-				ResultOutput.writeTextFile(outputFileName, "Configuration parameters :" + parameter);
-		    	String[] paras = parameter.split("-");
-		    	String noOfIteration = paras[0];
-		    	String width = paras[1];
-		    	
-				if (doWithinCoreference) {
-					//TODO
-					// within case 
-					ResultOutput.writeTextFile(CDCR.outputFileName, "do within coreference first, and then cross coreference.....");
-					/** train the model, the model is too big, so I do not print them out */
-			    	ResultOutput.writeTextFile(CDCR.outputFileName, "training Phase................");
-			    	TrainSingleDocumentHeuristicFunction tsdhf = new TrainSingleDocumentHeuristicFunction(Integer.parseInt(noOfIteration), topics, Integer.parseInt(width));
-			    	Matrix model = tsdhf.train();
-					
-				} else {
-					//TODO
-					// cross case
-					ResultOutput.writeTextFile(CDCR.outputFileName, "cross coreference directly");
-				    	
-			    	/** train the model, the model is too big, so I do not print them out */
-			    	ResultOutput.writeTextFile(CDCR.outputFileName, "training Phase................");
-				    TrainHeuristicFunction thf = new TrainHeuristicFunction(Integer.parseInt(noOfIteration), topics, Integer.parseInt(width));
-				    Matrix model = thf.train();
-				    
-				    /*
-				    ResultOutput.writeTextFile(CDCR.outputFileName, "Apply the learned cost function to the coreference resolution task................");
-				    for (String topic : topics) {
-				    	ResultOutput.writeTextFile(CDCR.outputFileName, "begin to process topic" + topic + "................");
-				    	// apply high preicision sieves phase
-				    	CorefSystem cs = new CorefSystem(CDCR.sieve);
-				    	try {
-				    		Document topicDocument = cs.getDocument(topic);
-				    		cs.corefSystem.coref(topicDocument);
-				    	
-				    		// structured perceptron without bias, just set bias as 0
-				    		BestBeamSearch beamSearch = new BestBeamSearch(topicDocument, cs.corefSystem.dictionaries(), model, Integer.parseInt(width));
-				    		beamSearch.search();
-					    
-				    		// pronoun sieves
-						    DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-						    cs.corefSystem.coreference(topicDocument, pronounSieve);
-				    		
-				    		cdcr.add(topicDocument);
-				    	} catch (Exception e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
-				    	ResultOutput.writeTextFile(CDCR.outputFileName, "end to process topic" + topic + "................");
-				    }*/
-				}
-			}
-			
-			ResultOutput.writeTextFile(CDCR.outputFileName, "Search guided by the loss function end.................");
+		switch (cdcr.experiment) {
+			case 1: 
+				executeStanfordExperiment(cdcr, topics);
+				break;
+			case 2: 
+				executeCrossCoreferenceResolution(topics, parameters);
+				break;
+			case 3:
+				executeWithinCoreferenceResolution(topics, parameters);
+				break;
+			case 4:
+				executeWithinCrossCoreferenceResolution(topics);
+				break;
+			default:
+				executeStanfordExperiment(cdcr, topics);
+				break;
 		}
 
-		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
-		ResultOutput.writeTextFile(CDCR.outputFileName, "\n\n");
-		ResultOutput.writeTextFile(CDCR.outputFileName, timeStamp);
-		ResultOutput.writeTextFile(CDCR.outputFileName, "End..............................");
+		ResultOutput.printTime();
 		System.out.println("Done.........");
 	}
 	
-	/** print score of the document, whether post-processing or not */
-	public void printScore(Document document) {
-		CorefScorer score = new ScorerBCubed(BCubedType.Bconll);
-    	score.calculateScore(document);
-    	score.printF1(logger, true);
-    	
-    	CorefScorer ceafscore = new ScorerCEAF();
-    	ceafscore.calculateScore(document);
-    	ceafscore.printF1(logger, true);
+	/**
+	 * do within coreference first, do not use search to guide the within coreference resolution, 
+	 * combine the within coreference resolution result produced by the Stanford System together,
+	 * and then do cross corefernce resolution on the combined document, produce the final result
+	 * 
+	 * @param topics
+	 */
+	private static void executeWithinCrossCoreferenceResolution(String[] topics) {
+		ResultOutput.writeTextFile(CDCR.outputFileName, "do within coreference first, do not use search to guide the within coreference resolution, " +
+				"combine the within coreference resolution result produced by the Stanford System together, " +
+				"and then do cross corefernce resolution on the combined document, produce the final result ");
+		ResultOutput.writeTextFile(CDCR.outputFileName, "training Phase................");
+		ResultOutput.deleteResult(EecbConstants.TEMPORY_RESULT_PATH);
+		String[] parameters = {"300-1-10"};
+		for (String parameter : parameters) {
+			int[] paras = getParameters(parameter);
+			for(ScoreType type : scoreTypes) {
+				TrainHybridCase thc = new TrainHybridCase(paras[0], paras[2], topics, topics, paras[1], type);
+				thc.train();
 
-    	if (!postProcess) {
-    		CorefScorer mucscore = new ScorerMUC();
-    		mucscore.calculateScore(document);
-    		mucscore.printF1(logger, true);
-    	
-    		CorefScorer pairscore = new ScorerPairwise();
-    		pairscore.calculateScore(document);
-    		pairscore.printF1(logger, true);
-    		
-    		// Average of MUC, B^{3} and CEAF-\phi_{4}.
-    		double conllF1 = (score.getF1() + ceafscore.getF1() + mucscore.getF1()) / 3;
-        	ResultOutput.writeTextFile(CDCR.outputFileName, "conllF1:     " + conllF1);
-    	} else {
-    		ResultOutput.writeTextFile(CDCR.outputFileName, "do post processing");
-    		CorefSystem cs = new CorefSystem();
-        	cs.corefSystem.postProcessing(document);
-        	
-        	CorefScorer postmucscore = new ScorerMUC();
-        	postmucscore.calculateScore(document);
-        	postmucscore.printF1(logger, true);
-        	
-        	CorefScorer postpairscore = new ScorerPairwise();
-        	postpairscore.calculateScore(document);
-        	postpairscore.printF1(logger, true);
-        	
-        	// Average of MUC, B^{3} and CEAF-\phi_{4}.
-        	double conllF1 = (score.getF1() + ceafscore.getF1() + postmucscore.getF1()) / 3;
-        	ResultOutput.writeTextFile(CDCR.outputFileName, "conllF1:     " + conllF1);
-    	}
+				Matrix weight = thc.getModel();
+				System.out.println(ResultOutput.printStructredModel(weight, Feature.featuresName));
+				ResultOutput.writeTextFile(outputFileName, ResultOutput.printStructredModel(weight, Feature.featuresName));
+				//thc.test();
+			}
+		}
+	}
+	
+	/** transform the string to int array */
+	private static int[] getParameters(String parameter) {
+		ResultOutput.writeTextFile(outputFileName, "Configuration parameters :" + parameter);
+		String[] paras = parameter.split("-");
+		int maximumSearch = Integer.parseInt(paras[0]);
+		int width = Integer.parseInt(paras[1]);
+		int noOfIteration = Integer.parseInt(paras[2]);
+		int[] parameters = new int[] {maximumSearch, width, noOfIteration};
+		return parameters;
+	}
+
+	/** combine the documents together, and then do cross corefernce resolution as a whole */
+	private static void executeCrossCoreferenceResolution(String[] topics, String[] parameters) {
+		ResultOutput.writeTextFile(CDCR.outputFileName, "cross coreference directly");	
+		for (String parameter : parameters) {
+			ResultOutput.writeTextFile(outputFileName, "Configuration parameters :" + parameter);
+	    	String[] paras = parameter.split("-");
+	    	String noOfIteration = paras[0];
+	    	String width = paras[1];
+	    	ResultOutput.writeTextFile(CDCR.outputFileName, "training Phase................");
+			TrainHeuristicFunction thf = new TrainHeuristicFunction(Integer.parseInt(noOfIteration), topics, Integer.parseInt(width));
+			Matrix model = thf.train();
+		}
+	}
+
+	/** execute within search first and then combine them together to perform the cross coreference resolution as a whole */
+	private static void executeWithinCoreferenceResolution(String[] topics, String[] parameters) {
+		ResultOutput.writeTextFile(CDCR.outputFileName, "do within coreference first, and then cross coreference.....");
+		/** train the model, the model is too big, so I do not print them out */
+		ResultOutput.writeTextFile(CDCR.outputFileName, "training Phase................");
+		for (String parameter : parameters) {
+			ResultOutput.writeTextFile(outputFileName, "Configuration parameters :" + parameter);
+	    	String[] paras = parameter.split("-");
+	    	String noOfIteration = paras[0];
+	    	String width = paras[1];
+	    	TrainSingleDocumentHeuristicFunction tsdhf = new TrainSingleDocumentHeuristicFunction(Integer.parseInt(noOfIteration), topics, Integer.parseInt(width));
+	    	Matrix model = tsdhf.train();
+		}
+	}
+
+	/**
+	 * Execute Stanford's Experiment
+	 * 
+	 * @param cdcr
+	 * @param topics
+	 */
+	private static void executeStanfordExperiment(CDCR cdcr, String[] topics) {
+		ResultOutput.writeTextFile(CDCR.outputFileName, "Replicate stanford experiment");
+		
+		/** train the model and print them out */
+		Train train = new Train( topics, 10, 1.0, 0.7);  // the L2 regularized linear regression configuration
+		Matrix model = new Matrix(Feature.featuresName.length + 1, 1);
+		Matrix initialmodel = train.assignInitialWeights();
+		ResultOutput.writeTextFile(CDCR.outputFileName, ResultOutput.printModel(initialmodel, Feature.featuresName));
+		model = train.train(initialmodel);
+		ResultOutput.writeTextFile(CDCR.outputFileName, ResultOutput.printModel(model, Feature.featuresName));
+		
+		for (String topic : topics) {
+			//TODO
+			// replicate the Stanford experiment
+			ResultOutput.writeTextFile(CDCR.outputFileName, "begin to process topic" + topic + "................");
+			CorefSystem cs = new CorefSystem();
+			try {
+				Document topicDocument = cs.getDocument(topic);
+				cs.corefSystem.coref(topicDocument);
+				
+				// iterative event/entity co-reference
+		    	// flag variable : linearregression, if true, then do replicate the Stanford's experiment,
+		    	// if not, then learn a heuristic function
+		    	IterativeResolution ir = new JointCoreferenceResolution(topicDocument, cs.corefSystem.dictionaries(), model);
+		    	ir.merge(cs.corefSystem.dictionaries());
+
+			    // pronoun sieves
+			    DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
+			    cs.corefSystem.coreference(topicDocument, pronounSieve);
+			    
+			    // add the four fields into the corpus data structure
+			    DocumentMerge dm = new DocumentMerge(topicDocument, cdcr.corpus);
+			    dm.addDocument();
+			    
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			
+			ResultOutput.writeTextFile(CDCR.outputFileName, "end to process topic" + topic + "................");
+		}
+		
+		// print the score
+		ScorerHelper sh = new ScorerHelper(cdcr.corpus, logger, outputFileName, postProcess);
+		sh.printScore();
+		
+		ResultOutput.writeTextFile(CDCR.outputFileName, "Finish the processing, next state is to evaluation");
 	}
 	
 }

@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Collection;
 import java.util.Collections;
 
-import edu.oregonstate.data.Document;
+import edu.oregonstate.data.EecbClusterDocument;
 import edu.oregonstate.cluster.Cluster;
 import edu.oregonstate.cluster.agglomeration.AgglomerationMethod;
 import edu.oregonstate.cluster.experiment.DissimilarityMeasure;
@@ -24,14 +24,14 @@ import edu.oregonstate.cluster.experiment.DissimilarityMeasure;
 public class HAC {
 
 	public List<Cluster> mClusters;
-	public List<Document> mDocuments;
+	public List<EecbClusterDocument> mDocuments;
 	// interface to incorporate different dissimilarityMeasure and different agglomerationMethod
 	private DissimilarityMeasure dissimilarityMeasure;
 	private List<Cluster> mergeResult; // all dendrogram clusters
 	private AgglomerationMethod method;
 	public List<String> mergeSequence;
 	
-	public HAC(List<Document> documents, DissimilarityMeasure dissimilarityMeasure, 
+	public HAC(List<EecbClusterDocument> documents, DissimilarityMeasure dissimilarityMeasure, 
 			AgglomerationMethod agglomerationMethod) {
 		mDocuments = documents;
 		mClusters = new ArrayList<Cluster>();

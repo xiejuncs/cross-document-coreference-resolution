@@ -6,7 +6,7 @@ package edu.oregonstate.data;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class SrlAnnotation {
+public class EecbSrlAnnotation {
 	
 	/** The id. */
 	String id;
@@ -29,7 +29,7 @@ public class SrlAnnotation {
 	/**predicate*/
 	String predicate;
 
-	public SrlAnnotation(String id, String text, String predicate, int parentPosition, int start, int end) {
+	public EecbSrlAnnotation(String id, String text, String predicate, int parentPosition, int start, int end) {
 	  this.id = id;
 	  this.mText = text;
 	  this.predicate = predicate;

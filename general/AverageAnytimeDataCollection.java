@@ -1,4 +1,4 @@
-package edu.oregonstate.training;
+package edu.oregonstate.general;
 
 import java.io.BufferedReader;
 import java.io.File;

@@ -1,11 +1,9 @@
 package edu.oregonstate.util;
 
-import java.io.File;
-
-public class Constants {
+public class EecbConstants {
 
 	// the corpus for debug
-	public static final String DEBUG_CORPUS_PATH = "../corpus/EECB1.0/data/";
+	public static final String DEBUG_CORPUS_PATH = "../corpus/EECB1/data/";
 	
 	// the mention annotation for debug
 	public static final String DEBUG_MENTION_ANNOTATION_PATH = "../corpus/mentions-backup.txt";
@@ -33,10 +31,13 @@ public class Constants {
 	public static final String RESULT_PATH = "../corpus/CROSS-RESULT/";
 	
 	/** Temporary result folder in order to further analysis */
-	public static final String TEMPORY_RESULT_PATH = "../corpus/TEMPORYRESUTl/";
+	public static final String TEMPORY_RESULT_PATH = "../corpus/TEMPORYRESUT/";
 	
 	// the path for SRL result
 	public static final String TOKENS_OUTPUT_PATH = "../corpus/tokenoutput/";
+	
+	// the path for single document SRL result
+	//public static final String TOKENS_OUTPUT_PATH = "../corpus/srloutputforsingledocument/2/";
 	
 	// Partial sieve configuration
 	public static final String PARTIAL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch";
@@ -58,4 +59,18 @@ public class Constants {
 	public static final String ADJACENT_INTERMEDIATE_RESULT_PATH = "../corpus/ADJACENT-INTERMEDIATE-RESULT/";
 	
 	public static final String STOPWORD_PATH = "../corpus/english.stop";
+	
+	public static final String CLASSIFIER = "classifier";
+	
+	public static final String COSTFUNCTION = "costfunction";
+	
+	public static final String LOSSFUNCTION = "lossfunction";
+	
+	public static final String CLUSTERING = "clustering";
+	
+	public static final String SEARCHMETHOD = "searchmethod";
+	
+	public static final String DATASET = "dataset";
+	
+	public static final String SRL = "srl";
 }

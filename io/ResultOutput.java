@@ -9,10 +9,17 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 
 import edu.oregonstate.CDCR;
 import edu.oregonstate.features.Feature;
-import edu.oregonstate.util.Constants;
+import edu.oregonstate.general.FixedSizePriorityQueue;
+import edu.oregonstate.search.State;
+import edu.oregonstate.util.EecbConstants;
+import edu.stanford.nlp.dcoref.CorefCluster;
+import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.Counter;
 
 import Jama.Matrix;
@@ -70,6 +77,23 @@ public class ResultOutput {
 			sb.append(featureName[i] + " weight: " + model.get(i+1, 0) + "\n");
 		}
 		return sb.toString();
+	}
+	
+	public static String printStructredModel(Matrix model, String[] featureName) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < featureName.length; i++) {
+			sb.append(featureName[i] + " weight: " + model.get(i, 0) + "\n");
+		}
+		return sb.toString();
+	}
+	
+	/** print the JAMA matrix */
+	public static String printModel(Matrix model) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < model.getRowDimension(); i++) {
+			sb.append("weight: " + model.get(i, 0) + "\n");
+		}
+		return sb.toString().trim();
 	}
 	
 	// put features and quality together in order to create a string for output
@@ -185,4 +209,47 @@ public class ResultOutput {
        return cluster;
 	}
 	
+	/**
+	 * print the cluster information
+	 * 
+	 * @param clusters
+	 * @return
+	 */
+	public static String printCluster(Map<Integer, CorefCluster> clusters) {
+		StringBuilder sb = new StringBuilder();
+		for (Integer key : clusters.keySet()) {
+			CorefCluster cluster = clusters.get(key);
+			sb.append(Integer.toString(key) + "[ ");
+			for (Mention mention : cluster.getCorefMentions()) {
+				sb.append(mention.mentionID + " ");
+			}
+			sb.append(" ]");
+			sb.append("\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	/** print the current time in order to know the duration of the experiment */
+	public static void printTime() {
+		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+		ResultOutput.writeTextFile(CDCR.outputFileName, "\n\n");
+		ResultOutput.writeTextFile(CDCR.outputFileName, timeStamp);
+	}
+	
+	/** print the beam information, because beam is represented as priority queue, we just print the id */
+	public static String printBeam(FixedSizePriorityQueue<State<CorefCluster>> beam) {
+		List<State<CorefCluster>> elements = beam.getElements();
+		double[] priorities = beam.getPriorities();
+		
+		assert elements.size() == priorities.length;
+		StringBuilder sb = new StringBuilder();
+		sb.append("beam: \n");
+		for (int i = 0; i < elements.size(); i++) {
+			State<CorefCluster> state = elements.get(i);
+			double priority = priorities[i];
+			sb.append(priority + " " + state.toString() + "\n");
+		}
+		return sb.toString();
+	}
 }

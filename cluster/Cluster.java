@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import Jama.Matrix;
 
-import edu.oregonstate.data.Document;
+import edu.oregonstate.data.EecbClusterDocument;
 
 /**
  * cluster representation
@@ -14,20 +14,20 @@ import edu.oregonstate.data.Document;
 public class Cluster {
 
 	public int mID;
-	public List<Document> documents;
+	public List<EecbClusterDocument> documents;
 	public List<Cluster> children;
 	
 	public Cluster(int id) {
 		mID = id;
-		documents = new ArrayList<Document>();
+		documents = new ArrayList<EecbClusterDocument>();
 		children = new ArrayList<Cluster>();
 	}
 	
-	public void addDocument(Document document) {
+	public void addDocument(EecbClusterDocument document) {
 		documents.add(document);
 	}
 	
-	public void addDocuments(List<Document> docus) {
+	public void addDocuments(List<EecbClusterDocument> docus) {
 		documents.addAll(docus);
 	}
 	
@@ -35,7 +35,7 @@ public class Cluster {
 		children.addAll(child);
 	}
 	
-	public List<Document> getDocuments() {
+	public List<EecbClusterDocument> getDocuments() {
 		return documents;
 	}
 	
@@ -55,7 +55,7 @@ public class Cluster {
 	public static void mergeClusters(Cluster to, Cluster from) {
 		int toID = to.getID();
 		to.addChildren(to);
-		for (Document m : from.getDocuments()) {
+		for (EecbClusterDocument m : from.getDocuments()) {
 			to.addDocument(m);
 		}
 		to.addChildren(from);

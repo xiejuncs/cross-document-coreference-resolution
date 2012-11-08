@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import edu.oregonstate.data.Document;
+import edu.oregonstate.data.EecbClusterDocument;
 import java.util.Set;
 import Jama.Matrix;
 
@@ -21,14 +21,14 @@ public class EM {
 
 	// initial model for each algorithm
 	private List<Cluster> minitialModel;
-	private List<Document> mDocuments;  // all documents
+	private List<EecbClusterDocument> mDocuments;  // all documents
 	private List<Double> classFrequency;
 	private Map<Integer, Map<Integer, Double>> parameters;
 	private Set<String> mDictionary;
 	private List<Cluster> finalModel;
 	private List<Cluster> intermediateModel;
 	
-	public EM(List<Cluster> initialModel, List<Document> documents, Set<String> dictionary) {
+	public EM(List<Cluster> initialModel, List<EecbClusterDocument> documents, Set<String> dictionary) {
 		minitialModel = initialModel;
 		mDocuments = documents;
 		classFrequency = new ArrayList<Double>();
@@ -90,8 +90,8 @@ public class EM {
 			double frequency = (1.0 + updateModel.get(i).getDocuments().size()) / (q + n);
 			classFrequency.add(frequency);
 			Cluster cluster = updateModel.get(i);
-			List<Document> documents = cluster.getDocuments();
-			for (Document document : documents) {
+			List<EecbClusterDocument> documents = cluster.getDocuments();
+			for (EecbClusterDocument document : documents) {
 				Matrix vector = document.vector;
 				for (int k = 0; k < vector.getRowDimension(); k++) {
 					denominator += vector.get(k, 0);
@@ -103,11 +103,11 @@ public class EM {
 		for (int i = 0; i < q; i++) {
 			parameters.put(i, new HashMap<Integer, Double>());
 			Cluster cluster = updateModel.get(i);
-			List<Document> documents = cluster.getDocuments();
+			List<EecbClusterDocument> documents = cluster.getDocuments();
 			int j = 0;
 			for (String key : mDictionary) {
 				double numerator = 0.0;
-				for (Document document : documents) {
+				for (EecbClusterDocument document : documents) {
 					Matrix vector = document.vector;
 					numerator += vector.get(j, 0);
 				}
@@ -125,8 +125,8 @@ public class EM {
 		double loglikelihood = 0.0;
 		for (int i = 0; i < model.size(); i++) {
 			Cluster cluster = model.get(i);
-			List<Document> documents = cluster.getDocuments();
-			for (Document document: documents) {
+			List<EecbClusterDocument> documents = cluster.getDocuments();
+			for (EecbClusterDocument document: documents) {
 				loglikelihood += Math.log(classFrequency.get(i));
 				Matrix vector = document.vector;
 				for (int j = 0; j < vector.getRowDimension(); j++) {
@@ -153,7 +153,7 @@ public class EM {
 			updateModel.add(newcluster);
 		}
 		
-		for (Document document : mDocuments) {
+		for (EecbClusterDocument document : mDocuments) {
 			List<Double> scores = new ArrayList<Double>();
 			Matrix vector = document.vector;
 			double denominator = 0.0;
@@ -224,8 +224,8 @@ public class EM {
 			double frequency = (1.0 + minitialModel.get(i).getDocuments().size()) / (q + n);
 			classFrequency.add(frequency);
 			Cluster cluster = minitialModel.get(i);
-			List<Document> documents = cluster.getDocuments();
-			for (Document document : documents) {
+			List<EecbClusterDocument> documents = cluster.getDocuments();
+			for (EecbClusterDocument document : documents) {
 				Matrix vector = document.vector;
 				for (int k = 0; k < vector.getRowDimension(); k++) {
 					denominator += vector.get(k, 0);
@@ -237,11 +237,11 @@ public class EM {
 		for (int i = 0; i < q; i++) {
 			parameters.put(i, new HashMap<Integer, Double>());
 			Cluster cluster = minitialModel.get(i);
-			List<Document> documents = cluster.getDocuments();
+			List<EecbClusterDocument> documents = cluster.getDocuments();
 			int j = 0;
 			for (String key : mDictionary) {
 				double numerator = 0.0;
-				for (Document document : documents) {
+				for (EecbClusterDocument document : documents) {
 					Matrix vector = document.vector;
 					numerator += vector.get(j, 0);
 				}

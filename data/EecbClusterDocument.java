@@ -5,13 +5,13 @@ import Jama.Matrix;
 /**
  * Jun Xie(xiejuncs@gmail.com)
  */
-public class Document {
+public class EecbClusterDocument {
 
 	public int mID;
 	public String mPrefix;
 	public Matrix vector;
 
-	public Document(int id, Matrix vec) {
+	public EecbClusterDocument(int id, Matrix vec) {
 		mID = id;
 		vector = vec;
 	}

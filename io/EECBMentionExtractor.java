@@ -55,7 +55,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		super(dict, semantics);
 		stanfordProcessor = loadStanfordProcessor(props);
 		baseID = 1000000 * Integer.parseInt(topic);
-		topicPath = props.getProperty(edu.oregonstate.util.Constants.EECB_PROP, CDCR.corpusPath) + "/" + topic + "/";
+		topicPath = props.getProperty(edu.oregonstate.util.EecbConstants.EECB_PROP, CDCR.corpusPath) + "/" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
 		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
@@ -118,9 +118,11 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		        	List<Mention> sentence = new ArrayList<Mention>();
 		        	for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
 		        		Mention mention = allGoldMentions.get(i).get(j);
-		        		ResultOutput.serialize(mention, mention.mentionID, edu.oregonstate.util.Constants.RESULT_PATH);
-		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", edu.oregonstate.util.Constants.RESULT_PATH, true);
+		        		ResultOutput.serialize(mention, mention.mentionID, edu.oregonstate.util.EecbConstants.RESULT_PATH);
+		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", edu.oregonstate.util.EecbConstants.RESULT_PATH, true);
+		        		copyMention.goldCorefClusterID = -1;
 		        		sentence.add(copyMention);
+		        		
 		        	}
 		        	allPredictedMentions.add(sentence);
 		        }
