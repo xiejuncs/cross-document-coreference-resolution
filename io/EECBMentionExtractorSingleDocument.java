@@ -1,16 +1,10 @@
 package edu.oregonstate.io;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import edu.oregonstate.CDCR;
-import edu.oregonstate.io.EmentionExtractor.EntityComparator;
-import edu.oregonstate.io.EmentionExtractor.EventComparator;
-import edu.oregonstate.util.EecbConstants;
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
@@ -48,7 +42,8 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 		documentID = documentID.substring(0, documentID.length() - 5);
 		documentIdentifier = topic + "-" + documentID;
 		documentPath = singleDocument;
-		baseID = 1000000 * Integer.parseInt(topic);
+		baseID = 10000000 * Integer.parseInt(topic) + 100000 * Integer.parseInt(documentID);
+		goldBaseID = 10000000 * Integer.parseInt(topic);
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
 	}
@@ -91,15 +86,15 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
-		    if (CDCR.goldOnly) {
+		    if (ExperimentConstructor.goldOnly) {
 		    	// just use the gold mentions
 		        allPredictedMentions = new ArrayList<List<Mention>>();
 		        for (int i = 0; i < allGoldMentions.size(); i++) {
 		        	List<Mention> sentence = new ArrayList<Mention>();
 		        	for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
 		        		Mention mention = allGoldMentions.get(i).get(j);
-		        		ResultOutput.serialize(mention, mention.mentionID, EecbConstants.RESULT_PATH);
-		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", EecbConstants.RESULT_PATH, true);
+		        		ResultOutput.serialize(mention, mention.mentionID, ExperimentConstructor.mentionResultPath);
+		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), ExperimentConstructor.mentionResultPath, true);
 		        		copyMention.goldCorefClusterID = -1;
 		        		sentence.add(copyMention);
 		        	}

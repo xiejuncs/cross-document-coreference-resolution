@@ -22,14 +22,17 @@ import edu.stanford.nlp.pipeline.DefaultPaths;
  */
 public class CorefSystem {
 
+	/** Coreference Resolution Properties */
 	protected Properties props;
+	
 	public SieveCoreferenceSystem corefSystem;
 	protected LexicalizedParser parser;
 	
 	// use the default sieve configuration
 	public CorefSystem() {
-		this(CDCR.sieve);
+		this(EecbConstants.PARTIAL_SIEVE_STRING);
 	}
+	
 	
 	public CorefSystem(String sieve) {
 		setProperties(sieve);
@@ -40,10 +43,11 @@ public class CorefSystem {
 	protected void setProperties(String sieve) {
 		//The configuration for EECB corpus, 
 		props = new Properties();
-		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-		props.put("dcoref.eecb", ExperimentConstructor.getParameter(EecbConstants.DATASET, "corpusPath"));
-		props.put("dcoref.score", "true");
-		props.put("dcoref.sievePasses", ExperimentConstructor.getParameter(EecbConstants.DATASET, "sieve"));
+		props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+		props.setProperty("dcoref.eecb", (String) ExperimentConstructor.getParameter(EecbConstants.DATASET, "corpusPath"));
+		//TODO
+		props.setProperty("dcoref.score", "false");
+		props.setProperty("dcoref.sievePasses", (String) ExperimentConstructor.getParameter(EecbConstants.DATASET, "sieve"));
 	}
 	
 	protected void setCorefSystem() {
@@ -62,6 +66,13 @@ public class CorefSystem {
 	    return parser;
 	}
 	
+	/**
+	 * return the whole topic which consists of documents
+	 * 
+	 * @param topic
+	 * @return
+	 * @throws Exception
+	 */
 	public Document getDocument(String topic) throws Exception {
 		EmentionExtractor mentionExtractor = null;
 	    mentionExtractor = new EECBMentionExtractor(topic, parser, corefSystem.dictionaries(), props, corefSystem.semantics());

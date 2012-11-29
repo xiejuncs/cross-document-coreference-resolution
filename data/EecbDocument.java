@@ -14,7 +14,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import edu.oregonstate.CDCR;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.EecbConstants;
@@ -87,7 +86,7 @@ public class EecbDocument extends EecbElement {
 		String[] paras = id.split("-");
 		String topic = paras[0];
 		String document = paras[1];
-		baseID = 1000000 * Integer.parseInt(topic) + 10000 * Integer.parseInt(document);
+		baseID = 10000000 * Integer.parseInt(topic) + 100000 * Integer.parseInt(document);
 		
 		mEntities = new HashMap<String, EecbEntity>();
 		mEntityMentions = new HashMap<String, EecbEntityMention>();
@@ -408,7 +407,7 @@ public class EecbDocument extends EecbElement {
 	        mRawText = sb.toString().trim();
 	        nRawText = nsb.toString().trim();
 	        
-	        if (CDCR.outputText){
+	        if (ExperimentConstructor.outputText){
 	        	ResultOutput.writeTextFile(EecbConstants.ADJACENT_INTERMEDIATE_RESULT_PATH + "/" + mPrefix, nRawText);
 	        }
 		}

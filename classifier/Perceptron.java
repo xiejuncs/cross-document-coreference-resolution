@@ -67,14 +67,10 @@ public class Perceptron {
 			delta = delta.times(1.0/row);
 			initial_weight = initial_weight.minus(delta.times(learningRate));
 			average_weight = average_weight.plus(initial_weight);
-			i += 1;
-			System.out.println(i);
-			System.out.println(ResultOutput.printModel(initial_weight));
-			
+			i += 1;			
 		} while (delta.norm2() > meplison);
 
 		average_weight = average_weight.times(1.0/(row * i));
-		System.out.println(i);
 		if (maveragePerceptron) {
 			return average_weight;
 		} else {

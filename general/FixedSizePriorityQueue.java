@@ -239,7 +239,7 @@ public class FixedSizePriorityQueue <E> implements Iterator<E>, Serializable, Cl
 	}
 	
     public static void main(String[] args) {
-	    FixedSizePriorityQueue<String> pq = new FixedSizePriorityQueue<String>(2);
+	    FixedSizePriorityQueue<String> pq = new FixedSizePriorityQueue<String>(1);
 	    System.out.println(pq);
 	    pq.add("one",1);
 	    System.out.println(pq);
@@ -248,6 +248,8 @@ public class FixedSizePriorityQueue <E> implements Iterator<E>, Serializable, Cl
 	    pq.add("four",3);
 	    System.out.println(pq);
 	    pq.add("two",4);
+	    System.out.println(pq);
+	    pq.add("five",4);
 	    System.out.println(pq);
 	}
 }

@@ -14,7 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 import edu.oregonstate.CDCR;
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
+import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
 import edu.oregonstate.search.State;
 import edu.oregonstate.util.EecbConstants;
@@ -51,7 +53,7 @@ public class ResultOutput {
 	
 	/** get all the sub-directories under the specific directory */
 	public static String[] getTopics(String corpusPath) {
-		ResultOutput.writeTextFile(CDCR.outputFileName, corpusPath);
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, corpusPath);
 		File corpusDir = new File(corpusPath);
 		String[] directories = corpusDir.list();
 		
@@ -79,10 +81,10 @@ public class ResultOutput {
 		return sb.toString();
 	}
 	
-	public static String printStructredModel(Matrix model, String[] featureName) {
+	public static String printStructredModel(double[] model, String[] featureName) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < featureName.length; i++) {
-			sb.append(featureName[i] + " weight: " + model.get(i, 0) + "\n");
+			sb.append(featureName[i] + " weight: " + model[i] + "\n");
 		}
 		return sb.toString();
 	}
@@ -115,15 +117,22 @@ public class ResultOutput {
 	}
 	
 	// delete the intermediate result in case of wrong linear model
+	// and also delete the whole directory
 	public static void deleteResult(String directoryName) {
 		File directory = new File(directoryName);
 		File[] files = directory.listFiles();
-		if (files == null) return;
-		for (File file : files) {
-			if (!file.delete()) {
-				System.out.println("Failed to delete "+file);
+		if (files == null) {
+			return;
+		} else if (files.length > 0) {
+			for (File file : files) {
+				if (!file.delete()) {
+					System.out.println("Failed to delete "+file);
+				}
 			}
 		}
+
+		boolean delete = directory.delete();
+		assert delete == true;
 	}
 	
 	/** just delete the file according to the filePath  */
@@ -174,7 +183,7 @@ public class ResultOutput {
 	public static <T> void serialize(T object, int id, String directory) {
 		try
 	      {
-	         FileOutputStream fileOut = new FileOutputStream(directory + id +".ser");
+	         FileOutputStream fileOut = new FileOutputStream(directory + "/" + id +".ser");
 	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
 	         out.writeObject(object);
 	         out.close();
@@ -185,12 +194,24 @@ public class ResultOutput {
 	      }
 	}
 	
+	public static <T> void serialize(T object, String id, String directory) {
+		try {
+			FileOutputStream fileOut = new FileOutputStream(directory + "/" + id +".ser");
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(object);
+			out.close();
+			fileOut.close();
+		} catch (IOException i) {
+			i.printStackTrace();
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static <T> T deserialize(String fileName, String directory, boolean delete) {
 		T cluster = null;
 		try
         {
-           FileInputStream fileIn = new FileInputStream(directory + fileName);
+           FileInputStream fileIn = new FileInputStream(directory + "/" +  fileName + ".ser");
            ObjectInputStream in = new ObjectInputStream(fileIn);
            cluster = (T) in.readObject();
            in.close();
@@ -203,7 +224,7 @@ public class ResultOutput {
            System.exit(1);
        }
        if (delete) {
-    	   deleteFile(directory + fileName);
+    	   deleteFile(directory + "/" + fileName + ".ser");
        }
        
        return cluster;
@@ -233,8 +254,8 @@ public class ResultOutput {
 	/** print the current time in order to know the duration of the experiment */
 	public static void printTime() {
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
-		ResultOutput.writeTextFile(CDCR.outputFileName, "\n\n");
-		ResultOutput.writeTextFile(CDCR.outputFileName, timeStamp);
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, timeStamp);
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\n\n");
 	}
 	
 	/** print the beam information, because beam is represented as priority queue, we just print the id */

@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import Jama.Matrix;
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
+import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
@@ -21,8 +23,8 @@ import edu.stanford.nlp.stats.Counter;
  */
 public class JointCoreferenceResolution extends IterativeResolution {
 
-	public JointCoreferenceResolution(Document document, Dictionaries dictionary, Matrix model) {
-		super(document, dictionary, model);
+	public JointCoreferenceResolution(Document document, Matrix model) {
+		super(document, model);
 	}
 	
 	private void fillScore(Map<String, Double> scoreMap) {
@@ -47,7 +49,7 @@ public class JointCoreferenceResolution extends IterativeResolution {
 	 * iterative entity/event resolution
 	 */
 	@Override
-	public void merge(Dictionaries dictionary) {
+	public void merge() {
 		Map<String, Double> scoreMap = new HashMap<String, Double>();
 		fillScore(scoreMap);
 		while(scoreMap.size() > 0) {
@@ -55,7 +57,7 @@ public class JointCoreferenceResolution extends IterativeResolution {
 			String[] indexs = index.split("-");
 			CorefCluster c1 = clusters.get(Integer.parseInt(indexs[0]));
 			CorefCluster c2 = clusters.get(Integer.parseInt(indexs[1]));
-			System.out.println("another merge----" + c1.getClusterID() + "---->" + c2.getClusterID());
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "another merge----" + c1.getClusterID() + "---->" + c2.getClusterID());
 			int removeID = c1.getClusterID();
 			CorefCluster.mergeClusters(mdocument, c2, c1, mDictionary);
 			mdocument.corefClusters.remove(removeID);

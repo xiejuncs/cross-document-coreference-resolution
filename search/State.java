@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
+import edu.oregonstate.features.Feature;
 import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
 
@@ -19,11 +20,26 @@ public class State<T> implements Serializable {
 	
 	private static final long serialVersionUID = 8666265337578515592L;
 	// every state consists of a set of CorefClusters, in order to make it generic
+	
+	/** state */
 	private Map<Integer, T> state;
+	
+	/** id */
 	private String id;
+	
+	/** features */
 	private Counter<String> mfeatures;
+	
+	/** metric score, respectively F1, Precision and Recall */
 	private double[] mMetricScore;
+	
+	/** cost score */
 	private double mCostScore;
+	
+	/** score detail information, PrecisionNum, PrecisionDen, RecallNum, RecallDen, which can be used to calculate the overall performance of the algorithm */
+	private String scoreDetailInformation;
+	
+	private String featureString;
 
 	public State() {
 		state = new HashMap<Integer, T>();
@@ -31,14 +47,44 @@ public class State<T> implements Serializable {
 		mfeatures = new ClassicCounter<String>();
 		mMetricScore = new double[3];
 		mCostScore = 0.0;
+		scoreDetailInformation = "";
+	}
+	
+	public void setScoreDetailInformation(String scoreInformation) {
+		scoreDetailInformation = scoreInformation;
+	}
+	
+	public String getScoreDetailInformation() {
+		return scoreDetailInformation;
 	}
 	
 	public void setFeatures(Counter<String> featrues) {
 		mfeatures = featrues;
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("[");
+		for (int i = 0; i < Feature.featuresName.length; i++) {
+			String feature = Feature.featuresName[i];
+			double value = mfeatures.getCount(feature);
+			if (i == Feature.featuresName.length - 1) {
+				sb.append(value);
+			} else {
+				sb.append(value + ", ");
+			}
+		}
+		
+		sb.append("]");
+		
+		featureString = sb.toString().trim();
 	}
 	
 	public Counter<String> getFeatures() {
 		return mfeatures;
+	}
+	
+	public String featureString() {
+		
+		return featureString;
 	}
 	
 	public void add(Integer i, T element) {

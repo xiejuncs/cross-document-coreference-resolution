@@ -1,5 +1,5 @@
 package edu.oregonstate.cluster;
 
-public interface Clustering {
+public interface IClustering {
 
 }

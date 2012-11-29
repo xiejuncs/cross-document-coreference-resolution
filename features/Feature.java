@@ -19,8 +19,9 @@ import edu.oregonstate.featureExtractor.SimilarityVector;
 public class Feature {
 
 	// used in generating features
-	public static boolean USE_DISAGREE = false;
-	public static boolean SRL_INDICATOR = true;
+	private static boolean USE_DISAGREE = false;
+	private static boolean SRL_INDICATOR = true;
+	
 	public static String[] featuresName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
 		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
 		"SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", "SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", 

@@ -46,7 +46,7 @@ public class SRLExtraction {
 	/**
 	 * initialize the document.
 	 * <b>NOTE</b> document can be treated as a list of sentences, which consist of a bunch of words.
-	 * The key of the document hashmap structure bookkeeps the sentence id;
+	 * The key of the document hashmap structure book-keeps the sentence id;
 	 * The output of each token in one sentence can be represented as a List<String>. So each sentence is represented as a List<List<String>> structure.
 	 * 
 	 * @param path
@@ -126,8 +126,8 @@ public class SRLExtraction {
         }
     }
     
-    public Mention find(int headPosition, List<EecbSrlAnnotation> tokens) {
-    	Mention span = new Mention();
+    public EecbSrlAnnotation find(int headPosition, List<EecbSrlAnnotation> tokens) {
+    	EecbSrlAnnotation span = new EecbSrlAnnotation();
 		int startIndex = 0;
 		int endIndex = 0;
 		List<Integer> spans = new ArrayList<Integer>();
@@ -135,12 +135,17 @@ public class SRLExtraction {
 		startIndex = Collections.min(spans);
 		endIndex = Collections.max(spans);
 		assert endIndex > startIndex;
-		span.startIndex = startIndex;
-		span.endIndex = endIndex + 1;
+		span.setStartOffset(startIndex);
+		span.setEndOffset(endIndex + 1);
+		StringBuffer sb = new StringBuffer();
+		for (int i = startIndex; i < endIndex + 1; i++) {
+			sb.append(tokens.get(i).getText() + " ");
+		}
+		span.setText(sb.toString().trim());
 		return span;
 	}
     
-    public Map<Mention, Map<String, Mention>> extractExtent(List<List<String>> sentence) {
+    public Map<EecbSrlAnnotation, Map<String, EecbSrlAnnotation>> extractExtent(List<List<String>> sentence) {
     	List<EecbSrlAnnotation> annotations = new ArrayList<EecbSrlAnnotation>();
 		for (int i = 0; i < sentence.size(); i++) {
 			List<String> data = sentence.get(i);
@@ -212,22 +217,19 @@ public class SRLExtraction {
 			addEdge(outputNode.get(parent), outputNode.get(i));
 		}
 		
-		Map<Mention, Map<String, Mention>> semanticRoles = new HashMap<Mention, Map<String,Mention>>();
+		Map<EecbSrlAnnotation, Map<String, EecbSrlAnnotation>> semanticRoles = new HashMap<EecbSrlAnnotation, Map<String,EecbSrlAnnotation>>();
 		for (Integer index : arguments.keySet()) {
 			EecbSrlAnnotation annotation = annotations.get(index);
-			Mention anno = new Mention();
-			anno.startIndex = annotation.getStartOffset();
-			anno.endIndex = annotation.getEndOffset();
 			Map<String, Integer> roles = arguments.get(index);
-			Map<String, Mention> semRoles = new HashMap<String, Mention>();
+			Map<String, EecbSrlAnnotation> semRoles = new HashMap<String, EecbSrlAnnotation>();
 			for (String role : roles.keySet()) {
 				int headPosition = roles.get(role);
-				Mention span = find(headPosition, annotations);
+				EecbSrlAnnotation span = find(headPosition, annotations);
 				// find its yield according to headsPosition
 				semRoles.put(role, span);
 			}
 			
-			semanticRoles.put(anno, semRoles);
+			semanticRoles.put(annotation, semRoles);
 		}
     	
     	return semanticRoles;
@@ -260,16 +262,16 @@ public class SRLExtraction {
 	 * @param args
 	 */
 	public static void main(String[] args) {		
-		 String file = "corpus/srloutput/1.output";
+		 String file = "../corpus/tokenoutput/16.output";
 		 SRLExtraction semantic = new SRLExtraction();
 		 semantic.setDocument(semantic.read(file));
 		 Map<Integer, List<List<String>>> doc = semantic.getDocument();
 		 
-		 Map<Integer, Map<Mention, Map<String, Mention>>> extentsWithArgumentRoles = new HashMap<Integer, Map<Mention,Map<String,Mention>>>();
+		 Map<Integer, Map<EecbSrlAnnotation, Map<String, EecbSrlAnnotation>>> extentsWithArgumentRoles = new HashMap<Integer, Map<EecbSrlAnnotation,Map<String,EecbSrlAnnotation>>>();
 		 Map<Integer, List<String>> sentenceidToSentence = new HashMap<Integer, List<String>>();
 		 for (Integer id : doc.keySet()) {
 			 List<List<String>> sentence = doc.get(id);
-			 Map<Mention, Map<String, Mention>> extentWithArgumentRoles = semantic.extractExtent(sentence);
+			 Map<EecbSrlAnnotation, Map<String, EecbSrlAnnotation>> extentWithArgumentRoles = semantic.extractExtent(sentence);
 			 if (extentWithArgumentRoles.size() == 0) continue;
 			 List<String> tokens = new ArrayList<String>();
 			 for (List<String> data : sentence) {

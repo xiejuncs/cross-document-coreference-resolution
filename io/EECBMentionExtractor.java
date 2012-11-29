@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import java.util.List;
 
 import edu.oregonstate.CDCR;
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.io.EecbReader;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -111,15 +112,15 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
-		    if (CDCR.goldOnly) {
+		    if (ExperimentConstructor.goldOnly) {
 		    	// just use the gold mentions
 		        allPredictedMentions = new ArrayList<List<Mention>>();
 		        for (int i = 0; i < allGoldMentions.size(); i++) {
 		        	List<Mention> sentence = new ArrayList<Mention>();
 		        	for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
 		        		Mention mention = allGoldMentions.get(i).get(j);
-		        		ResultOutput.serialize(mention, mention.mentionID, edu.oregonstate.util.EecbConstants.RESULT_PATH);
-		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", edu.oregonstate.util.EecbConstants.RESULT_PATH, true);
+		        		ResultOutput.serialize(mention, mention.mentionID, ExperimentConstructor.mentionResultPath);
+		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", ExperimentConstructor.mentionResultPath, true);
 		        		copyMention.goldCorefClusterID = -1;
 		        		sentence.add(copyMention);
 		        		
@@ -131,6 +132,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	// set the mention id here
 		    	allPredictedMentions = mentionFinder.extractPredictedMentions(anno, baseID, dictionaries);
 		    }
+		    
+		    
 		    
 		    /** according to the extraction result, print the original document with different annotation */
 		    printRawDoc(sentences, allPredictedMentions, false);

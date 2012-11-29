@@ -24,7 +24,7 @@ import edu.oregonstate.search.State;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class StructuredPerceptron implements IClassifier {
+public class StructuredPerceptronConsideringBeam implements IClassifier {
 
 	// the right links according to the gold corpus
 	private Set<String> mrightLinks;
@@ -112,7 +112,7 @@ public class StructuredPerceptron implements IClassifier {
 		
 	}
 	
-	public StructuredPerceptron() {
+	public StructuredPerceptronConsideringBeam() {
 	}
 	
 	/** test whether the candidate states exist good links*/
@@ -136,33 +136,34 @@ public class StructuredPerceptron implements IClassifier {
 	 */
 	public void train() {
 		noOfVilotions = 0;
-		boolean exist = existGoodMerge();
-		if (exist) {
-			updateWeightForGoodCase();
-			
-		} else {
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "there do not exist good states ");
-			List<State<CorefCluster>> beamLists = mBeam.getElements();
-			for (State<CorefCluster> beam : beamLists) {
-				mstates.remove(beam.getID());
-			}
-			
-			if (beamLists.size() == 1) {
-				updateWeightGreedyCase(beamLists);
-			} else {
-				updateWeightBeamCase(beamLists);
-			}
-			
-			// third constraint
-			if (mBestState.getCostScore() <= mpreviousBestState.getCostScore()) {
-				if (ExperimentConstructor.outputFeature) {
-					outputFeatureFurther(beamLists.get(0), mBestState);
-				}
-				
-				updateFature(mBestState, mpreviousBestState);
-				noOfVilotions++;
-			}
+//		boolean exist = existGoodMerge();
+//		if (exist) {
+//			updateWeightForGoodCase();
+//			
+//		} else {
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "there do not exist good states ");
+		List<State<CorefCluster>> beamLists = mBeam.getElements();
+		for (State<CorefCluster> beam : beamLists) {
+			mstates.remove(beam.getID());
 		}
+
+		if (beamLists.size() == 1) {
+			updateWeightGreedyCase(beamLists);
+		} else {
+			updateWeightBeamCase(beamLists);
+		}
+
+		// third constraint
+		if (mBestState.getCostScore() <= mpreviousBestState.getCostScore()) {
+
+			if (ExperimentConstructor.outputFeature) {
+				outputFeatureFurther(beamLists.get(0), mBestState);
+			}
+
+			updateFature(mBestState, mpreviousBestState);
+			noOfVilotions++;
+		}
+//		}
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "No of violated constraints : " + noOfVilotions);
 	}
 	
@@ -189,6 +190,9 @@ public class StructuredPerceptron implements IClassifier {
 			State<CorefCluster> beamState = beamLists.get(i);
 			for (int j = 0; j < unBeamLists.size(); j++) {
 				State<CorefCluster> unBeamState = unBeamLists.get(j);
+				
+				if (beamState.getScore()[0] == unBeamState.getScore()[0]) continue;
+				
 				if (beamState.getCostScore() <= unBeamState.getCostScore()) {
 					if (ExperimentConstructor.outputFeature) {
 						outputFeatureFurther(beamState, unBeamState);
@@ -203,6 +207,9 @@ public class StructuredPerceptron implements IClassifier {
 		// second constraint
 		for (int i = 1; i < beamLists.size(); i++) {
 			State<CorefCluster> beamState = beamLists.get(i);
+			
+			if (beamLists.get(0).getScore()[0] == beamState.getScore()[0]) continue;
+			
 			if ( beamLists.get(0).getCostScore() <= beamState.getCostScore()) {
 				if (ExperimentConstructor.outputFeature) {
 					outputFeatureFurther(beamLists.get(0), beamState);
@@ -218,6 +225,9 @@ public class StructuredPerceptron implements IClassifier {
 	private void updateWeightGreedyCase(List<State<CorefCluster>> beamLists) {
 		for (String id : mstates.keySet()) {			
 			State<CorefCluster> state = mstates.get(id);
+			
+			if (beamLists.get(0).getScore()[0] == state.getScore()[0]) continue;
+			
 			if ( beamLists.get(0).getCostScore() <= state.getCostScore()) {
 				if (ExperimentConstructor.outputFeature) {
 					outputFeatureFurther(beamLists.get(0), state);
@@ -279,7 +289,7 @@ public class StructuredPerceptron implements IClassifier {
 			for (int j = 0; j < badStates.size(); j++) {
 				State<CorefCluster> goodState = goodStates.get(i);
 				State<CorefCluster> badState = badStates.get(j);
-				if (goodState.getCostScore() < badState.getCostScore()) {
+				if (goodState.getCostScore() <= badState.getCostScore()) {
 					
 					// output feature in order for optimize
 					if (ExperimentConstructor.outputFeature) {

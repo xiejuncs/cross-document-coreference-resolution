@@ -125,5 +125,38 @@ public class MatrixOperation {
 		
 		return averageModel;
 	}
+	
+	/** 
+	 * get average matrix
+	 * 
+	 * @param averageWeight
+	 * @param wholeSearchStep
+	 * @return
+	 */
+	public static Matrix getAverageMatrix (Matrix averageWeight, int wholeSearchStep) {
+		Matrix matrix = new Matrix(averageWeight.getRowDimension(), 1);
+		for (int i = 0; i < averageWeight.getRowDimension(); i++) {
+			matrix.set(i, 0, averageWeight.get(i, 0) / wholeSearchStep);
+		}
+		return matrix;
+	}
+	
+	/**
+	 * matrix normalization
+	 * 
+	 * @param weight
+	 */
+	public static Matrix normalization(Matrix weight) {
+		double sum = weight.norm2();
+		
+		if (sum == 0.0) return weight;
+		
+		for (int i = 0; i < weight.getRowDimension(); i++){
+			double value = weight.get(i, 0);
+			weight.set(i, 0, value / sum);
+		}
+		
+		return weight;
+	}
 
 }

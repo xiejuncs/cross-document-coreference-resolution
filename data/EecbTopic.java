@@ -363,9 +363,6 @@ public class EecbTopic extends EecbElement {
 					String key = annos[0] + annos[3];
 					if (key.equals(id)) {
 						String sentenceID = annos[1] + "-" + annos[2];
-						if (CDCR.enableNull) {
-							if (documentPositioninTopic.get(sentenceID) == null) continue;
-						}
 						int documentSentenceID = documentPositioninTopic.get(sentenceID);
 						String sentence = lRawText.get(documentSentenceID);
 						int start = Integer.parseInt(annos[6]);
@@ -389,9 +386,6 @@ public class EecbTopic extends EecbElement {
 					String key = annos[0] + annos[3];
 					if (key.equals(id)) {
 						String sentenceID = annos[1] + "-" + annos[2];
-						if (CDCR.enableNull) {
-							if (documentPositioninTopic.get(sentenceID) == null) continue;
-						}
 						int documentSentenceID = documentPositioninTopic.get(sentenceID);
 						String sentence = lRawText.get(documentSentenceID);
 						int start = Integer.parseInt(annos[6]);

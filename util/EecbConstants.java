@@ -1,43 +1,45 @@
 package edu.oregonstate.util;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
+
 public class EecbConstants {
 
 	// the corpus for debug
-	public static final String DEBUG_CORPUS_PATH = "../corpus/EECB1/data/";
+	public static final String DEBUG_CORPUS_PATH = ExperimentConstructor.corpusPath + "corpus/EECB1/data/";
 	
 	// the mention annotation for debug
-	public static final String DEBUG_MENTION_ANNOTATION_PATH = "../corpus/mentions-backup.txt";
+	public static final String DEBUG_MENTION_ANNOTATION_PATH = ExperimentConstructor.corpusPath + "corpus/mentions-backup.txt";
 	
 	// the corpus for running the whole experiment
-	public static final String WHOLE_CORPUS_PATH = "../corpus/EECB1.0/data/";
+	public static final String WHOLE_CORPUS_PATH = ExperimentConstructor.corpusPath + "corpus/EECB1.0/data/";
 	
 	// the mention annotation for running the whole experiment
-	public static final String WHOLE_MENTION_ANNOTATION_PATH = "../corpus/mentions-backup.txt";
+	public static final String WHOLE_MENTION_ANNOTATION_PATH = ExperimentConstructor.corpusPath + "corpus/mentions-backup.txt";
 	
 	/** the corpus for debugging within coreference resolution case */
-	public static final String DEBUG_WITHIN_CORPUS_PATH = "../corpus/EECB3.0/data/";
+	public static final String DEBUG_WITHIN_CORPUS_PATH = ExperimentConstructor.corpusPath + "corpus/EECB3.0/data/";
 	
 	/**the mention annotation for running the whole experiment */
-	public static final String DEBUG_WITHIN_MENTION_ANNOTATION_PATH = "../corpus/mentions-within.txt";
+	public static final String DEBUG_WITHIN_MENTION_ANNOTATION_PATH = ExperimentConstructor.corpusPath + "corpus/mentions-within.txt";
 	
 	// the similarity dictionary created by Lin
-	public static final String WORD_SIMILARITY_PATH = "../corpus/sims.lsp";
+	public static final String WORD_SIMILARITY_PATH = ExperimentConstructor.corpusPath + "corpus/sims.lsp";
 	
 	// the configuration file for WORDNET
-	public static final String WORD_NET_CONFIGURATION_PATH = "../corpus/file_properties.xml";
+	public static final String WORD_NET_CONFIGURATION_PATH = ExperimentConstructor.corpusPath + "corpus/file_properties.xml";
 	
 	// store the serilize and deserize result
-	//public static final String RESULT_PATH = "../corpus/RESULT/";
-	public static final String RESULT_PATH = "../corpus/CROSS-RESULT/";
+	//public static final String RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/RESULT/";
+	public static final String RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/CROSS-RESULT/";
 	
 	/** Temporary result folder in order to further analysis */
-	public static final String TEMPORY_RESULT_PATH = "../corpus/TEMPORYRESUT/";
+	public static final String TEMPORY_RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/TEMPORYRESUT/";
 	
 	// the path for SRL result
-	public static final String TOKENS_OUTPUT_PATH = "../corpus/tokenoutput/";
+	public static final String TOKENS_OUTPUT_PATH = ExperimentConstructor.corpusPath + "corpus/tokenoutput/";
 	
 	// the path for single document SRL result
-	//public static final String TOKENS_OUTPUT_PATH = "../corpus/srloutputforsingledocument/2/";
+	//public static final String TOKENS_OUTPUT_PATH = ExperimentConstructor.corpusPath + "corpus/srloutputforsingledocument/2/";
 	
 	// Partial sieve configuration
 	public static final String PARTIAL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch";
@@ -56,9 +58,9 @@ public class EecbConstants {
 	public static final boolean SKIP_COREF = false;
 	
 	/** store the intermediate result created during creating the adjacent states */
-	public static final String ADJACENT_INTERMEDIATE_RESULT_PATH = "../corpus/ADJACENT-INTERMEDIATE-RESULT/";
+	public static final String ADJACENT_INTERMEDIATE_RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/ADJACENT-INTERMEDIATE-RESULT/";
 	
-	public static final String STOPWORD_PATH = "../corpus/english.stop";
+	public static final String STOPWORD_PATH = ExperimentConstructor.corpusPath + "corpus/english.stop";
 	
 	public static final String CLASSIFIER = "classifier";
 	

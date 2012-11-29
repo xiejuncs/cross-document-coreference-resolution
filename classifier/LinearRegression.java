@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 import edu.oregonstate.CDCR;
+import edu.oregonstate.features.Feature;
+import edu.oregonstate.io.ResultOutput;
 
 /**
  * A class to train and evaluate Linear Regression models with L2-Regularization
@@ -45,7 +47,11 @@ public class LinearRegression {
 				String fields[] = line.split(",");
 				double data[] = new double[fields.length];
 				for (int i = 0; i < fields.length; i++) {
-					data[i] = Double.parseDouble(fields[i]);
+					if (fields[i].equals("NaN")) {
+						data[i] = 0.0;
+					} else {
+						data[i] = Double.parseDouble(fields[i]);
+					}
 				}
 				data_array.add(data);
 			}
@@ -219,7 +225,7 @@ public class LinearRegression {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LinearRegression lr = new LinearRegression(CDCR.resultPath + "one.csv", 1.0);
+		LinearRegression lr = new LinearRegression("/nfs/guille/xfern/users/xie/Experiment/corpus/TEMPORYRESUT/Fri-Nov-23-16:06:47-PST-2012-StanfordExperiment-gold-LinearRegression-10/trainingSet/initial.csv", 1.0);
 		try {
 			Matrix training = lr.readMatrix(lr.trainingFile);
 			/** get the actual features, meanwhile add a N*1 column vector with value being all 1 as the first column of the features */
@@ -228,8 +234,8 @@ public class LinearRegression {
 		    // Train the model.
 		    Matrix weights = lr.trainLinearRegressionModel(trainingData, trainingTargets, lr.lambda);
 		    // Evaluate the model using training and testing data.
-		    double training_error = lr.evaluateLinearRegressionModel(trainingData, trainingTargets, weights);
-		    System.out.println(training_error);
+		    
+		    System.out.println(ResultOutput.printModel(weights, Feature.featuresName));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);			

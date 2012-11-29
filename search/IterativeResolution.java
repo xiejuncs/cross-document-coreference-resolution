@@ -15,6 +15,7 @@ import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.Counter;
 import edu.stanford.nlp.dcoref.Dictionaries;
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.training.Train;
@@ -42,9 +43,9 @@ public class IterativeResolution {
 	protected Dictionaries mDictionary;
 	protected Matrix mModel;
 	
-	public IterativeResolution(Document document, Dictionaries dictionary, Matrix model) {
+	public IterativeResolution(Document document, Matrix model) {
 		mdocument = document;
-		mDictionary = dictionary;
+		mDictionary = ExperimentConstructor.mdictionary;
 		clusters = new ArrayList<CorefCluster>();
 		mModel = model;
 		initialize();
@@ -90,7 +91,7 @@ public class IterativeResolution {
 		return sum;
 	}
 
-	private void fillScore(Map<String, Double> scoreMap, boolean condition) {
+	private void fillScore(Map<String, Double> scoreMap) {
 		// compute the pair of the entities
 		for (int i = 0; i < (clusters.size() - 1); i++) {
 			for (int j = 0; j < i; j++) {
@@ -101,31 +102,35 @@ public class IterativeResolution {
 				if (formerRep.isPronominal() == true || latterRep.isPronominal() == true) continue;
 				Counter<String> features = Feature.getFeatures(mdocument, c1, c2, false, mDictionary); // get the feature size
 				double value = calculateScore(features);
-				if (condition && value > 0.5) {
-					scoreMap.put(Integer.toString(i) + "-" + Integer.toString(j), value);
-				}
-				
-				if (!condition) {
-					scoreMap.put(Integer.toString(i) + "-" + Integer.toString(j), value);
-				}
+				scoreMap.put(Integer.toString(i) + "-" + Integer.toString(j), value);
 			}
 		}
+	}
+	
+	/** return max value of the score map */
+	protected double maximumValue(Map<String, Double> scores) {
+		Collection<Double> c = scores.values();
+		Double maxvalue = Collections.max(c);
+		return maxvalue;
 	}
 
 	
 	/**
 	 * iterative entity/event resolution
 	 */
-	public void merge(Dictionaries dictionary) {
+	public void merge() {
 		Map<String, Double> scoreMap = new HashMap<String, Double>();
-		fillScore(scoreMap, true);
-		
-		while(scoreMap.size() > 0) {
+		fillScore(scoreMap);
+		boolean remainLoop = true;
+		while(remainLoop && scoreMap.size() > 0) {
 			// generate the training examples
-			Map<String, Double> allScores = new HashMap<String, Double>();
-			fillScore(allScores, false);
+			double maximumValue = maximumValue(scoreMap);
+			if (maximumValue <= 0.5) {
+				break;
+			}
+			
 			List<String> keys = new ArrayList<String>();
-			for (String key : allScores.keySet()) {
+			for (String key : scoreMap.keySet()) {
 				keys.add(key);
 			}
 			for (int i = 0; i < keys.size(); i++) {
@@ -135,7 +140,7 @@ public class IterativeResolution {
 				Mention formerRep = ci.getRepresentativeMention();
 				Mention latterRep = cj.getRepresentativeMention();
 				if (formerRep.isPronominal() == true || latterRep.isPronominal() == true) continue;
-				Counter<String> features = Feature.getFeatures(mdocument, ci, cj, false, dictionary); // get the feature
+				Counter<String> features = Feature.getFeatures(mdocument, ci, cj, false, mDictionary); // get the feature
 				Set<Mention> toMentions = ci.getCorefMentions();
 				Set<Mention> fromMentions = cj.getCorefMentions();
 				double correct = 0.0;
@@ -160,7 +165,7 @@ public class IterativeResolution {
 			String[] indexs = index.split("-");
 			CorefCluster c1 = clusters.get(Integer.parseInt(indexs[0]));
 			CorefCluster c2 = clusters.get(Integer.parseInt(indexs[1]));
-			System.out.println("another merge----" + c1.getClusterID() + "---->" + c2.getClusterID());
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "another merge----" + c1.getClusterID() + "---->" + c2.getClusterID());
 			int removeID = c1.getClusterID();
 			CorefCluster.mergeClusters(mdocument, c2, c1, mDictionary);
 			mdocument.corefClusters.remove(removeID);
@@ -174,7 +179,7 @@ public class IterativeResolution {
 				clusters.add(cluster);
 			}
 			scoreMap = new HashMap<String, Double>();
-			fillScore(scoreMap, true);
+			fillScore(scoreMap);
 		}
 	}
 	

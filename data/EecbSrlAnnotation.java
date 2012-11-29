@@ -36,7 +36,11 @@ public class EecbSrlAnnotation {
 	  this.parentPosition = parentPosition;
 	  this.start = start;
 	  this.end = end;
-	}	
+	}
+	
+	public EecbSrlAnnotation() {
+		
+	}
 	
 	public void setHead(String headString) {
 		this.headString = headString;
@@ -97,9 +101,13 @@ public class EecbSrlAnnotation {
 
 	/** Output representation of the annotation */
 	@Override
-	public String toString()
-	{
-		return mText;
+	public String toString() {
+		return mText + "(" + start + " " + end + ")";
 	}
+	
+	public void setText(String text) {
+		mText = text;
+	}
+	
 	
 }

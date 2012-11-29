@@ -8,9 +8,11 @@ import java.util.HashMap;
 import edu.oregonstate.data.EecbSrlAnnotation;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.dcoref.RuleBasedCorefMentionFinder;
+import edu.stanford.nlp.ling.CoreAnnotations.TokenBeginAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.IndexAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokenEndAnnotation;
 import edu.stanford.nlp.trees.Tree;
 
 /**
@@ -26,7 +28,7 @@ public class SrlResultIncorporation {
 	private String resultPath;
 	private SRLExtraction semantic;
 	private Map<Integer, List<String>> sentenceidToSentence;
-	private Map<Integer, Map<Mention, Map<String, Mention>>> extentsWithArgumentRoles;
+	private Map<Integer, Map<EecbSrlAnnotation, Map<String, EecbSrlAnnotation>>> extentsWithArgumentRoles;
 	private Map<Integer, Integer> matchResult;
 	private RuleBasedCorefMentionFinder rule;
 	
@@ -34,7 +36,7 @@ public class SrlResultIncorporation {
 		this.resultPath = path;
 		semantic = new SRLExtraction();
 		sentenceidToSentence = new HashMap<Integer, List<String>>();
-		extentsWithArgumentRoles = new HashMap<Integer, Map<Mention,Map<String,Mention>>>();
+		extentsWithArgumentRoles = new HashMap<Integer, Map<EecbSrlAnnotation,Map<String,EecbSrlAnnotation>>>();
 		matchResult = new HashMap<Integer, Integer>();
 		initialize();
 		rule = new RuleBasedCorefMentionFinder(); 
@@ -49,7 +51,7 @@ public class SrlResultIncorporation {
         Map<Integer, List<List<String>>> doc = semantic.getDocument();
         for (Integer id : doc.keySet()) {
                 List<List<String>> sentence = doc.get(id);
-                Map<Mention, Map<String, Mention>> extentWithArgumentRoles = semantic.extractExtent(sentence);
+                Map<EecbSrlAnnotation, Map<String, EecbSrlAnnotation>> extentWithArgumentRoles = semantic.extractExtent(sentence);
                 if (extentWithArgumentRoles.size() == 0) continue;
                 List<String> tokens = new ArrayList<String>();
                 for (List<String> data : sentence) {
@@ -109,6 +111,7 @@ public class SrlResultIncorporation {
 	 * 
 	 * @param allPredictedMentions
 	 */
+	/*
 	public void alignSRL1(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 		
@@ -160,72 +163,88 @@ public class SrlResultIncorporation {
 			}
 		}
 	}
+	*/
 	
 	// add the closest left and right mentions into the srl incorporation
 	// we have added the left and right mentions before
 	public void alignSRL(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
-		
+
 		for (int i = 0; i < allPredictedMentions.size(); i++) {
 			int sentenceID = i;
 			boolean contains = matchResult.containsKey(sentenceID);
 			if (!contains) continue;
 			int correspondingID = matchResult.get(sentenceID);
-			Map<Mention, Map<String, Mention>> srlResult = extentsWithArgumentRoles.get(correspondingID);
-			for (Mention predicate : srlResult.keySet()) {
-				int predicateStart = predicate.startIndex;
-				int predicateEnd = predicate.endIndex;
+			Map<EecbSrlAnnotation, Map<String, EecbSrlAnnotation>> srlResult = extentsWithArgumentRoles.get(correspondingID);
+			for (EecbSrlAnnotation predicate : srlResult.keySet()) {
+				int predicateStart = predicate.getStartOffset();
+				int predicateEnd = predicate.getEndOffset();
 				for (Mention mention : allPredictedMentions.get(i)) {
-					boolean matched = false;
-					int start = mention.startIndex;
-					int end = mention.endIndex;
-					
+					int start = mention.headWord.get(TokenBeginAnnotation.class);
+					int end = mention.headWord.get(TokenEndAnnotation.class);
+
 					if ((predicateStart == start) || (predicateEnd == end)) {
-						Map<String, Mention> arguments = srlResult.get(predicate);
+						Map<String, EecbSrlAnnotation> arguments = srlResult.get(predicate);
 						if (arguments.size() == 0) continue;
-						
+
 						for (String argKey : arguments.keySet()) {
-							Mention argument = arguments.get(argKey);
-							
+							EecbSrlAnnotation argument = arguments.get(argKey);
+
 							// match the id
-							int argumentStart = argument.startIndex;
-							int argumentEnd = argument.endIndex;
+							int argumentStart = argument.getStartOffset();
+							int argumentEnd = argument.getEndOffset();
+							
 							for (int k = 0; k < allPredictedMentions.get(i).size(); k++) {
 								Mention mentionMatch = allPredictedMentions.get(i).get(k);
-								int mentionMatchStart = mentionMatch.startIndex;
-								int mentionMatchEnd = mentionMatch.endIndex;
-								
+								int mentionMatchStart = mentionMatch.headWord.get(TokenBeginAnnotation.class);
+								int mentionMatchEnd = mentionMatch.headWord.get(TokenEndAnnotation.class);
+
 								// it is very tricky here, I need to experiment for a while
 								// if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd))
 								if (!argKey.equals("AM-LOC")) {
-								if ((argumentStart == mentionMatchStart) && (mentionMatchEnd == argumentEnd)) {
-									mention.setArgument(argKey, mentionMatch);
-									mentionMatch.setPredicte(mention);
-									mentionMatch.SRLrole = argKey;
-									matched = true;
-									break;
-								}} else {
-									if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd)) {
+									if ((argumentStart <= mentionMatchStart) && (argumentEnd >= mentionMatchEnd)) {
 										mention.setArgument(argKey, mentionMatch);
 										mentionMatch.setPredicte(mention);
 										mentionMatch.SRLrole = argKey;
-										matched = true;
 										break;
+									}
+								} else {
+									if ((argumentStart <= mentionMatchStart) && (argumentEnd >= mentionMatchEnd)) {
+										mention.setArgument(argKey, mentionMatch);
+										mentionMatch.setPredicte(mention);
+										mentionMatch.SRLrole = argKey;
+										break;
+									}
 								}
 							}
+							
+							
 						}
-						// do not need to go through all the documents, just once
-						break;
-					}
-				}
-					if (matched) break;
-					
+					}					
 				}
 			}
 		}
 	}
 	
-
+	/*
+	 if (!argKey.equals("AM-LOC")) {
+									if ((argumentStart <= mentionMatchStart) && (argumentEnd >= mentionMatchEnd)) {
+										mention.setArgument(argKey, mentionMatch);
+										mentionMatch.setPredicte(mention);
+										mentionMatch.SRLrole = argKey;
+										break;
+									}
+								} else {
+									if ((argumentStart <= mentionMatchStart) && (argumentEnd >= mentionMatchEnd)) {
+										mention.setArgument(argKey, mentionMatch);
+										mentionMatch.setPredicte(mention);
+										mentionMatch.SRLrole = argKey;
+										break;
+									}
+								}
+	 */
+	
+	/*
 	public void alignSRL2(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 		
@@ -283,5 +302,6 @@ public class SrlResultIncorporation {
 		}
 	}
 	}
+	*/
 	
 }

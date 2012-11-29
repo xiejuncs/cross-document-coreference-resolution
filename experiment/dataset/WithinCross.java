@@ -4,13 +4,20 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
+import edu.oregonstate.CDCR;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.experiment.IDataSet;
 import edu.oregonstate.featureExtractor.SrlResultIncorporation;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.DocumentMerge;
 import edu.oregonstate.util.EecbConstants;
+import edu.stanford.nlp.dcoref.CorefCluster;
+import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.dcoref.ScorerPairwise;
 
 /**
  * use the within result produced by Stanford Multi-Sieve System, and then incorporate them together
@@ -22,33 +29,40 @@ import edu.stanford.nlp.dcoref.Document;
 public class WithinCross implements IDataSet {
 		
 	/** corpus path */
-	private static String corpusPath;
+	private String corpusPath;
+	
+	private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
 	
 	/** srl path */
-	private static String srlPath;
-	
-	static{
-		corpusPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("corpusPath");
-		srlPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("srlpath");
-	}
+	private String srlPath;
 	
 	public WithinCross() {
 	}
 	
 	@Override
 	public Document getData(String[] topics) {
+		corpusPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("corpusPath");
+		srlPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("srlpath");
+		
 		Document corpus = new Document();
 		IDocument documentExtraction = new SingleDocument();
-		DocumentMerge dm; 
+		DocumentMerge dm;
+	
 		for (String topic : topics) {
+			String statisPath = ExperimentConstructor.currentExperimentFolder + "/" + "statistics";
+			
 			List<String> files  = getSortedFileNames(topic);
 			for (String file : files) {
 				try {
 					String path = corpusPath + topic + "/" + file;
+					ResultOutput.writeTextFile(ExperimentConstructor.logFile, file + " : " + path);
 					Document document = documentExtraction.getDocument(path);
 					// combine the documents together
 					dm = new DocumentMerge(document, corpus);
+					ResultOutput.writeTextFile(statisPath, file + " " + document.allGoldMentions.size() + " " + document.allPredictedMentions.size() + " " +
+					document.corefClusters.size() + " " + document.goldCorefClusters.size());
 					dm.mergeDocument();
+					ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\n");
 				} catch (Exception e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -57,8 +71,18 @@ public class WithinCross implements IDataSet {
 			
 			srlIncorporation(topic, corpus);              // incorporate the srl result
 			corpus.fill();                                // incorporate SYNONYM
+			
+			// generate feature for each mention
+		    for (Integer id : corpus.corefClusters.keySet()) {
+		    	CorefCluster cluster = corpus.corefClusters.get(id);
+		    	cluster.regenerateFeature();
+		    }
+			
+			CorefScorer pairscore = new ScorerPairwise();
+    		pairscore.calculateScore(corpus);
+    		pairscore.printF1(logger, true);
 		}
-		
+
 		return corpus;
 	}
 	
@@ -67,8 +91,7 @@ public class WithinCross implements IDataSet {
 		SrlResultIncorporation srlResult = new SrlResultIncorporation(srlPath + topic + ".output");
 		srlResult.alignSRL(corpus.predictedOrderedMentionsBySentence);
 	}
-	
-	
+
 	/** get files orded by the file name */
 	protected List<String> getSortedFileNames(String topic) {
 		List<String> files  = new ArrayList<String>();

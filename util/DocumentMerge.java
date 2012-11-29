@@ -110,12 +110,6 @@ public class DocumentMerge {
 		addCorefCluster();
 		addPredictedOrderdBySentence();
 		
-		for (IntPair key : mDocument.mentionSynonymInWN){
-			mCorpus.mentionSynonymInWN.add(key);
-		}
-		
-		
-		
 		for (Integer id : mCorpus.goldCorefClusters.keySet()) {
 			CorefCluster cluster = mCorpus.goldCorefClusters.get(id);
 			for (Mention m : cluster.corefMentions) {
