@@ -16,7 +16,9 @@ import java.util.List;
 
 import edu.oregonstate.CDCR;
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.EecbReader;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
@@ -55,8 +57,9 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
 		super(dict, semantics);
 		stanfordProcessor = loadStanfordProcessor(props);
-		baseID = 1000000 * Integer.parseInt(topic);
-		topicPath = props.getProperty(edu.oregonstate.util.EecbConstants.EECB_PROP, CDCR.corpusPath) + "/" + topic + "/";
+		baseID = 10000000 * Integer.parseInt(topic);
+		goldBaseID = 10000000 * Integer.parseInt(topic);
+		topicPath = props.getProperty(edu.oregonstate.util.EecbConstants.EECB_PROP) + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
 		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
@@ -133,7 +136,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	allPredictedMentions = mentionFinder.extractPredictedMentions(anno, baseID, dictionaries);
 		    }
 		    
-		    
+		    // 
 		    
 		    /** according to the extraction result, print the original document with different annotation */
 		    printRawDoc(sentences, allPredictedMentions, false);

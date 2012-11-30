@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import Jama.Matrix;
 
-import edu.oregonstate.CorefSystem;
+import edu.oregonstate.experiment.dataset.CorefSystem;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
@@ -120,7 +120,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 			printParameters(document, topic);
 		}
 		
-		printParameters(beforePronounSieveCorpus, "the overall topics");
+		printParameters(beforePronounSieveCorpus, "the overall topics without pronoun sieve");
 		ScorerHelper beforesh = new ScorerHelper(beforePronounSieveCorpus, logger, logFile, postProcess);
 		beforesh.printScore();
 		
@@ -152,7 +152,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 			printParameters(document, topic);
 		}
 		
-		printParameters(afterPronounSieveCorpus, "the overall topics");
+		printParameters(afterPronounSieveCorpus, "the overall topics with pronoun sieve");
 		ScorerHelper sh = new ScorerHelper(afterPronounSieveCorpus, logger, logFile, postProcess);
 		sh.printScore();
 		
@@ -183,7 +183,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 			splitTopics(2);
 			corpusPath = "../";
 		} else {
-			experimentTopics = totalTopics;
+			experimentTopics = stanfordTotalTopics;
 			splitTopics(12);
 			corpusPath = "/nfs/guille/xfern/users/xie/Experiment/";
 		}
@@ -217,7 +217,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 		String outputPath = (String) getParameter(EecbConstants.DATASET, "outputPath");
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		//TODO
-		goldOnly = false;
+		goldOnly = true;
 		if (goldOnly) {
 			// create mention result folder to store the mention serialization object
 			experimentResultFolder = outputPath + timeStamp + "-" + this.getClass().getSimpleName() + "-gold" + "-" + classifierLearningModel + "-" + classifierNoOfIteration;
@@ -265,7 +265,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 		CorefSystem cs = new CorefSystem();
 		mdictionary = cs.corefSystem.dictionaries();
 		
-		mDatasetMode = createDataSetModel("WithinCross");
+		mDatasetMode = createDataSetModel("CrossTopic");
 		createDataSet();
 	}
 	

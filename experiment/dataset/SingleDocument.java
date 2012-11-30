@@ -1,6 +1,5 @@
 package edu.oregonstate.experiment.dataset;
 
-import edu.oregonstate.CorefSystemSingleDocument;
 import edu.stanford.nlp.dcoref.Document;
 
 public class SingleDocument implements IDocument {

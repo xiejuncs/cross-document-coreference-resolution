@@ -19,7 +19,7 @@ import edu.oregonstate.cluster.experiment.EecbDissimilarityMeasure;
 import edu.oregonstate.data.EecbClusterDocument;
 
 import edu.oregonstate.CDCR;
-import edu.oregonstate.CorefSystemSingleDocument;
+import edu.oregonstate.experiment.dataset.CorefSystemSingleDocument;
 import edu.oregonstate.general.CounterMap;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.score.ScorerCEAF;

@@ -1,4 +1,4 @@
-package edu.oregonstate;
+package edu.oregonstate.experiment.dataset;
 
 import java.io.FileInputStream;
 import java.util.Properties;

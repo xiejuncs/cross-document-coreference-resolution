@@ -2,7 +2,7 @@ package edu.oregonstate.score;
 
 import java.util.logging.Logger;
 
-import edu.oregonstate.CorefSystem;
+import edu.oregonstate.experiment.dataset.CorefSystem;
 import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;

@@ -1,22 +1,12 @@
 package edu.oregonstate.training;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-
-import edu.stanford.nlp.dcoref.Mention;
-import edu.oregonstate.CDCR;
-import edu.oregonstate.CorefSystem;
 import edu.oregonstate.classifier.LinearRegression;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.IterativeResolution;
 import edu.oregonstate.util.EecbConstants;
-import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.stats.Counter;
 import Jama.Matrix;
 
 /**

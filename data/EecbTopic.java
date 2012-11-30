@@ -14,7 +14,8 @@ import java.util.Vector;
 import java.util.List;
 import java.util.logging.Logger;
 
-import edu.oregonstate.CDCR;
+import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -87,7 +88,7 @@ public class EecbTopic extends EecbElement {
 		super(id);
 		mFiles = files;
 		mPrefix = id;
-		baseID = 1000000 * Integer.parseInt(id);
+		baseID = 10000000 * Integer.parseInt(id);
 		
 		mEntities = new HashMap<String, EecbEntity>();
 		mEntityMentions = new HashMap<String, EecbEntityMention>();
@@ -196,49 +197,49 @@ public class EecbTopic extends EecbElement {
 	   * Matches all relevant mentions, i.e. entities and anchors, to tokens Note:
 	   * entity mentions may match with multiple tokens!
 	   */
-	  public void matchCharSeqs() {
-	    // match the head and extent of entity mentions
-	    Set<String> keys = mEntityMentions.keySet();
-	    for (String key : keys) {
-	      EecbEntityMention m = mEntityMentions.get(key);
-	      // match the extent charseq to 1+ phrase(s)
-	      try {
-	        m.getExtent().match(mTokens);
-	      } catch (MatchException e) {
-	        mLog.severe("READER ERROR: Failed to match entity mention extent: " + "[" + m.getExtent().getText() + ", "
-	            + m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + ", " + m.sentenceID() + "]");
-	        System.out.println(mPrefix + "-" +sentencePositionDocument.get(m.sentenceID()));
-	        mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
-	        mLog.severe("Document prefix: " + mID);
-	        System.exit(1);
-	      }
-	    }
-	    
-	    Set<String> eventKeys = mEventMentions.keySet();
-	    for (String key : eventKeys) {
-	      EecbEventMention m = mEventMentions.get(key);
-	      // match the extent charseq to 1+ phrase(s)
-	      try {
-	        m.getExtent().match(mTokens);
-	      } catch (MatchException e) {
-	        mLog.severe("READER ERROR: Failed to match event mention extent: " + "[" + m.getExtent().getText() + ", "
-	            + m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + "]");
-	        mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
-	        mLog.severe("Document prefix: " + mID);
-	        System.exit(1);
-	      }
-	      // match the anchor
-	      try {
-		        m.getAnchor().match(mTokens);
-		      } catch (MatchException e) {
-		        mLog.severe("READER ERROR: Failed to match event mention extent: " + "[" + m.getAnchor().getText() + ", "
-		            + m.getAnchor().getByteStart() + ", " + m.getAnchor().getByteEnd() + "]");
-		        mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
-		        mLog.severe("Document prefix: " + mID);
-		        System.exit(1);
-		      }
-	    }
-	  }
+	public void matchCharSeqs() {
+		// match the head and extent of entity mentions
+		Set<String> keys = mEntityMentions.keySet();
+		for (String key : keys) {
+			EecbEntityMention m = mEntityMentions.get(key);
+			// match the extent charseq to 1+ phrase(s)
+			try {
+				m.getExtent().match(mTokens);
+			} catch (MatchException e) {
+				mLog.severe("READER ERROR: Failed to match entity mention extent: " + "[" + m.getExtent().getText() + ", "
+						+ m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + ", " + m.sentenceID() + "]");
+				System.out.println(mPrefix + "-" +sentencePositionDocument.get(m.sentenceID()));
+				mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
+				mLog.severe("Document prefix: " + mID);
+				System.exit(1);
+			}
+		}
+
+		Set<String> eventKeys = mEventMentions.keySet();
+		for (String key : eventKeys) {
+			EecbEventMention m = mEventMentions.get(key);
+			// match the extent charseq to 1+ phrase(s)
+			try {
+				m.getExtent().match(mTokens);
+			} catch (MatchException e) {
+				mLog.severe("READER ERROR: Failed to match event mention extent: " + "[" + m.getExtent().getText() + ", "
+						+ m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + "]");
+				mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
+				mLog.severe("Document prefix: " + mID);
+				System.exit(1);
+			}
+			// match the anchor
+			try {
+				m.getAnchor().match(mTokens);
+			} catch (MatchException e) {
+				mLog.severe("READER ERROR: Failed to match event mention extent: " + "[" + m.getAnchor().getText() + ", "
+						+ m.getAnchor().getByteStart() + ", " + m.getAnchor().getByteEnd() + "]");
+				mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
+				mLog.severe("Document prefix: " + mID);
+				System.exit(1);
+			}
+		}
+	}
 	  
 	//TODO
 	// The entry of the class
@@ -356,7 +357,7 @@ public class EecbTopic extends EecbElement {
 				// Entity
 				EecbEntity entity = new EecbEntity(mID + "-" + id);
 				for (String anno : annotation) {
-					//String key = topicID;
+					
 					//String value = type + ":" + documentID +":" + sentenceNumber + ":" + corefID + ":" + startIndex + ":" + endIndex + ":" + startCharIndex + ":" + endCharIndex;
 					// anno N:1:1:27:3:5:13:27
 					String[] annos = anno.split("-");
@@ -369,7 +370,7 @@ public class EecbTopic extends EecbElement {
 						int end = Integer.parseInt(annos[7]);
 					    String mentionText = getMentionExtent(sentence, start, end);
 					    int[] byteoffset = convertByteOffset(sentence, start, end);
-					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID);
+					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID + 100000 * Integer.parseInt(annos[1]));
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, byteoffset[0], byteoffset[1], documentSentenceID);
 					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, documentSentenceID); // HEAD will be processed later
 					    addEntityMention(entityMention);
@@ -392,7 +393,7 @@ public class EecbTopic extends EecbElement {
 						int end = Integer.parseInt(annos[7]);
 						String mentionText = getMentionExtent(sentence, start, end);
 						int[] byteoffset = convertByteOffset(sentence, start, end);
-					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID);
+					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID + 100000 * Integer.parseInt(annos[1]));
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, byteoffset[0], byteoffset[1], documentSentenceID);
 					    
 					    // because we do not know the extent, so we just use the mention as its extent
@@ -495,7 +496,7 @@ public class EecbTopic extends EecbElement {
 		// put all documents into one document
 		for (String file : mFiles) {
 			try {
-				String filename = CDCR.corpusPath + mID + File.separator + file;
+				String filename = (String) ExperimentConstructor.getParameter(EecbConstants.DATASET, "corpusPath") + mID + File.separator + file;
 				BufferedReader br = new BufferedReader(new FileReader(filename));
 				int i = 0;
 				// filename : 1.eecb
@@ -620,7 +621,7 @@ public class EecbTopic extends EecbElement {
 	 */
 	public static HashMap<String, ArrayList<String>> readAnnotation() {
 		HashMap<String, ArrayList<String>> annotation = new HashMap<String, ArrayList<String>>();
-		String mentionPath = CDCR.annotationPath;    // mentions.txt path
+		String mentionPath = (String) ExperimentConstructor.getParameter(EecbConstants.DATASET, "annotationPath");    // mentions.txt path
 		
 		try {
 			BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(mentionPath));

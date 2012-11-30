@@ -6,7 +6,6 @@ import java.util.*;
 
 import net.didion.jwnl.JWNL;
 
-import edu.oregonstate.CorefSystem;
 import edu.oregonstate.classifier.IClassifier;
 import edu.oregonstate.cluster.IClustering;
 import edu.oregonstate.costfunction.ICostFunction;
@@ -44,8 +43,8 @@ public abstract class ExperimentConstructor {
 	 */
 	
 	/** total topics for running all experiments */
-	protected static String[] stanfordTotalTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "38", "40", "43", "44", 
-		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20", "21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", "36", "39", "41", "42", "45"};
+	protected static String[] stanfordTotalTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44", 
+		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20", "21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", "36", "39", "41", "42", "45"}; // 12, 22, 38 development set
 	
 	protected static String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
 											 "11", "12", "13", "14", "16", "18", "19", "20", "21", "22", 
@@ -164,6 +163,9 @@ public abstract class ExperimentConstructor {
 	/** generate features for the experiment */
 	public static boolean oregonStateExperiment = true;
 	
+	/**  */
+	public static boolean crossCase;
+	
 	/** print final score */
 	protected void printFinalScore(int iteration) {
 		FinalScore finalScore = new FinalScore(trainingTopics, testingTopics, experimentResultFolder);
@@ -194,6 +196,7 @@ public abstract class ExperimentConstructor {
 	public ExperimentConstructor() {
 		mParameters = new HashMap<String, Map<String, Object>>();
 		stanfordExperiment = false;
+		crossCase = true;
 	}
 	
 	/** set debug mode */

@@ -2,7 +2,6 @@ package edu.oregonstate.search;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import Jama.Matrix;
@@ -10,7 +9,6 @@ import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.dcoref.CorefCluster;
-import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.Counter;
