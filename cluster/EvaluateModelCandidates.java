@@ -1,20 +1,13 @@
-package oregonstate.cluster;
+package edu.oregonstate.cluster;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import Jama.Matrix;
 
-import oregonstate.cluster.experiment.DissimilarityMeasure;
-import oregonstate.cluster.experiment.EecbDissimilarityMeasure;
-import oregonstate.data.Document;
-import oregonstate.quality.GW;
-import oregonstate.quality.GWB;
-import oregonstate.quality.GWN;
-import oregonstate.quality.Measure;
-import oregonstate.quality.W;
-import oregonstate.quality.WB;
-import oregonstate.quality.WN;
+import edu.oregonstate.cluster.experiment.DissimilarityMeasure;
+import edu.oregonstate.cluster.experiment.EecbDissimilarityMeasure;
+import edu.oregonstate.data.EecbClusterDocument;
 
 /**
  * First, we use a hierarchical algorithm to generate the collection dendrogram. From the dendrogram 
@@ -47,6 +40,7 @@ public class EvaluateModelCandidates {
 	 * 
 	 * @return return the model, which specifies the initial cluster number and the cluster result 
 	 */
+	/*
 	public List<Cluster> evaluate() {
 		double bestScore = 0.0;
 		List<Cluster> bestModel = new ArrayList<Cluster>();
@@ -106,7 +100,9 @@ public class EvaluateModelCandidates {
 		}
 		
 		return bestModel;
+	
 	}
+	*/
 	
 	/**
 	 * currentScore = first local maximum of C as r decrease from 100% to 0%

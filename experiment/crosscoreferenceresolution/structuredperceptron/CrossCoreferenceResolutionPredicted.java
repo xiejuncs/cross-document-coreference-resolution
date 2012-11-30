@@ -2,7 +2,6 @@ package edu.oregonstate.experiment.crosscoreferenceresolution.structuredperceptr
 
 import java.util.*;
 
-import edu.oregonstate.CDCR;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;

@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.util.List;
 import java.util.ArrayList;
 
-import edu.oregonstate.CDCR;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
 

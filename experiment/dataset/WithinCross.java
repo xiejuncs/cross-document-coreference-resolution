@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
-import edu.oregonstate.CDCR;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.experiment.IDataSet;
 import edu.oregonstate.featureExtractor.SrlResultIncorporation;

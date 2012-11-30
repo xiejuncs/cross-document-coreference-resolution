@@ -13,7 +13,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
-import edu.oregonstate.CDCR;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;
@@ -140,44 +139,6 @@ public class ResultOutput {
 		File file = new File(filePath);
 		boolean success = file.delete();
 		assert success == true;
-	}
-	
-	// serialize the 
-	public static <T> void serialize1(T object) {
-		try
-	      {
-	         FileOutputStream fileOut = new FileOutputStream(CDCR.resultPath + "object.ser");
-	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
-	         out.writeObject(object);
-	         out.close();
-	         fileOut.close();
-	      }catch(IOException i)
-	      {
-	          i.printStackTrace();
-	      }
-	}
-	
-	@SuppressWarnings("unchecked")
-	public static <T> T deserialize1(boolean delete) {
-		T cluster = null;
-		try
-        {
-           FileInputStream fileIn = new FileInputStream(CDCR.resultPath + "object.ser");
-           ObjectInputStream in = new ObjectInputStream(fileIn);
-           cluster = (T) in.readObject();
-           in.close();
-           fileIn.close();
-       }catch(IOException i) {
-           i.printStackTrace(); 
-       }catch(ClassNotFoundException c)
-       {
-           c.printStackTrace();
-           System.exit(1);
-       }
-       if (delete) {
-    	   ResultOutput.deleteResult(CDCR.resultPath);
-       }
-       return cluster;
 	}
 	
 	public static <T> void serialize(T object, int id, String directory) {

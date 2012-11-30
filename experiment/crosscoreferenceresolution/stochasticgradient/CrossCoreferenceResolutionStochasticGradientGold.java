@@ -3,7 +3,6 @@ package edu.oregonstate.experiment.crosscoreferenceresolution.stochasticgradient
 
 import java.util.*;
 
-import edu.oregonstate.CorefSystem;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;

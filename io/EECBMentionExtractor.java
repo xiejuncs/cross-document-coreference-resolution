@@ -14,7 +14,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.List;
 
-import edu.oregonstate.CDCR;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.EecbReader;

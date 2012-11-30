@@ -10,9 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-
-import edu.oregonstate.util.GlobalConstantVariables;
 
 public class RawTextMatch {
 
@@ -60,7 +57,7 @@ public class RawTextMatch {
 					anno.add(record);
 				}
 			}
-			filename = GlobalConstantVariables.WHOLE_CORPUS_PATH + topic + "/" + filename;
+			
 			System.out.println(anno);
 			Integer[] sentences = getSentences(anno);
 			for (Integer sentence : sentences) {
@@ -115,7 +112,7 @@ public class RawTextMatch {
 	 */
 	public static HashMap<String, ArrayList<String>> readAnnotation() {
 		HashMap<String, ArrayList<String>> annotation = new HashMap<String, ArrayList<String>>();
-		String mentionPath = GlobalConstantVariables.MENTION_ANNOTATION_PATH;    // mentions.txt path
+		String mentionPath = "";    // mentions.txt path
 		try {
 			BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(mentionPath));
 			for (String line = entitiesBufferedReader.readLine(); line != null; line = entitiesBufferedReader.readLine()) {

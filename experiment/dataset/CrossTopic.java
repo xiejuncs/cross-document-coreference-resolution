@@ -4,9 +4,7 @@ import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.experiment.IDataSet;
-import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.util.DocumentMerge;
 import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;

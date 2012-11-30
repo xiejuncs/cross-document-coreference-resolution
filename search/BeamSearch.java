@@ -7,14 +7,12 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 
-import edu.oregonstate.CorefSystem;
 import edu.oregonstate.classifier.IClassifier;
 import edu.oregonstate.costfunction.ICostFunction;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
-import edu.oregonstate.general.MatrixOperation;
 import edu.oregonstate.general.PriorityQueue;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.lossfunction.ILossFunction;

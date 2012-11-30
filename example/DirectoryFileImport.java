@@ -6,10 +6,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.sun.xml.internal.ws.util.StringUtils;
-
-import edu.oregonstate.util.GlobalConstantVariables;
-
 /**
  * Example to get all files resides in one directory.
  * in the case of EECB, there are still sub directory .
@@ -48,7 +44,6 @@ public class DirectoryFileImport {
 	
 	public static void main(String[] args) {
 		args = new String[1];
-		args[0] = GlobalConstantVariables.CORPUS_PATH;
 		files = new ArrayList<String>();
 		File aFile = new File(args[0]);
 		DirectoryFileImport dir = new DirectoryFileImport();

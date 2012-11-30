@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import edu.oregonstate.util.GlobalConstantVariables;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
@@ -27,7 +26,7 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public class EecbAnnotation {
 
-	public static String filename = GlobalConstantVariables.MENTION_ANNOTATION_PATH;
+	public static String filename = "";
 	// store them into the data strcture
 	public ArrayList<ArrayList<String>> corpus = new ArrayList<ArrayList<String>>();
 	public ArrayList<EntityMention> entity = new ArrayList<EntityMention>();
