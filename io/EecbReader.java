@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.oregonstate.EgenericDataSetReader;
+import edu.oregonstate.io.EgenericDataSetReader;
 import edu.oregonstate.data.EecbCharSeq;
 import edu.oregonstate.data.EecbDocument;
 import edu.oregonstate.data.EecbTopic;

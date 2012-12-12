@@ -7,7 +7,6 @@ import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
 import edu.oregonstate.general.PriorityQueue;
-import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.State;
 import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefCluster;
@@ -120,7 +119,7 @@ public class StochasticGradientConsideringBeam implements IClassifier {
 	}
 	
 	public StochasticGradientConsideringBeam() {
-		mEta = (Double) ExperimentConstructor.getParameter(EecbConstants.CLASSIFIER, "learningRate");
+		mEta = Double.parseDouble(ExperimentConstructor.property.getProperty("learningRate"));
 	}
 	
 	public void setPreviousBestState(State<CorefCluster> previousBestState){
@@ -133,6 +132,10 @@ public class StochasticGradientConsideringBeam implements IClassifier {
 		mViolations = 0;
 		double[] regularizer = calculateWeight();
 		double[] weightedRegularizer = DoubleOperation.time(regularizer, mEta);
+		
+		// divide the number of violated constraints
+		weightedRegularizer = DoubleOperation.divide(weightedRegularizer, mViolations);
+		
 		mWeight = DoubleOperation.time(mWeight, 1 - mEta);
 		mWeight = DoubleOperation.add(mWeight, weightedRegularizer);
 		mTotalWeight = DoubleOperation.add(mTotalWeight, mWeight);

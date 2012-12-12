@@ -5,7 +5,6 @@ import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.IterativeResolution;
-import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.Document;
 import Jama.Matrix;
 
@@ -39,9 +38,11 @@ public class Train {
 	 */
 	public Train( String[] trainingTopics) {
 		mTrainingTopics = trainingTopics;
-		mIteration = (Integer) ExperimentConstructor.getParameter(EecbConstants.CLASSIFIER, "noOfIteration");
-		mCoefficient = (Double) ExperimentConstructor.getParameter(EecbConstants.CLASSIFIER, "coefficient");
-		mLamda = (Double) ExperimentConstructor.getParameter(EecbConstants.CLASSIFIER, "interPolationWeight");
+		mIteration = Integer.parseInt(ExperimentConstructor.property.getProperty("dcoref.classifier.epoch"));
+		String option = ExperimentConstructor.property.getProperty("dcoref.classifier.options");
+		String[] options = option.split("-"); 
+		mCoefficient = Double.parseDouble(options[0]);
+		mLamda = Double.parseDouble(options[1]);
 	}
 	
 	/** main method for training the linear regression model, in the current time, use four roles now */

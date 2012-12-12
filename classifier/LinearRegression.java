@@ -224,7 +224,7 @@ public class LinearRegression {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		LinearRegression lr = new LinearRegression("/nfs/guille/xfern/users/xie/Experiment/corpus/TEMPORYRESUT/Fri-Nov-23-16:06:47-PST-2012-StanfordExperiment-gold-LinearRegression-10/trainingSet/initial.csv", 1.0);
+		LinearRegression lr = new LinearRegression("/nfs/guille/xfern/users/xie/Experiment/corpus/TEMPORYRESUT/Fri-Nov-30-14:58:24-PST-2012-StanfordExperiment-gold-LinearRegression-10/trainingSet/initial.csv", 1.0);
 		try {
 			Matrix training = lr.readMatrix(lr.trainingFile);
 			/** get the actual features, meanwhile add a N*1 column vector with value being all 1 as the first column of the features */

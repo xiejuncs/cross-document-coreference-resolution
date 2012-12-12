@@ -379,7 +379,7 @@ public class EecbDocument extends EecbElement {
 				
 				String[] paras = mID.split("-");
 				String file = paras[1];
-				String filename = ExperimentConstructor.getParameter(EecbConstants.DATASET, "corpusPath") + paras[0] + File.separator + paras[1] + ".eecb";
+				String filename = ExperimentConstructor.DATA_PATH + paras[0] + File.separator + paras[1] + ".eecb";
 				BufferedReader br = new BufferedReader(new FileReader(filename));
 				int i = 0;
 				// filename : 1.eecb
@@ -408,7 +408,7 @@ public class EecbDocument extends EecbElement {
 	        nRawText = nsb.toString().trim();
 	        
 	        if (ExperimentConstructor.outputText){
-	        	ResultOutput.writeTextFile(EecbConstants.ADJACENT_INTERMEDIATE_RESULT_PATH + "/" + mPrefix, nRawText);
+	        	//ResultOutput.writeTextFile(EecbConstants.ADJACENT_INTERMEDIATE_RESULT_PATH + "/" + mPrefix, nRawText);
 	        }
 		}
 		
@@ -541,7 +541,7 @@ public class EecbDocument extends EecbElement {
 		
 		public static HashMap<String, ArrayList<String>> readAnnotation() {
 			HashMap<String, ArrayList<String>> annotation = new HashMap<String, ArrayList<String>>();
-			String mentionPath = (String) ExperimentConstructor.getParameter(EecbConstants.DATASET, "annotationPath");    // mentions.txt path
+			String mentionPath = ExperimentConstructor.MENTION_PATH;    // mentions.txt path
 			
 			try {
 				BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(mentionPath));

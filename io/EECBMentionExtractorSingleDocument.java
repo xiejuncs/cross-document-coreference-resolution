@@ -93,8 +93,8 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 		        	List<Mention> sentence = new ArrayList<Mention>();
 		        	for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
 		        		Mention mention = allGoldMentions.get(i).get(j);
-		        		ResultOutput.serialize(mention, mention.mentionID, ExperimentConstructor.mentionResultPath);
-		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), ExperimentConstructor.mentionResultPath, true);
+		        		ResultOutput.serialize(mention, mention.mentionID, ExperimentConstructor.mentionRepositoryPath);
+		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), ExperimentConstructor.mentionRepositoryPath, true);
 		        		copyMention.goldCorefClusterID = -1;
 		        		sentence.add(copyMention);
 		        	}

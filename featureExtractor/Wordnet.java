@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.util.Set;
 import java.util.HashSet;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.util.EecbConstants;
 
 import net.didion.jwnl.JWNL;
@@ -76,7 +77,7 @@ public class Wordnet {
 
 	public static void configureJWordNet() {
 		try {
-			JWNL.initialize(new FileInputStream(EecbConstants.WORD_NET_CONFIGURATION_PATH));
+			JWNL.initialize(new FileInputStream(ExperimentConstructor.WORD_NET_CONFIGURATION_PATH));
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(-1);

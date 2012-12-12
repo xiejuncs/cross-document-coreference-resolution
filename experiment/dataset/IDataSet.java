@@ -1,4 +1,4 @@
-package edu.oregonstate.experiment;
+package edu.oregonstate.experiment.dataset;
 
 import edu.stanford.nlp.dcoref.Document;
 

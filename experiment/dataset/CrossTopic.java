@@ -3,7 +3,7 @@ package edu.oregonstate.experiment.dataset;
 import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.experiment.IDataSet;
+import edu.oregonstate.experiment.dataset.IDataSet;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefCluster;
@@ -26,17 +26,13 @@ public class CrossTopic implements IDataSet {
 	
 	/** used for scoring */
 	private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
-	
-	/** srl path */
-	private String srlPath;
-	
+
 	public CrossTopic() {
 	}
 	
 	@Override
 	public Document getData(String[] topics) {
-		corpusPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("corpusPath");
-		srlPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("srlpath");
+		corpusPath = ExperimentConstructor.DATA_PATH;
 		
 		Document corpus = new Document();
 		IDocument documentExtraction = new CrossDocument();
@@ -47,8 +43,8 @@ public class CrossTopic implements IDataSet {
 				String path = corpusPath + topic + "/";
 				ResultOutput.writeTextFile(ExperimentConstructor.logFile, topic + " : " + path);
 				corpus = documentExtraction.getDocument(topic);
-				ResultOutput.writeTextFile(statisPath, topic + " " + corpus.allGoldMentions.size() + " " + corpus.allPredictedMentions.size() + " " +
-						corpus.corefClusters.size() + " " + corpus.goldCorefClusters.size());
+				ResultOutput.writeTextFile(statisPath, topic + " " + corpus.allGoldMentions.size() + " " + corpus.goldCorefClusters.size() + " " + corpus.allPredictedMentions.size() + " " +
+						corpus.corefClusters.size());
 				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\n");
 			} catch (Exception e) {
 				throw new RuntimeException(e);
@@ -65,6 +61,8 @@ public class CrossTopic implements IDataSet {
 			CorefScorer pairscore = new ScorerPairwise();
     		pairscore.calculateScore(corpus);
     		pairscore.printF1(logger, true);
+    		
+    		corpus.setID(topic);
 		}
 
 		return corpus;

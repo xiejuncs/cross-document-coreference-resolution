@@ -101,14 +101,14 @@ public class BeamSearch implements ISearch {
     
     /** constructor */
     public BeamSearch() {
-    	mBeamWidth = (Integer) ExperimentConstructor.getParameter(EecbConstants.SEARCHMETHOD, "beamWidth");
-    	maximumSearch = (Integer) ExperimentConstructor.getParameter(EecbConstants.SEARCHMETHOD, "searchStep");
+    	mBeamWidth = 1;
+    	maximumSearch = 300;
         mdictionary = ExperimentConstructor.mdictionary;
         mrightLinks = new HashSet<String>();
-        lossFunction = ExperimentConstructor.createLossFunction((String) ExperimentConstructor.getParameter(EecbConstants.LOSSFUNCTION, "model"));
-        costFunction = ExperimentConstructor.createCostFunction((String) ExperimentConstructor.getParameter(EecbConstants.COSTFUNCTION, "model"));
-        classifier = ExperimentConstructor.createClassifier((String) ExperimentConstructor.getParameter(EecbConstants.CLASSIFIER, "model"));
-        type = (ScoreType) ExperimentConstructor.getParameter(EecbConstants.LOSSFUNCTION, "scoreType");
+        lossFunction = ExperimentConstructor.createLossFunction("Metric");
+        costFunction = ExperimentConstructor.createCostFunction("model");
+        classifier = ExperimentConstructor.createClassifier("model");
+        type = CorefScorer.ScoreType.Pairwise;
     }
     
     public int getSearchStep() {
@@ -159,7 +159,16 @@ public class BeamSearch implements ISearch {
     	}
     }
     
-    // get the neighbors of the current state
+    /**
+     * get the neighbors of the current state
+     * 
+     * do not deal with the pronoun case, because the pronoun is still the singleton cluster all the time
+     * so pull out the cluster and determine whether the first mention of the cluster is Pronominal. If the 
+     * first mention is Pronominal, then jump out of the loop
+     * 
+     * @param state
+     * @return
+     */
     private Set<String> generateCandidateSets(State<CorefCluster> state) {
         Set<String> actions = new HashSet<String>();
         Map<Integer, CorefCluster> clusters = state.getState();
@@ -174,19 +183,19 @@ public class BeamSearch implements ISearch {
         // generate the action
         for (int i = 0; i < size; i++) {
             Integer iID = keys.get(i);
-            //CorefCluster icluster = clusters.get(iID);
+            CorefCluster icluster = clusters.get(iID);
             //do not deal with pronoun
-            //if (icluster.corefMentions.size() == 1 && icluster.firstMention.isPronominal()) {
-            //	continue;
-            //}
+            if (icluster.corefMentions.size() == 1 && icluster.firstMention.isPronominal()) {
+            	continue;
+            }
             
             for (int j = 0; j < i; j++) {
                 Integer jID = keys.get(j);
-                //CorefCluster jcluster = clusters.get(jID);
+                CorefCluster jcluster = clusters.get(jID);
                 //do not deal with pronoun
-               // if (jcluster.corefMentions.size() == 1 && jcluster.firstMention.isPronominal()) {
-               // 	continue;
-                //}
+                if (jcluster.corefMentions.size() == 1 && jcluster.firstMention.isPronominal()) {
+                 	continue;
+                }
                 
                 String action = iID + "-" + jID + "-" +  moffset;;
                 actions.add(action);
@@ -651,11 +660,10 @@ public class BeamSearch implements ISearch {
 			
 			//closedList.add(indexState);
 			regenerateFeatures(indexState);  // update the mdocument
-			
+			List<Double> costScores = new ArrayList<Double>();
 			try {
 				/** get the candidate lists*/
 				Set<String> actions = generateCandidateSets(indexState);
-				List<Double> costScores = new ArrayList<Double>();
 				for (String action : actions) {
 					State<CorefCluster> initial = new State<CorefCluster>();
 					for (Integer key : indexState.getState().keySet()) {
@@ -674,6 +682,14 @@ public class BeamSearch implements ISearch {
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.exit(1);
+			}
+			
+			// if enable the zero condition, then if all the cost score of the candidate states are below zero, then 
+			// stop the search
+			if (ExperimentConstructor.enableZeroCondition) {
+				if (allNegative(costScores)) {
+					break;
+				}
 			}
 			
 			msearchStep++;			

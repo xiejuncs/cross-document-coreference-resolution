@@ -1,78 +1,64 @@
 package edu.oregonstate.util;
 
-import edu.oregonstate.experiment.ExperimentConstructor;
-
 public class EecbConstants {
-
-	// the corpus for debug
-	public static final String DEBUG_CORPUS_PATH = ExperimentConstructor.corpusPath + "corpus/EECB1/data/";
 	
-	// the mention annotation for debug
-	public static final String DEBUG_MENTION_ANNOTATION_PATH = ExperimentConstructor.corpusPath + "corpus/mentions-backup.txt";
+	/** String constants */
+	/** local corpus path, which is used for debug */
+	public static final String LOCAL_CORPUS_PATH = "../";
 	
-	// the corpus for running the whole experiment
-	public static final String WHOLE_CORPUS_PATH = ExperimentConstructor.corpusPath + "corpus/EECB1.0/data/";
+	/** cluster corpus path, which is used to run the whole experiment */
+	public static final String CLUSTER_CPRPUS_PATH = "/nfs/guille/xfern/users/xie/Experiment/";
 	
-	// the mention annotation for running the whole experiment
-	public static final String WHOLE_MENTION_ANNOTATION_PATH = ExperimentConstructor.corpusPath + "corpus/mentions-backup.txt";
-	
-	/** the corpus for debugging within coreference resolution case */
-	public static final String DEBUG_WITHIN_CORPUS_PATH = ExperimentConstructor.corpusPath + "corpus/EECB3.0/data/";
-	
-	/**the mention annotation for running the whole experiment */
-	public static final String DEBUG_WITHIN_MENTION_ANNOTATION_PATH = ExperimentConstructor.corpusPath + "corpus/mentions-within.txt";
-	
-	// the similarity dictionary created by Lin
-	public static final String WORD_SIMILARITY_PATH = ExperimentConstructor.corpusPath + "corpus/sims.lsp";
-	
-	// the configuration file for WORDNET
-	public static final String WORD_NET_CONFIGURATION_PATH = ExperimentConstructor.corpusPath + "corpus/file_properties.xml";
-	
-	// store the serilize and deserize result
-	//public static final String RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/RESULT/";
-	public static final String RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/CROSS-RESULT/";
-	
-	/** Temporary result folder in order to further analysis */
-	public static final String TEMPORY_RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/TEMPORYRESUT/";
-	
-	// the path for SRL result
-	public static final String TOKENS_OUTPUT_PATH = ExperimentConstructor.corpusPath + "corpus/tokenoutput/";
-	
-	// the path for single document SRL result
-	//public static final String TOKENS_OUTPUT_PATH = ExperimentConstructor.corpusPath + "corpus/srloutputforsingledocument/2/";
-	
-	// Partial sieve configuration
+	/** partial sieves, does not including pronoun sieve, which is the right configuration for Stanford experiment and our own experiment */
 	public static final String PARTIAL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch";
-	
-	// Full sieve configuration
+
+	/** full sieve, including Pronoun Sieve */
 	public static final String FULL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch, PronounMatch";
 	
+	/** the topics used in the Stanford experiments 
+	 * "12", "22", "38",                                                        // development topics 
+	 * */
+	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
+														"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
+														"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
+														"36", "39", "41", "42", "45"};
+	
+	/** the total topics */
+	public static final String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
+											 "11", "12", "13", "14", "16", "18", "19", "20", "21", "22", 
+											 "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", 
+											 "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", 
+											 "43", "44", "45"};
+	
+	/** debug topics */
+	public static final String[] debugTopics = {"1", "38", "3", "20"};
+	
+	/** score Types */
+	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
+	
 	/** configuration setting */
-	public static final String EECB_PROP = "dcoref.eecb";
-	
+	public static final String DATASET_PROP = "dcoref.dataset";
+	public static final String CLASSIFIER_PROP = "dcoref.classifier";
+	public static final String CLASSIFIER_EPOCH_PROP = "dcoref.classifier.epoch";
+	public static final String CLASSIFIER_OPTIONS_PROP = "dcoref.classifier.options";
+	public static final String COSTFUNCTION_PROP = "dcoref.costfunction";
+	public static final String LOSSFUNCTION_PROP = "dcoref.lossfunction";
+	public static final String CLUSTERING_PROP = "dcoref.clustering";
+	public static final String SEARCH_PROP = "dcoref.search";
+	public static final String SEARCH_BEAMWIDTH_PROP = "dcoref.search.beamwidth";
+	public static final String SEARCH_MAXIMUMSTEP_PROP = "dcoref.search.maximumstep";
+	public static final String SRL_PROP = "dcoref.srl";
+	public static final String STOPWORD_PROP = "dcoref.stopword";
+	public static final String SIEVES_PROP = "dcoref.sievePasses";
 	public static final String SCORE_PROP = "dcoref.score";
+	public static final String GOLD_PROP = "dcoref.gold";
+	public static final String DEBUG_PROP = "dcoref.debug";
+	public static final String STOPPING_CRITERION = "dcoref.stoppingcriterion";
+	public static final String STOPPING_RATE = "dcoref.stoppingrate";
+	public static final String TRAINING_VALIDATION_PROP = "dcoref.training.validation";
+	public static final String ANNOTATORS_PROP = "dcoref.annotators";
+	public static final String FILTERSINGLETONS_PROP = "dcoref.filtersingletons";
+	public static final String POSTPROCESS_PROP = "dcoref.postprocess";
+	public static final String WEIGHT_PROP = "dcoref.weight";
 	
-	public static final String MENTION_FINDER_PROP = "dcoref.mentionFinder";
-	
-	/** if true, skip coreference resolution. do mention detection only */
-	public static final boolean SKIP_COREF = false;
-	
-	/** store the intermediate result created during creating the adjacent states */
-	public static final String ADJACENT_INTERMEDIATE_RESULT_PATH = ExperimentConstructor.corpusPath + "corpus/ADJACENT-INTERMEDIATE-RESULT/";
-	
-	public static final String STOPWORD_PATH = ExperimentConstructor.corpusPath + "corpus/english.stop";
-	
-	public static final String CLASSIFIER = "classifier";
-	
-	public static final String COSTFUNCTION = "costfunction";
-	
-	public static final String LOSSFUNCTION = "lossfunction";
-	
-	public static final String CLUSTERING = "clustering";
-	
-	public static final String SEARCHMETHOD = "searchmethod";
-	
-	public static final String DATASET = "dataset";
-	
-	public static final String SRL = "srl";
 }

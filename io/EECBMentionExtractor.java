@@ -18,6 +18,7 @@ import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.EecbReader;
 import edu.oregonstate.util.EecbConstants;
+import edu.stanford.nlp.dcoref.CoNLL2011DocumentReader;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
@@ -26,6 +27,7 @@ import edu.stanford.nlp.dcoref.Semantics;
 import edu.stanford.nlp.ie.machinereading.structure.EntityMention;
 import edu.stanford.nlp.ie.machinereading.structure.EventMention;
 import edu.stanford.nlp.ie.machinereading.structure.MachineReadingAnnotations;
+import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
@@ -58,7 +60,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		stanfordProcessor = loadStanfordProcessor(props);
 		baseID = 10000000 * Integer.parseInt(topic);
 		goldBaseID = 10000000 * Integer.parseInt(topic);
-		topicPath = props.getProperty(edu.oregonstate.util.EecbConstants.EECB_PROP) + topic + "/";
+		topicPath = ExperimentConstructor.DATA_PATH + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
 		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
@@ -92,6 +94,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		List<List<Mention>> allPredictedMentions = null;
 		List<Tree> allTrees = new ArrayList<Tree>();
 		Annotation anno = new Annotation("");
+		CoNLL2011DocumentReader.Document conllDocument = new CoNLL2011DocumentReader.Document();
 		try {
 			// call the eecbReader
 			anno = eecbReader.read(files, topic);
@@ -99,13 +102,34 @@ public class EECBMentionExtractor extends EmentionExtractor {
 			 
 		    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
 		    for (CoreMap sentence : sentences) {
+		    	List<String[]> currentSentence = new ArrayList<String[]>();
 		    	int i = 1;
+		    	
 		    	for (CoreLabel w : sentence.get(TokensAnnotation.class)) {
+		    		
+		    		// Add by Jun Xie, create the CoNLL format
+		    		String[] words = new String[13];
+		    		words[0] = topic;
+		    		words[1] = "0";
+		    		words[2] = (i - 1) + "";
+		    		words[3] = w.get(TextAnnotation.class);
+		    		words[4] = w.get(PartOfSpeechAnnotation.class);
+		    		words[5] = "-";
+		    		words[6] = "-";
+		    		words[7] = "-";
+		    		words[8] = "-";
+		    		words[9] = "-";
+		    		words[10] = "-";
+		    		words[11] = "-";
+		    		words[12] = "-";
+		    		
 		    		w.set(IndexAnnotation.class, i++);
 		    		if(!w.containsKey(UtteranceAnnotation.class)) {
 		    	        w.set(UtteranceAnnotation.class, 0);
 		    	    }
+		    		currentSentence.add(words);
 		    	}
+		    	conllDocument.addSentence(currentSentence);
 		   
 		    	allTrees.add(sentence.get(TreeAnnotation.class));
 		    	allWords.add(sentence.get(TokensAnnotation.class));
@@ -114,15 +138,14 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
-		    if (ExperimentConstructor.goldOnly) {
-		    	// just use the gold mentions
+		    if (ExperimentConstructor.goldOnly) {		    	
 		        allPredictedMentions = new ArrayList<List<Mention>>();
 		        for (int i = 0; i < allGoldMentions.size(); i++) {
 		        	List<Mention> sentence = new ArrayList<Mention>();
 		        	for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
 		        		Mention mention = allGoldMentions.get(i).get(j);
-		        		ResultOutput.serialize(mention, mention.mentionID, ExperimentConstructor.mentionResultPath);
-		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID) + ".ser", ExperimentConstructor.mentionResultPath, true);
+		        		ResultOutput.serialize(mention, mention.mentionID, ExperimentConstructor.mentionRepositoryPath);
+		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), ExperimentConstructor.mentionRepositoryPath, true);
 		        		copyMention.goldCorefClusterID = -1;
 		        		sentence.add(copyMention);
 		        		
@@ -130,12 +153,11 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		        	allPredictedMentions.add(sentence);
 		        }
 		        
+		        //allPredictedMentions = makeCopy(allGoldMentions);
 		    } else {
 		    	// set the mention id here
 		    	allPredictedMentions = mentionFinder.extractPredictedMentions(anno, baseID, dictionaries);
 		    }
-		    
-		    // 
 		    
 		    /** according to the extraction result, print the original document with different annotation */
 		    printRawDoc(sentences, allPredictedMentions, false);
@@ -150,7 +172,27 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		dcorfMentionExtractor.setCurrentDocumentID(topic);
 		Document document = dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
 		document.extractGoldCorefClusters();
+		document.conllDoc = conllDocument;
 		return document;
+	}
+	
+	public List<List<Mention>> makeCopy(List<List<Mention>> mentions) {
+		List<List<Mention>> copy = new ArrayList<List<Mention>>(mentions.size());
+		for (List<Mention> sm:mentions) {
+			List<Mention> sm2 = new ArrayList<Mention>(sm.size());
+			for (Mention m:sm) {
+				Mention m2 = new Mention();
+				m2.goldCorefClusterID = m.goldCorefClusterID;
+				m2.mentionID = m.mentionID;
+				m2.startIndex = m.startIndex;
+				m2.endIndex = m.endIndex;
+				m2.originalSpan = m.originalSpan;
+				m2.dependency = m.dependency;
+				sm2.add(m2);
+			}
+			copy.add(sm2);
+		}
+		return copy;
 	}
 	
 	@Override

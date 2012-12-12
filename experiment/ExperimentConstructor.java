@@ -1,8 +1,9 @@
 package edu.oregonstate.experiment;
 
-
 import java.io.FileInputStream;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.didion.jwnl.JWNL;
 
@@ -24,78 +25,94 @@ import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.Counter;
+import edu.stanford.nlp.util.StringUtils;
+import edu.oregonstate.experiment.dataset.CorefSystem;
+import edu.oregonstate.experiment.dataset.IDataSet;
 
 /**
- * 
+ * The abstract class of Experiment Setting
  * 
  * @author Jun Xie (xie@eecs.oregonstate.edu)
- *
+ * 
  */
 public abstract class ExperimentConstructor {
-
-	/**
-	 * total number of topics: 43
-	 * {"1", "2", "3", "4", "5", "6", "7", "8", "9"}   9
-	 * {"10", "11", "12", "13", "14", "16", "18", "19"}   8
-	 * {"20", "21", "22", "23", "24", "25", "26", "27", "28", "29"}  10
-	 * {"30", "31", "32", "33", "34", "35", "36", "37", "38", "39"}  10
-	 * {"40", "41", "42", "43", "44", "45"}  6
-	 */
 	
-	/** total topics for running all experiments */
-	protected static String[] stanfordTotalTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44", 
-		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20", "21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", "36", "39", "41", "42", "45"}; // 12, 22, 38 development set
+	//
+	// properties for the experiment
+	//
+	public static Properties property;
 	
-	protected static String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
-											 "11", "12", "13", "14", "16", "18", "19", "20", "21", "22", 
-											 "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", 
-											 "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", 
-											 "43", "44", "45"};
-	
-	// for debug
-	protected static String[] debugTopics = {"1", "38", "3", "20"};
-	
-	
-	// for experiment case
+	//
+	// topics used for experiment, training and testing
+	//
+	/** the topics used for conducting the experiment */
 	protected static String[] experimentTopics;
 	
-	/** experiment folder */
+	/** training topics */
+	protected String[] trainingTopics;
+	
+	/** testing topics */
+	protected String[] testingTopics;
+	
+	//
+	// various path
+	//
+	/** experiment result folder */
 	public static String experimentResultFolder;
 	
-	/** corpus path */
+	/** corpus path, just corpus directory, including all the stuffs used for the experiment */
 	public static String corpusPath;
 	
-	/** store the mention result */
-	public static String mentionResultPath;
+	/** store the mention result, used for gold mentions, delete after the experiment */
+	public static String mentionRepositoryPath;
 	
-	/** whether output feature for violated case */
-	public static boolean outputFeature;
-	
-	/** whether output text for producing the SRL annotation */
-	public static boolean outputText;
-	
-	/** Reading text when there is numm pointer */
-	public static boolean enableNull;
-	
-	/** current experiment folder, output action information for future use */
+	/** current experiment folder, each topic is an directory, used for storing the intermediate results */
 	public static String currentExperimentFolder;
-	
-	/** whether normalize weight */
-	public static boolean normalizeWeight;
 	
 	/** log file */
 	public static String logFile;
 	
-	/** just output the train and test result, for example pairwise  */
+	/** object file */
+	public static String serializedOutput;
+	
+	/** violated file */
+	protected String violatedFile;
+	
+	/** store the intermediate weights produced by the algorithm */
+	protected String weightFile;
+	
+	/** SRL result path */
+	public static String SRL_PATH;
+	
+	/** the folder path store the training set produced during the training phase */
+	public static String linearRegressionTrainingPath;
+	
+	/** data path, which is used to access the file and read the document */
+	public static String DATA_PATH;
+	
+	/** gold mention path */
+	public static String MENTION_PATH;
+	
+	/** the similarity dictionary created by Lin */
+	public static String WORD_SIMILARITY_PATH;
+	
+	/** the configuration file for WORDNET */
+	public static String WORD_NET_CONFIGURATION_PATH;
+	
+	/** English Stop word path */
+	public static String STOPWORD_PATH;
+	
+	/** scorer path */
+	public static String conllScorerPath;
+	
+	//
+	// scoring results path
+	//
+	/** just output the train and test result, for example pairwise */
 	public static String mscorePath;
 	
 	/** output the detail information of each score, which can be used to calculate the total performance of all topics */
 	public static String mScoreDetailPath;
-	
-	public static boolean stoppingCriterion;
-	
-	/** score Types */
-	String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
 	
 	/** muc detail information */
 	public static String mMUCScoreDetailPath;
@@ -106,53 +123,26 @@ public abstract class ExperimentConstructor {
 	/** ceaf detail information */
 	public static String mCEAFScoreDetailPath;
 	
-	/** training topics */
-	protected String[] trainingTopics;
+	//
+	// conditions
+	//
+	/** whether output feature for violated case */
+	public static boolean outputFeature;
 	
-	/** current corpus statistics */
-	public static String currentCorpusStatistics;
+	/** whether output text for producing the SRL annotation */
+	public static boolean outputText;
 	
-	/** for mention words feature */
-	public static Map<String, List<String>> datas;
+	/** Reading text when there is null pointer */
+	public static boolean enableNull;
 	
-	/** testing topics */
-	protected String[] testingTopics;
+	/** whether normalize weight */
+	public static boolean normalizeWeight;
 	
-	/** object file */
-	public static String serializedOutput;
-	
-	/** create dataset model, for example, whether need to incorporate the SRL result */
-	protected IDataSet mDatasetMode;
-	
-	/** parameter for different components, value can be any type */
-	public static Map<String, Map<String, Object>> mParameters;
-	
-	/** whether to incorporate the SRL result */
-	public static boolean incorporateTopicSRLResult;
-	
-	/** whether to incorporate the document srl result */
-	public static boolean incorporateDocumentSRLResult;
-	 
+	/** whether enforce the stopping criterion */
+	public static boolean stoppingCriterion;
+
 	/** just deal with gold mention cases */
 	public static boolean goldOnly;
-	
-	/** dictionary used for creating features */
-	public static Dictionaries mdictionary;
-	
-	/** violated file */
-	protected String violatedFile;
-	
-	/** store the intermediate weights produced by the algorithm */
-	protected String weightFile;
-	
-	/** stopping rate */
-	public static double stoppingRate;
-	
-	/** whether update weight, training phase set as true, validation and testing phase set as false */
-	public static boolean updateWeight;
-	
-	/** the folder path store the training set produced during the training phase */
-	public static String linearRegressionTrainingPath;
 	
 	/** whether we need to post-process the document, apply for the predicted mentions */
 	public static boolean postProcess;
@@ -163,40 +153,165 @@ public abstract class ExperimentConstructor {
 	/** generate features for the experiment */
 	public static boolean oregonStateExperiment = true;
 	
-	/**  */
-	public static boolean crossCase;
+	/** whether put all documents of a topic together */
+	public static boolean dataSetMode;
+	
+	/** whether enable all zero condition to stop the search during the search phase */
+	public static boolean enableZeroCondition;
+	
+	/** whether debug or run the whole experiment */
+	protected boolean mDebug;
+	
+	/** whether update weight, training phase set as true, validation and testing phase set as false */
+	public static boolean updateWeight;
+	
+	//
+	// data used for experiment 
+	//
+	/** for mention words feature */
+	public static Map<String, List<String>> datas;
+	
+	/** dictionary used for creating features */
+	public static Dictionaries mdictionary;
+	
+	/** stopping rate */
+	public static double stoppingRate;
+
+	/**
+	 * initialize the Parameters
+	 */
+	public ExperimentConstructor(String configurationFile) {
+		
+		//
+		// read the property configuration file: property
+		//
+		String[] args = new String[] {"-props", configurationFile};
+		property = StringUtils.argsToProperties(args);
+		
+		//
+		// topics used for experiment: mDebug, experimentTopics, trainingTopics, testingTopics, corpusPath
+		//
+		mDebug = Boolean.parseBoolean(property.getProperty(EecbConstants.DEBUG_PROP, "false"));
+		if (mDebug) {
+			experimentTopics = EecbConstants.debugTopics;
+			corpusPath = EecbConstants.LOCAL_CORPUS_PATH;
+			splitTopics(2);
+		} else {
+			experimentTopics = EecbConstants.stanfordTotalTopics;
+			corpusPath = EecbConstants.CLUSTER_CPRPUS_PATH;
+			splitTopics(12);
+		}
+		
+		//
+		// various path: experimentResultFolder, stanfordExperiment
+		//
+		
+		/** create a directory to store the output of the specific experiment */
+		StringBuilder sb = new StringBuilder();
+		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+		sb.append(corpusPath + "corpus/TEMPORYRESUT/" + timeStamp + "-");
+		String classifierLearningModel = property.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
+		String classifierNoOfIteration = property.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP);   // epoch of classification model
+		sb.append(classifierLearningModel + "-" + classifierNoOfIteration);
+		if (property.containsKey(EecbConstants.SEARCH_PROP)) {
+			String searchModel = property.getProperty(EecbConstants.SEARCH_PROP);
+			String searchWidth = property.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP);
+			String searchStep = property.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP);
+			sb.append("-" + searchModel + "-" + searchWidth + "-" + searchStep);
+			stanfordExperiment = false;
+		} else {
+			stanfordExperiment = true;
+		}
+		if (property.containsKey(EecbConstants.STOPPING_CRITERION)) {
+			stoppingCriterion = Boolean.parseBoolean(property.getProperty(EecbConstants.STOPPING_CRITERION));
+			stoppingRate = Double.parseDouble(property.getProperty(EecbConstants.STOPPING_RATE));
+			sb.append("-" + stoppingRate);
+		} else {
+			stoppingCriterion = false;
+			stoppingRate = 0.0;
+		}
+		goldOnly = Boolean.parseBoolean(property.getProperty(EecbConstants.GOLD_PROP));
+		if (goldOnly) {
+			sb.append("-gold");
+		} else {
+			sb.append("-predicted");
+		}
+		
+		postProcess = Boolean.parseBoolean(property.getProperty(EecbConstants.POSTPROCESS_PROP));
+		if (postProcess) {
+			sb.append("-PostProcess");
+		} else {
+			sb.append("-notPostProcess");
+		}
+		
+		experimentResultFolder = sb.toString();
+		Command.createDirectory(experimentResultFolder);
+		
+		//
+		// if goldOnly, then just predicted mentions are just a copy of gold mentions, and create a directory to store the serialized mention object (deep copy), 
+		// else  then the predicted mentions are generated from the RuleBasedMentionExtraction system
+		//
+		
+		if (goldOnly) {
+			mentionRepositoryPath = experimentResultFolder + "/mentionResult";
+			Command.createDirectory(mentionRepositoryPath);
+		}
+		
+		logFile = experimentResultFolder + "/" + "experimentlog";
+		
+		/** create document serialization folder which store document serialization object */
+		serializedOutput = experimentResultFolder + "/documentobject";
+		Command.createDirectory(serializedOutput);
+		
+		SRL_PATH = corpusPath + "corpus/tokenoutput/";
+		DATA_PATH = corpusPath + "corpus/EECB1.0/data/";
+		MENTION_PATH = corpusPath + "corpus/mentions.txt";
+		WORD_SIMILARITY_PATH = corpusPath + "corpus/sims.lsp";
+		WORD_NET_CONFIGURATION_PATH = corpusPath + "corpus/file_properties.xml";
+		STOPWORD_PATH = corpusPath + "corpus/english.stop";
+		conllScorerPath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
+		
+		weightFile = experimentResultFolder + "/weights";
+		violatedFile = experimentResultFolder + "/violatedFile";
+		linearRegressionTrainingPath = experimentResultFolder + "/trainingSet";
+		Command.createDirectory(linearRegressionTrainingPath);
+		
+		
+		/** some features are constant across all experiments */
+		outputFeature = false;
+		outputText = false;
+		enableZeroCondition = false;
+		enableNull = false;
+		normalizeWeight = false;
+		updateWeight = false;
+		
+		/** do post process and remove the singleton mentions during output conll document */
+		
+		dataSetMode = Boolean.parseBoolean(property.getProperty(EecbConstants.DATASET_PROP));
+		
+		
+		/** initialize the dictionary */
+		CorefSystem cs = new CorefSystem();
+		mdictionary = cs.corefSystem.dictionaries();
+
+		/** configure the Wordnet and Lin's dictionary */
+		configureJWordNet();
+		configureWordSimilarity();
+		
+		/** read the Dataset */
+		createDataSet();
+	}
 	
 	/** print final score */
 	protected void printFinalScore(int iteration) {
 		FinalScore finalScore = new FinalScore(trainingTopics, testingTopics, experimentResultFolder);
 		for (int i = 1; i <= iteration; i++) {
-			for (String scoreType : scoreTypes) {
+			for (String scoreType : EecbConstants.scoreTypes) {
 				finalScore.set(i);
 				finalScore.setScoreType(scoreType);
 				finalScore.computePerformance();
 			}
 		}
-	}
-	
-	/** get parameter */
-	public static Object getParameter(String methodKey, String parameterKey) {
-		
-		
-		if (mParameters == null) {
-			return null;
-		} else {
-			return mParameters.get(methodKey).get(parameterKey);
-		}
-	}
-	
-	/** whether debug or run the whole experiment */
-	protected boolean mDebug;
-	
-	/** initialize the Parameter */
-	public ExperimentConstructor() {
-		mParameters = new HashMap<String, Map<String, Object>>();
-		stanfordExperiment = false;
-		crossCase = true;
 	}
 	
 	/** set debug mode */
@@ -336,24 +451,6 @@ public abstract class ExperimentConstructor {
 	}
 	
 	/**
-	 * add parameter to the parameters
-	 * 
-	 * Through explicit add parameter to the parameters, it is easy to pinpoint the bug
-	 * 
-	 * @param methodkey
-	 * @param parameterKey
-	 * @param parameterValue
-	 */
-	protected void addParas(String methodkey, String parameterKey, Object parameterValue) {
-		boolean containMethod = mParameters.containsKey(methodkey);
-		if (!containMethod) {
-			mParameters.put(methodkey, new HashMap<String, Object>());
-		}
-		
-		mParameters.get(methodkey).put(parameterKey, parameterValue);
-	}
-	
-	/**
 	 * print debug information for topic
 	 * 
 	 * @param document
@@ -387,6 +484,14 @@ public abstract class ExperimentConstructor {
 	protected void createDataSet() {
 		int totalPredictedMentions = 0;
 		int totalGoalMentions = 0;
+		
+		IDataSet mDatasetMode;
+		
+		if (dataSetMode) {
+			mDatasetMode = createDataSetModel("CrossTopic");
+		} else {
+			mDatasetMode = createDataSetModel("WithinCross");
+		}
 		
 		String corpusStatisticsPath = experimentResultFolder + "/corpusStatisticsPath";
 		
@@ -532,7 +637,7 @@ public abstract class ExperimentConstructor {
 	protected void configureJWordNet() {
 		try {
 			System.out.println("begin configure WORDNET");
-			JWNL.initialize(new FileInputStream((String) getParameter(EecbConstants.DATASET, "wordnetConfigurationPath")));
+			JWNL.initialize(new FileInputStream(WORD_NET_CONFIGURATION_PATH));
 			System.out.println("finish configure WORDNET");
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -542,7 +647,7 @@ public abstract class ExperimentConstructor {
 	
 	/** configure word similarity matrix */
 	protected void configureWordSimilarity() {
-		WordSimilarity wordSimilarity = new WordSimilarity((String) getParameter(EecbConstants.DATASET, "wordsimilaritypath"));
+		WordSimilarity wordSimilarity = new WordSimilarity(WORD_SIMILARITY_PATH);
 		wordSimilarity.initialize();
 		datas = wordSimilarity.datas;
 	}
@@ -568,4 +673,36 @@ public abstract class ExperimentConstructor {
 		}
 	}
 	
+	protected void printScoreSummary(String summary, boolean afterPostProcessing) {
+		String[] lines = summary.split("\n");
+		if(!afterPostProcessing) {
+			for(String line : lines) {
+				if(line.startsWith("Identification of Mentions")) {
+					ResultOutput.writeTextFile(logFile, line);
+					return;
+				}
+			}
+		} else {
+			StringBuilder sb = new StringBuilder();
+			for(String line : lines) {
+				if(line.startsWith("METRIC")) sb.append(line);
+				if(!line.startsWith("Identification of Mentions") && line.contains("Recall")) {
+					sb.append(line).append("\n");
+				}
+			}
+			ResultOutput.writeTextFile(logFile, sb.toString());
+		}
+	}
+	
+	/** Print average F1 of MUC, B^3, CEAF_E */
+	protected void printFinalScore(String summary) {
+		Pattern f1 = Pattern.compile("Coreference:.*F1: (.*)%");
+		Matcher f1Matcher = f1.matcher(summary);
+		double[] F1s = new double[5];
+		int i = 0;
+		while (f1Matcher.find()) {
+			F1s[i++] = Double.parseDouble(f1Matcher.group(1));
+		}
+		ResultOutput.writeTextFile(logFile, "Final score ((muc+bcub+ceafe)/3) = "+(F1s[0]+F1s[1]+F1s[3])/3);
+	}
 }

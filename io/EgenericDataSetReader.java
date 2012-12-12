@@ -1,4 +1,4 @@
-package edu.oregonstate;
+package edu.oregonstate.io;
 
 import java.util.List;
 import java.util.logging.Level;

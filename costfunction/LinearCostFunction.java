@@ -1,8 +1,6 @@
 package edu.oregonstate.costfunction;
 
-import Jama.Matrix;
 import edu.oregonstate.features.Feature;
-import edu.oregonstate.general.DoubleOperation;
 import edu.stanford.nlp.stats.Counter;
 
 public class LinearCostFunction implements ICostFunction {

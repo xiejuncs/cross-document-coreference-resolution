@@ -8,7 +8,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.experiment.IDataSet;
+import edu.oregonstate.experiment.dataset.IDataSet;
 import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.DocumentMerge;
@@ -40,8 +40,8 @@ public class WithinCross implements IDataSet {
 	
 	@Override
 	public Document getData(String[] topics) {
-		corpusPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("corpusPath");
-		srlPath = (String) ExperimentConstructor.mParameters.get(EecbConstants.DATASET).get("srlpath");
+		corpusPath = ExperimentConstructor.property.getProperty("corpusPath");
+		srlPath = ExperimentConstructor.property.getProperty("srlpath");
 		
 		Document corpus = new Document();
 		IDocument documentExtraction = new SingleDocument();

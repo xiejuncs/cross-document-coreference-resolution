@@ -1,7 +1,5 @@
 package edu.oregonstate.lossfunction;
 
-import java.util.Map;
-import java.util.ResourceBundle;
 
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;
@@ -36,7 +34,7 @@ public class MetricLossFunction implements ILossFunction {
     private double recallDenSum;
 	
 	public MetricLossFunction() {
-		mtype = (ScoreType) ExperimentConstructor.getParameter(EecbConstants.LOSSFUNCTION, "scoreType");
+		mtype = CorefScorer.ScoreType.Pairwise;
 		scores = new double[3];
 	}
 	

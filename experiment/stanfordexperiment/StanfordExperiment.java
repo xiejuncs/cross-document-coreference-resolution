@@ -1,6 +1,7 @@
 package edu.oregonstate.experiment.stanfordexperiment;
 
-import java.util.Calendar;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.logging.Logger;
 
 import Jama.Matrix;
@@ -12,8 +13,6 @@ import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.score.ScorerHelper;
 import edu.oregonstate.search.JointCoreferenceResolution;
 import edu.oregonstate.training.Train;
-import edu.oregonstate.util.Command;
-import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 
@@ -43,6 +42,10 @@ public class StanfordExperiment extends ExperimentConstructor {
 	/** aggregate the result */
 	private Document beforePronounSieveCorpus;
 	private Document afterPronounSieveCorpus;
+
+	public StanfordExperiment(String configurationPath) {
+		super(configurationPath);
+	}
 	
 	/**
 	 * add four fields to the corpus
@@ -86,7 +89,6 @@ public class StanfordExperiment extends ExperimentConstructor {
 	
 	@Override
 	protected void performExperiment() {
-		configureExperiment();
 		beforePronounSieveCorpus = new Document();
 		afterPronounSieveCorpus = new Document();
 		
@@ -99,7 +101,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 		Train train = new Train(trainingTopics);
 		Matrix initialmodel = train.assignInitialWeights();    // train initial model
 		model = train.train(initialmodel);                     // based on the initial model, train the final model
-		ResultOutput.writeTextFile(logFile, "final weight: " + ResultOutput.printModel(model, Feature.featuresName));
+		ResultOutput.writeTextFile(logFile, "final weight: " + ResultOutput.printModel(model, Feature.featuresName));		
 		
 		// testing part
 		// without pronoun sieve
@@ -159,118 +161,15 @@ public class StanfordExperiment extends ExperimentConstructor {
 		// delete serialized objects and mention result
 		ResultOutput.deleteResult(serializedOutput);
 		if (goldOnly) {
-			ResultOutput.deleteResult(mentionResultPath);
+			ResultOutput.deleteResult(mentionRepositoryPath);
 		}
 		
 		ResultOutput.printTime();
-	}
-	
-	/** 
-	 * Experiment Configuration
-	 * classifier: linear regression (iteration no: 10)
-	 * debug: true
-	 * Dataset: gold mentions
-	 * 
-	 */
-	private void configureExperiment() {
-		// configure topics and dataSet
-		setDebugMode(true);
-		
-		//TODO
-		boolean debugExperiment = false;
-		if (debugExperiment) {
-			experimentTopics = debugTopics;
-			splitTopics(2);
-			corpusPath = "../";
-		} else {
-			experimentTopics = stanfordTotalTopics;
-			splitTopics(12);
-			corpusPath = "/nfs/guille/xfern/users/xie/Experiment/";
-		}
-		
-		// define Data set
-		addParas(EecbConstants.DATASET, "corpusPath", corpusPath + "corpus/EECB1.0/data/");
-		addParas(EecbConstants.DATASET, "srlpath", corpusPath + "corpus/tokenoutput/");
-		addParas(EecbConstants.DATASET, "sieve", "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch");
-		addParas(EecbConstants.DATASET, "annotationPath", corpusPath + "corpus/mentions.txt");
-		addParas(EecbConstants.DATASET, "wordnetConfigurationPath", corpusPath + "corpus/file_properties.xml");
-		addParas(EecbConstants.DATASET, "wordsimilaritypath", corpusPath + "corpus/sims.lsp");
-		addParas(EecbConstants.DATASET, "outputPath", corpusPath + "corpus/TEMPORYRESUT/");
-		addParas(EecbConstants.DATASET, "aligned", false);
-		
-		// define classifier parameter
-		addParas(EecbConstants.CLASSIFIER, "noOfIteration", 10);
-		addParas(EecbConstants.CLASSIFIER, "noOfFeature", Feature.featuresName.length);
-		addParas(EecbConstants.CLASSIFIER, "model", "LinearRegression");
-		addParas(EecbConstants.CLASSIFIER, "coefficient", 1.0);
-		addParas(EecbConstants.CLASSIFIER, "interPolationWeight", 0.7);
-		
-		// configure Word Net and Lin's dictionary
-		configureJWordNet();
-		configureWordSimilarity();
-		
-		// get the according configuration parameters
-		String classifierLearningModel = (String) getParameter(EecbConstants.CLASSIFIER, "model");
-		int classifierNoOfIteration = (Integer) getParameter(EecbConstants.CLASSIFIER, "noOfIteration");
-		
-		// create a folder to contain all log information
-		String outputPath = (String) getParameter(EecbConstants.DATASET, "outputPath");
-		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
-		//TODO
-		goldOnly = true;
-		if (goldOnly) {
-			// create mention result folder to store the mention serialization object
-			experimentResultFolder = outputPath + timeStamp + "-" + this.getClass().getSimpleName() + "-gold" + "-" + classifierLearningModel + "-" + classifierNoOfIteration;
-			Command.createDirectory(experimentResultFolder);
-			
-			// store the mention serialization method
-			mentionResultPath = experimentResultFolder + "/mentionResult";
-			Command.createDirectory(mentionResultPath);
-			postProcess = false;
-		} else {
-			experimentResultFolder = outputPath + timeStamp + "-" + this.getClass().getSimpleName() + "-predicted" + "-" + classifierLearningModel + "-" + classifierNoOfIteration;
-			Command.createDirectory(experimentResultFolder);
-			
-			// post process the mentions 
-			postProcess = true;
-		}
-		
-		/** configure other parameters */
-		logFile = experimentResultFolder + "/" + "experimentlog";
-		weightFile = experimentResultFolder + "/weights";
-		outputText = false;
-		enableNull = false;
-		incorporateTopicSRLResult = false;
-		incorporateDocumentSRLResult = false;
-		stanfordExperiment = true;
-
-		normalizeWeight = false;
-		outputFeature = false;
-		linearRegressionTrainingPath = experimentResultFolder + "/trainingSet";
-		Command.createDirectory(linearRegressionTrainingPath);
-		
-		// print configure information
-		ResultOutput.printTime();
-		ResultOutput.writeTextFile(logFile, "corpus path : " + corpusPath);
-		ResultOutput.writeTextFile(logFile, "classification : " + classifierLearningModel + "-" + classifierNoOfIteration);
-		ResultOutput.writeTextFile(logFile, buildString(Feature.featuresName));
-		ResultOutput.writeTextFile(logFile, "experiment topics : " + buildString(experimentTopics));
-
-		/** create document serialization folder which store document serialization object */
-		serializedOutput = experimentResultFolder + "/documentobject";
-		Command.createDirectory(serializedOutput);
-		
-		// define dataset model
-		/** initialize the dictionary */
-		CorefSystem cs = new CorefSystem();
-		mdictionary = cs.corefSystem.dictionaries();
-		
-		mDatasetMode = createDataSetModel("CrossTopic");
-		createDataSet();
 	}
 	
 	public static void main(String[] args) {
-		StanfordExperiment sge = new StanfordExperiment();
+		String configurationPath = "/scratch/JavaFile/stanford-corenlp-2012-05-22/src/edu/oregonstate/experimentconfigs/flat-stanford-gold.properties";
+		StanfordExperiment sge = new StanfordExperiment(configurationPath);
 		sge.performExperiment();
 	}
 }

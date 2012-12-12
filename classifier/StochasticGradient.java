@@ -118,7 +118,7 @@ public class StochasticGradient implements IClassifier {
 	
 	/** cascade constructor */
 	public StochasticGradient() {
-		mEta = (Double) ExperimentConstructor.getParameter(EecbConstants.CLASSIFIER, "learningRate");
+		mEta = Double.parseDouble(ExperimentConstructor.property.getProperty("learningRate"));
 	}
 	
 	public void setPreviousBestState(State<CorefCluster> previousBestState){
