@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.util.List;
 import java.util.ArrayList;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
 
@@ -234,7 +235,7 @@ public class LinearRegression {
 		    Matrix weights = lr.trainLinearRegressionModel(trainingData, trainingTargets, lr.lambda);
 		    // Evaluate the model using training and testing data.
 		    
-		    System.out.println(ResultOutput.printModel(weights, Feature.featuresName));
+		    System.out.println(ResultOutput.printModel(weights, ExperimentConstructor.features));
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);			

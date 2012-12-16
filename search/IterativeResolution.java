@@ -85,7 +85,7 @@ public class IterativeResolution {
 			if (i == 0) {
 				sum += mModel.get(i, 0);
 			} else {
-				sum += features.getCount(Feature.featuresName[i-1]) * mModel.get(i, 0);
+				sum += features.getCount(ExperimentConstructor.features[i-1]) * mModel.get(i, 0);
 			}
 		}
 		return sum;

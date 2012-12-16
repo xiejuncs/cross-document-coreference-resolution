@@ -2,6 +2,7 @@ package edu.oregonstate.experiment;
 
 import java.io.FileInputStream;
 import java.util.*;
+import java.util.prefs.PreferenceChangeEvent;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,6 +55,9 @@ public abstract class ExperimentConstructor {
 	/** testing topics */
 	protected String[] testingTopics;
 	
+	/** development topics */
+	protected String[] developmentTopics;
+	
 	//
 	// various path
 	//
@@ -105,23 +109,14 @@ public abstract class ExperimentConstructor {
 	/** scorer path */
 	public static String conllScorerPath;
 	
+	/** conll output folder used for scoring */
+	public static String conllResultPath;
+	
 	//
 	// scoring results path
 	//
 	/** just output the train and test result, for example pairwise */
 	public static String mscorePath;
-	
-	/** output the detail information of each score, which can be used to calculate the total performance of all topics */
-	public static String mScoreDetailPath;
-	
-	/** muc detail information */
-	public static String mMUCScoreDetailPath;
-	
-	/** Bcubed detail information */
-	public static String mBcubedScoreDetailPath;
-	
-	/** ceaf detail information */
-	public static String mCEAFScoreDetailPath;
 	
 	//
 	// conditions
@@ -162,8 +157,11 @@ public abstract class ExperimentConstructor {
 	/** whether debug or run the whole experiment */
 	protected boolean mDebug;
 	
-	/** whether update weight, training phase set as true, validation and testing phase set as false */
-	public static boolean updateWeight;
+	/** whether conduct validation on development set in order to tune the parameter */
+	public static boolean tuningParameter;
+	
+	/** whether extend the feature */
+	public static boolean extendFeature;
 	
 	//
 	// data used for experiment 
@@ -176,7 +174,13 @@ public abstract class ExperimentConstructor {
 	
 	/** stopping rate */
 	public static double stoppingRate;
-
+	
+	/** stochastic learning rate */
+	public static double learningRate;
+	
+	/** features used in the experiment */
+	public static String[] features;
+	
 	/**
 	 * initialize the Parameters
 	 */
@@ -196,10 +200,12 @@ public abstract class ExperimentConstructor {
 			experimentTopics = EecbConstants.debugTopics;
 			corpusPath = EecbConstants.LOCAL_CORPUS_PATH;
 			splitTopics(2);
+			developmentTopics = EecbConstants.debugDevelopmentTopics;
 		} else {
 			experimentTopics = EecbConstants.stanfordTotalTopics;
 			corpusPath = EecbConstants.CLUSTER_CPRPUS_PATH;
 			splitTopics(12);
+			developmentTopics = EecbConstants.stanfordDevelopmentTopics;
 		}
 		
 		//
@@ -209,49 +215,74 @@ public abstract class ExperimentConstructor {
 		/** create a directory to store the output of the specific experiment */
 		StringBuilder sb = new StringBuilder();
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
-		sb.append(corpusPath + "corpus/TEMPORYRESUT/" + timeStamp + "-");
-		String classifierLearningModel = property.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
-		String classifierNoOfIteration = property.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP);   // epoch of classification model
-		sb.append(classifierLearningModel + "-" + classifierNoOfIteration);
-		if (property.containsKey(EecbConstants.SEARCH_PROP)) {
-			String searchModel = property.getProperty(EecbConstants.SEARCH_PROP);
-			String searchWidth = property.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP);
-			String searchStep = property.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP);
-			sb.append("-" + searchModel + "-" + searchWidth + "-" + searchStep);
-			stanfordExperiment = false;
-		} else {
-			stanfordExperiment = true;
-		}
-		if (property.containsKey(EecbConstants.STOPPING_CRITERION)) {
-			stoppingCriterion = Boolean.parseBoolean(property.getProperty(EecbConstants.STOPPING_CRITERION));
-			stoppingRate = Double.parseDouble(property.getProperty(EecbConstants.STOPPING_RATE));
-			sb.append("-" + stoppingRate);
-		} else {
-			stoppingCriterion = false;
-			stoppingRate = 0.0;
-		}
-		goldOnly = Boolean.parseBoolean(property.getProperty(EecbConstants.GOLD_PROP));
+		sb.append(corpusPath + "corpus/TEMPORYRESUT/" + timeStamp);
+		
+		/*gold mention or predicted mention */
+		goldOnly = Boolean.parseBoolean(property.getProperty(EecbConstants.GOLD_PROP, "false"));
 		if (goldOnly) {
 			sb.append("-gold");
 		} else {
 			sb.append("-predicted");
 		}
 		
-		postProcess = Boolean.parseBoolean(property.getProperty(EecbConstants.POSTPROCESS_PROP));
+		/* flat or hierarchy */
+		dataSetMode = Boolean.parseBoolean(property.getProperty(EecbConstants.DATASET_PROP, "true"));
+		if (dataSetMode) {
+			sb.append("-flat");
+		} else {
+			sb.append("-hierarchy");
+		}
+		
+		/* Stanford experiment or Oregon State statement */
+		if (property.containsKey(EecbConstants.SEARCH_PROP)) {
+			String searchModel = property.getProperty(EecbConstants.SEARCH_PROP);
+			String searchWidth = property.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP);
+			String searchStep = property.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP);
+			stanfordExperiment = false;
+			sb.append("-oregonstate-" + searchModel + "-" + searchWidth + "-" + searchStep);
+		} else {
+			stanfordExperiment = true;
+			sb.append("-stanford");
+		}
+		
+		/* classifier method */
+		String classifierLearningModel = property.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
+		String classifierNoOfIteration = property.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP);   // epoch of classification model
+		if (classifierLearningModel.startsWith("Structured")) {
+			sb.append("-pairwise");
+		} else {
+			sb.append("-pairwisesingleton");
+		}
+		sb.append("-" + classifierNoOfIteration);
+		
+		/* tuning or halt */
+		String stopping = property.getProperty(EecbConstants.STOPPING_PROP);
+		if (stopping.equals("tuning")) {
+			sb.append("-tuning");
+			stoppingCriterion = true;
+			tuningParameter = true;
+			extendFeature = false;
+		} else {
+			sb.append("-halt");
+			stoppingCriterion = false;
+			tuningParameter = false;
+			extendFeature = true;
+		}
+		
+		/* whether process or not process */
+		postProcess = Boolean.parseBoolean(property.getProperty(EecbConstants.POSTPROCESS_PROP, "false"));
 		if (postProcess) {
 			sb.append("-PostProcess");
 		} else {
 			sb.append("-notPostProcess");
 		}
 		
+		/* score type */
+		String lossScoreType = property.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP);
+		sb.append("-" + lossScoreType);
+		
 		experimentResultFolder = sb.toString();
 		Command.createDirectory(experimentResultFolder);
-		
-		//
-		// if goldOnly, then just predicted mentions are just a copy of gold mentions, and create a directory to store the serialized mention object (deep copy), 
-		// else  then the predicted mentions are generated from the RuleBasedMentionExtraction system
-		//
-		
 		if (goldOnly) {
 			mentionRepositoryPath = experimentResultFolder + "/mentionResult";
 			Command.createDirectory(mentionRepositoryPath);
@@ -273,9 +304,13 @@ public abstract class ExperimentConstructor {
 		
 		weightFile = experimentResultFolder + "/weights";
 		violatedFile = experimentResultFolder + "/violatedFile";
-		linearRegressionTrainingPath = experimentResultFolder + "/trainingSet";
-		Command.createDirectory(linearRegressionTrainingPath);
-		
+		if (stanfordExperiment) {
+			linearRegressionTrainingPath = experimentResultFolder + "/trainingSet";
+			Command.createDirectory(linearRegressionTrainingPath);
+		} else {
+			conllResultPath = experimentResultFolder + "/conllResult";
+			Command.createDirectory(conllResultPath);
+		}
 		
 		/** some features are constant across all experiments */
 		outputFeature = false;
@@ -283,12 +318,6 @@ public abstract class ExperimentConstructor {
 		enableZeroCondition = false;
 		enableNull = false;
 		normalizeWeight = false;
-		updateWeight = false;
-		
-		/** do post process and remove the singleton mentions during output conll document */
-		
-		dataSetMode = Boolean.parseBoolean(property.getProperty(EecbConstants.DATASET_PROP));
-		
 		
 		/** initialize the dictionary */
 		CorefSystem cs = new CorefSystem();
@@ -300,23 +329,13 @@ public abstract class ExperimentConstructor {
 		
 		/** read the Dataset */
 		createDataSet();
-	}
-	
-	/** print final score */
-	protected void printFinalScore(int iteration) {
-		FinalScore finalScore = new FinalScore(trainingTopics, testingTopics, experimentResultFolder);
-		for (int i = 1; i <= iteration; i++) {
-			for (String scoreType : EecbConstants.scoreTypes) {
-				finalScore.set(i);
-				finalScore.setScoreType(scoreType);
-				finalScore.computePerformance();
-			}
+		
+		/** specify the features */
+		if (extendFeature) {
+			features = Feature.extendFeaturesName;
+		} else {
+			features = Feature.featuresName;
 		}
-	}
-	
-	/** set debug mode */
-	protected void setDebugMode(boolean debugMode) {
-		mDebug = debugMode;
 	}
 	
 	/** all subclass need to implement the train method */
@@ -461,14 +480,14 @@ public abstract class ExperimentConstructor {
 		ResultOutput.writeTextFile(logFile, "Number of predicted Mentions of " + topic +  " : " + document.allPredictedMentions.size());
 		ResultOutput.writeTextFile(logFile, "Number of gold clusters of " + topic + " : " + document.goldCorefClusters.size());
 		ResultOutput.writeTextFile(logFile, "Gold clusters : \n" + ResultOutput.printCluster(document.goldCorefClusters));
-		ResultOutput.writeTextFile(logFile, "Numver of coref clusters of " + topic + " : " + document.corefClusters.size());
+		ResultOutput.writeTextFile(logFile, "Number of coref clusters of " + topic + " : " + document.corefClusters.size());
 		ResultOutput.writeTextFile(logFile, "Coref Clusters: \n" + ResultOutput.printCluster(document.corefClusters));
 	}
 	
 	/** split the topics */
 	protected void splitTopics(int index) {
 		trainingTopics = new String[index];
-		testingTopics = new String[experimentTopics.length - index]; 
+		testingTopics = new String[experimentTopics.length - index];
 		for (int i = 0; i < experimentTopics.length; i++) {
 			if (i < index) {
 				trainingTopics[i] = experimentTopics[i];
@@ -505,7 +524,7 @@ public abstract class ExperimentConstructor {
 			currentExperimentFolder = experimentResultFolder + "/" + topic;
 			Command.createDirectory(currentExperimentFolder);
 			
-			ResultOutput.writeTextFile(logFile, "create data set for " + topic);
+			ResultOutput.writeTextFile(logFile, "create training data set for " + topic);
 			ResultOutput.writeTextFile(logFile, "\n");
 			
 			String[] tops = {topic};
@@ -527,11 +546,33 @@ public abstract class ExperimentConstructor {
 			totalGoalMentions += document.allGoldMentions.size();
 			totalPredictedMentions += document.allPredictedMentions.size();
 			ResultOutput.serialize(document, topic, serializedOutput);
-			
 			ResultOutput.writeTextFile(logFile, "\n");
 		}
 		
 		Train.currentOutputFileName = "";
+		
+		// validation set
+		if (tuningParameter) {
+			for (String topic : developmentTopics) {
+				ResultOutput.writeTextFile(logFile, "create validation data set for " + topic);
+				ResultOutput.writeTextFile(logFile, "\n");
+				currentExperimentFolder = experimentResultFolder + "/" + topic;
+				Command.createDirectory(currentExperimentFolder);
+				
+				String[] tops = {topic};
+				Document document = mDatasetMode.getData(tops);
+				ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
+				ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());
+				
+				ResultOutput.writeTextFile(corpusStatisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
+						document.corefClusters.size());
+				totalPredictedMentions += document.allPredictedMentions.size();
+				totalGoalMentions += document.allGoldMentions.size();
+				ResultOutput.serialize(document, topic, serializedOutput);
+				
+				ResultOutput.writeTextFile(logFile, "\n");
+			}
+		}
 		
 		// testing set
 		for (String topic : testingTopics) {
@@ -544,7 +585,7 @@ public abstract class ExperimentConstructor {
 			String[] tops = {topic};
 			Document document = mDatasetMode.getData(tops);
 			ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
-			ResultOutput.writeTextFile(logFile, "number of mentions : " + document.allPredictedMentions.size());
+			ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());
 			
 			ResultOutput.writeTextFile(corpusStatisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
 					document.corefClusters.size());
@@ -599,7 +640,7 @@ public abstract class ExperimentConstructor {
 	    		
 	    		if (goldMentions.containsKey(ciFirstMention.mentionID) && goldMentions.containsKey(cjFirstMention.mentionID)) {
 					if (goldMentions.get(ciFirstMention.mentionID).goldCorefClusterID == goldMentions.get(cjFirstMention.mentionID).goldCorefClusterID) {
-						ResultOutput.writeTextFile(logFile, "training example " + ci.clusterID + " " + cj.clusterID);
+						ResultOutput.writeTextFile(logFile, "verb training example " + ci.clusterID + " " + cj.clusterID);
 						
 						correct += 1.0;
 					}
@@ -673,7 +714,7 @@ public abstract class ExperimentConstructor {
 		}
 	}
 	
-	protected void printScoreSummary(String summary, boolean afterPostProcessing) {
+	public static void printScoreSummary(String summary, boolean afterPostProcessing) {
 		String[] lines = summary.split("\n");
 		if(!afterPostProcessing) {
 			for(String line : lines) {
@@ -705,4 +746,35 @@ public abstract class ExperimentConstructor {
 		}
 		ResultOutput.writeTextFile(logFile, "Final score ((muc+bcub+ceafe)/3) = "+(F1s[0]+F1s[1]+F1s[3])/3);
 	}
+	
+	/**
+	 * update the corefcluster ID of each mention in the orderedPredictionMentions
+	 * 
+	 * @param document
+	 */
+	public static void updateOrderedPredictedMentions(Document document) {
+		List<List<Mention>> predictedOrderedMentionsBySentence = document.getOrderedMentions();
+		Map<Integer, CorefCluster> corefClusters = document.corefClusters;
+		for (Integer clusterID : corefClusters.keySet()) {
+			CorefCluster cluster = corefClusters.get(clusterID);
+			for (Mention m : cluster.getCorefMentions()) {
+				int sentenceID = m.sentNum;
+				List<Mention> mentions = predictedOrderedMentionsBySentence.get(sentenceID);
+				int mStartIndex = m.startIndex;
+				int mEndIndex = m.endIndex;
+				for (Mention mention : mentions) {
+					int mentionStartIndex = mention.startIndex;
+					int mentionEndIndex = mention.endIndex;
+					if (mentionStartIndex == mStartIndex && mentionEndIndex == mEndIndex) {
+						mention.corefClusterID = m.corefClusterID;
+					}
+				}
+				
+				int mentionID = m.mentionID;
+				Mention correspondingMention = document.allPredictedMentions.get(mentionID);
+				correspondingMention.corefClusterID = clusterID;
+			}
+		}
+	}
+	
 }

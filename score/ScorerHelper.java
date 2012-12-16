@@ -2,13 +2,13 @@ package edu.oregonstate.score;
 
 import java.util.logging.Logger;
 
-import edu.oregonstate.experiment.dataset.CorefSystem;
 import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.ScorerBCubed;
 import edu.stanford.nlp.dcoref.ScorerMUC;
 import edu.stanford.nlp.dcoref.ScorerPairwise;
+import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
 
 /**
@@ -59,9 +59,8 @@ public class ScorerHelper {
     		double conllF1 = (score.getF1() + ceafscore.getF1() + mucscore.getF1()) / 3;
         	ResultOutput.writeTextFile(mPath, "conllF1:     " + conllF1);
     	} else {
-    		ResultOutput.writeTextFile(mPath, "do postprocess the data");	
-    		CorefSystem cs = new CorefSystem();
-        	cs.corefSystem.postProcessing(mDocument);
+    		ResultOutput.writeTextFile(mPath, "do postprocess the data");
+        	SieveCoreferenceSystem.postProcessing(mDocument);
         	
         	CorefScorer score = new ScorerBCubed(BCubedType.Bconll);
         	score.calculateScore(mDocument);

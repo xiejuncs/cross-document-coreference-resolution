@@ -5,16 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
 import edu.oregonstate.general.PriorityQueue;
 import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Mention;
-import edu.stanford.nlp.ie.ClassifierCombiner;
 import edu.stanford.nlp.stats.Counter;
 import edu.oregonstate.search.State;
 
@@ -226,9 +223,12 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 		for (String id : mstates.keySet()) {			
 			State<CorefCluster> state = mstates.get(id);
 			
-			if (beamLists.get(0).getScore()[0] == state.getScore()[0]) continue;
+			if (beamLists.get(0).getScore()[0] == state.getScore()[0]) {
+				continue;
+			}
 			
 			if ( beamLists.get(0).getCostScore() <= state.getCostScore()) {
+				
 				if (ExperimentConstructor.outputFeature) {
 					outputFeatureFurther(beamLists.get(0), state);
 				}
@@ -237,6 +237,21 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 				noOfVilotions++;
 			}
 		}
+	}
+	
+	private boolean isAllZeroFeature(Counter<String> features){
+		boolean isallzerofeature = true;
+		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
+ 			String feature = ExperimentConstructor.features[i];
+ 			double value = features.getCount(feature);
+ 			value = DoubleOperation.transformNaN(value);
+ 			if (value != 0.0) {
+ 				isallzerofeature = false;
+ 			}
+ 		}
+		
+		
+		return isallzerofeature;
 	}
 	
 	/** 
@@ -265,9 +280,9 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 	private void updateFature(State<CorefCluster> good, State<CorefCluster> bad) {
 		Counter<String> goodFeature = good.getFeatures();
 		Counter<String> badFeature = bad.getFeatures();
-		double[] weightUpdate = new double[Feature.featuresName.length];
-		for (int i = 0; i < Feature.featuresName.length; i++) {
-			String feature = Feature.featuresName[i];
+		double[] weightUpdate = new double[ExperimentConstructor.features.length];
+		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
+			String feature = ExperimentConstructor.features[i];
 			double goodValue = goodFeature.getCount(feature);
 			double badValue = badFeature.getCount(feature);
 			weightUpdate[i] = goodValue - badValue;
@@ -306,12 +321,12 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 	
 	private String outputFeature(State<CorefCluster> goodState, State<CorefCluster> badState) {
 		StringBuffer sb = new StringBuffer();
-		for (String feature : Feature.featuresName) {
+		for (String feature : ExperimentConstructor.features) {
 			double count = goodState.getFeatures().getCount(feature);
 			sb.append(count + ",");
 		}
 		sb.append("-");
-		for (String feature : Feature.featuresName) {
+		for (String feature : ExperimentConstructor.features) {
 			double count = badState.getFeatures().getCount(feature);
 			sb.append(count + ",");
 		}

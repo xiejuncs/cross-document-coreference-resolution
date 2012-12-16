@@ -164,8 +164,8 @@ public class DoubleOperation {
 	 * @param dimension
 	 * @return
 	 */
-	public static double[] createDescendingArray(double startNumerical, int dimension) {
-		double gap = startNumerical / dimension;
+	public static double[] createDescendingArray(double startNumerical, double endNumerical, int dimension) {
+		double gap = (startNumerical - endNumerical) / dimension;
 		double[] learningRates = new double[dimension];
 		
 		for (int i = 0; i < dimension; i++) {

@@ -13,6 +13,7 @@ import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.DocumentMerge;
 import edu.oregonstate.util.EecbConstants;
+import edu.stanford.nlp.dcoref.CoNLL2011DocumentReader;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
@@ -28,7 +29,7 @@ import edu.stanford.nlp.dcoref.ScorerPairwise;
 public class WithinCross implements IDataSet {
 		
 	/** corpus path */
-	private String corpusPath;
+	private String dataPath;
 	
 	private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
 	
@@ -40,20 +41,21 @@ public class WithinCross implements IDataSet {
 	
 	@Override
 	public Document getData(String[] topics) {
-		corpusPath = ExperimentConstructor.property.getProperty("corpusPath");
-		srlPath = ExperimentConstructor.property.getProperty("srlpath");
+		dataPath = ExperimentConstructor.DATA_PATH;
+		srlPath = ExperimentConstructor.SRL_PATH;
 		
 		Document corpus = new Document();
 		IDocument documentExtraction = new SingleDocument();
 		DocumentMerge dm;
-	
+		CoNLL2011DocumentReader.Document conllDocument = new CoNLL2011DocumentReader.Document();
+		
 		for (String topic : topics) {
 			String statisPath = ExperimentConstructor.currentExperimentFolder + "/" + "statistics";
 			
 			List<String> files  = getSortedFileNames(topic);
 			for (String file : files) {
 				try {
-					String path = corpusPath + topic + "/" + file;
+					String path = dataPath + topic + "/" + file;
 					ResultOutput.writeTextFile(ExperimentConstructor.logFile, file + " : " + path);
 					Document document = documentExtraction.getDocument(path);
 					// combine the documents together
@@ -62,6 +64,10 @@ public class WithinCross implements IDataSet {
 					document.corefClusters.size() + " " + document.goldCorefClusters.size());
 					dm.mergeDocument();
 					ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\n");
+					
+					for (List<String[]> sentence : document.conllDoc.getSentenceWordLists()) {
+						conllDocument.addSentence(sentence);
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -80,6 +86,9 @@ public class WithinCross implements IDataSet {
 			CorefScorer pairscore = new ScorerPairwise();
     		pairscore.calculateScore(corpus);
     		pairscore.printF1(logger, true);
+    		
+    		corpus.setID(topic);
+    		corpus.conllDoc = conllDocument;
 		}
 
 		return corpus;
@@ -94,7 +103,7 @@ public class WithinCross implements IDataSet {
 	/** get files orded by the file name */
 	protected List<String> getSortedFileNames(String topic) {
 		List<String> files  = new ArrayList<String>();
-		String topicPath = corpusPath + topic + "/";
+		String topicPath = dataPath + topic + "/";
 		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
 		sort(files);
 		return files;

@@ -22,7 +22,7 @@ import edu.stanford.nlp.dcoref.ScorerPairwise;
 public class CrossTopic implements IDataSet {
 
 	/** corpus path */
-	private String corpusPath;
+	private String dataPath;
 	
 	/** used for scoring */
 	private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
@@ -32,7 +32,7 @@ public class CrossTopic implements IDataSet {
 	
 	@Override
 	public Document getData(String[] topics) {
-		corpusPath = ExperimentConstructor.DATA_PATH;
+		dataPath = ExperimentConstructor.DATA_PATH;
 		
 		Document corpus = new Document();
 		IDocument documentExtraction = new CrossDocument();
@@ -40,7 +40,7 @@ public class CrossTopic implements IDataSet {
 		for (String topic : topics) {
 			String statisPath = ExperimentConstructor.currentExperimentFolder + "/" + "statistics";
 			try {
-				String path = corpusPath + topic + "/";
+				String path = dataPath + topic + "/";
 				ResultOutput.writeTextFile(ExperimentConstructor.logFile, topic + " : " + path);
 				corpus = documentExtraction.getDocument(topic);
 				ResultOutput.writeTextFile(statisPath, topic + " " + corpus.allGoldMentions.size() + " " + corpus.goldCorefClusters.size() + " " + corpus.allPredictedMentions.size() + " " +
@@ -62,6 +62,7 @@ public class CrossTopic implements IDataSet {
     		pairscore.calculateScore(corpus);
     		pairscore.printF1(logger, true);
     		
+    		// set topic ID
     		corpus.setID(topic);
 		}
 

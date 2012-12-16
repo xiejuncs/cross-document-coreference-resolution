@@ -2,98 +2,35 @@ package edu.oregonstate.experiment.stanfordexperiment;
 
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import java.util.logging.Logger;
 
 import Jama.Matrix;
-
-import edu.oregonstate.experiment.dataset.CorefSystem;
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.experiment.dataset.CorefSystem;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.score.ScorerHelper;
 import edu.oregonstate.search.JointCoreferenceResolution;
 import edu.oregonstate.training.Train;
 import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 
 /**
- * Stanford's experiment
+ * Here, I just output the value, and then use the scorer program to run the scoring 
  * 
- * Experiment Configuration
- * 1. classifier: linear regression (iteration no: 10)
- * 2. debug : true
- * 
- * <p>
- * The dataset is EECB 1.0, which is annotated by the Stanford NLP group on the basis of ECB 
- * corpus created by Bejan and Harabagiu (2010).
- * The idea of the paper, Joint Entity and Event Coreference Resolution across Documents, 
- * is to model entity and event jointly in an iterative way.
- * 
- * <p>
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-
 public class StanfordExperiment extends ExperimentConstructor {
-
-	/** Logger used for scoring */
-	public static final Logger logger = Logger.getLogger(StanfordExperiment.class.getName());
-	
-	/** aggregate the result */
-	private Document beforePronounSieveCorpus;
-	private Document afterPronounSieveCorpus;
 
 	public StanfordExperiment(String configurationPath) {
 		super(configurationPath);
 	}
-	
-	/**
-	 * add four fields to the corpus
-	 * 
-	 * @param document
-	 */
-	public void add(Document document, Document corpus) {
-		addCorefCluster(document, corpus);
-		addGoldCorefCluster(document, corpus);
-		addPredictedMention(document, corpus);
-		addGoldMention(document, corpus);
-	}
-	
-	/** add coref cluster */
-	public void addCorefCluster(Document document, Document corpus) {
-		  for(Integer id : document.corefClusters.keySet()) {
-			  corpus.addCorefCluster(id, document.corefClusters.get(id));
-		  }
-	}
-	
-	/** add gold coref cluster */
-	public void addGoldCorefCluster(Document document, Document corpus) {
-		for (Integer id : document.goldCorefClusters.keySet()) {
-			corpus.addGoldCorefCluster(id, document.goldCorefClusters.get(id));
-		}
-	}
-	
-	/** add predicted mentions */
-	public void addPredictedMention(Document document, Document corpus) {
-		for (Integer id : document.allPredictedMentions.keySet()) {
-			corpus.addPredictedMention(id, document.allPredictedMentions.get(id));
-		}
-	}
 
-	/** add gold mentions */
-	public void addGoldMention(Document document, Document corpus) {
-		for (Integer id : document.allGoldMentions.keySet()) {
-			corpus.addGoldMention(id, document.allGoldMentions.get(id));
-		}
-	}
-	
 	@Override
 	protected void performExperiment() {
-		beforePronounSieveCorpus = new Document();
-		afterPronounSieveCorpus = new Document();
-		
+
 		// get the parameters
-		int noOfFeature = Feature.featuresName.length;
+		int noOfFeature = features.length;
 		
 		// training part
 		ResultOutput.writeTextFile(logFile, "Start to do training on training topics....");
@@ -101,7 +38,21 @@ public class StanfordExperiment extends ExperimentConstructor {
 		Train train = new Train(trainingTopics);
 		Matrix initialmodel = train.assignInitialWeights();    // train initial model
 		model = train.train(initialmodel);                     // based on the initial model, train the final model
-		ResultOutput.writeTextFile(logFile, "final weight: " + ResultOutput.printModel(model, Feature.featuresName));		
+		ResultOutput.writeTextFile(logFile, "final weight: " + ResultOutput.printModel(model, features));
+		
+		String predictedCorefClusterWithoutPronoun = experimentResultFolder + "/predictedCorefClusterWithoutPronoun";
+		String predictedCorefClusterWithPronoun = experimentResultFolder + "/predictedCorefClusterWithPronoun";
+		String goldCorefCluster = experimentResultFolder + "/goldCorefCluster";
+		PrintWriter writerPredictedWithoutPronoun = null;
+		PrintWriter writerPredictedWithPronoun = null;
+		PrintWriter writerGold = null;
+		try {
+			writerPredictedWithoutPronoun = new PrintWriter(new FileOutputStream(predictedCorefClusterWithoutPronoun));
+			writerPredictedWithPronoun = new PrintWriter(new FileOutputStream(predictedCorefClusterWithPronoun));
+			writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster));
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		
 		// testing part
 		// without pronoun sieve
@@ -114,17 +65,18 @@ public class StanfordExperiment extends ExperimentConstructor {
 			printParameters(document, topic);
 			
 			JointCoreferenceResolution ir = new JointCoreferenceResolution(document, model);
-	    	ir.merge();   	
-		    
-		    // add the four fields into the corpus data structure
-		    add(document, beforePronounSieveCorpus);
+	    	ir.merge();
+	    	
+		    if (postProcess) {
+		    	SieveCoreferenceSystem.postProcessing(document);
+		    }
+		    SieveCoreferenceSystem.printConllOutput(document, writerPredictedWithoutPronoun, false, postProcess);
+	    	
 		    ResultOutput.writeTextFile(logFile, "topic " + topic + "'s after after merge");
 			printParameters(document, topic);
 		}
 		
-		printParameters(beforePronounSieveCorpus, "the overall topics without pronoun sieve");
-		ScorerHelper beforesh = new ScorerHelper(beforePronounSieveCorpus, logger, logFile, postProcess);
-		beforesh.printScore();
+		writerPredictedWithoutPronoun.close();
 		
 		// with pronoun sieve
 		for (String topic : testingTopics) {
@@ -136,7 +88,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 			printParameters(document, topic);
 			
 			JointCoreferenceResolution ir = new JointCoreferenceResolution(document, model);
-	    	ir.merge();   	
+	    	ir.merge();
 
 		    // pronoun sieves
 		    try {
@@ -147,16 +99,34 @@ public class StanfordExperiment extends ExperimentConstructor {
 		    	throw new RuntimeException(e);
 		    }
 		    
-		    // add the four fields into the corpus data structure
-		    add(document, afterPronounSieveCorpus);
+		    if (postProcess) {
+		    	SieveCoreferenceSystem.postProcessing(document);
+		    }
+		    SieveCoreferenceSystem.printConllOutput(document, writerPredictedWithPronoun, false, postProcess);
+		    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
 		    
 		    ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail after merge");
 			printParameters(document, topic);
 		}
 		
-		printParameters(afterPronounSieveCorpus, "the overall topics with pronoun sieve");
-		ScorerHelper sh = new ScorerHelper(afterPronounSieveCorpus, logger, logFile, postProcess);
-		sh.printScore();
+		writerPredictedWithPronoun.close();
+		writerGold.close();
+		
+		// do scoring
+		try {
+			ResultOutput.writeTextFile(logFile, "the score summary of resolution without pronoun resolution");
+			String summaryWithoutPronoun = SieveCoreferenceSystem.getConllEvalSummary(conllScorerPath, goldCorefCluster, predictedCorefClusterWithoutPronoun);
+			printScoreSummary(summaryWithoutPronoun, true);
+			printFinalScore(summaryWithoutPronoun);
+			
+			ResultOutput.writeTextFile(logFile, "\n\n");
+			ResultOutput.writeTextFile(logFile, "the score summary of resolution with pronoun resolution");
+			String summaryWithPronoun = SieveCoreferenceSystem.getConllEvalSummary(conllScorerPath, goldCorefCluster, predictedCorefClusterWithPronoun);
+			printScoreSummary(summaryWithPronoun, true);
+			printFinalScore(summaryWithPronoun);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		
 		// delete serialized objects and mention result
 		ResultOutput.deleteResult(serializedOutput);
@@ -168,7 +138,20 @@ public class StanfordExperiment extends ExperimentConstructor {
 	}
 	
 	public static void main(String[] args) {
-		String configurationPath = "/scratch/JavaFile/stanford-corenlp-2012-05-22/src/edu/oregonstate/experimentconfigs/flat-stanford-gold.properties";
+		//TODO
+		boolean debug = false;
+		String configurationPath = "";
+		if (debug) {
+			configurationPath = "/scratch/JavaFile/stanford-corenlp-2012-05-22/src/edu/oregonstate/experimentconfigs/debug-hierarchy-stanford-predicted.properties";
+		} else {
+			if (args.length > 1) {
+				System.out.println("there are more parameters, you just can specify one path parameter.....");
+				System.exit(1);
+			}
+			
+			configurationPath = args[0];
+		}
+
 		StanfordExperiment sge = new StanfordExperiment(configurationPath);
 		sge.performExperiment();
 	}

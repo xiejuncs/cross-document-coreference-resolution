@@ -1,6 +1,16 @@
 package edu.oregonstate.util;
 
+/**
+ * defined the constant fileds which are used in the experiment
+ * 
+ * @author Jun Xie (xie@eecs.oregonstate.edu)
+ *
+ */
 public class EecbConstants {
+	
+	/* non-instantiable class */
+	private EecbConstants() {
+	}
 	
 	/** String constants */
 	/** local corpus path, which is used for debug */
@@ -23,6 +33,9 @@ public class EecbConstants {
 														"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
 														"36", "39", "41", "42", "45"};
 	
+	/** development topics */
+	public static final String[] stanfordDevelopmentTopics = {"12", "22", "38"};
+	
 	/** the total topics */
 	public static final String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
 											 "11", "12", "13", "14", "16", "18", "19", "20", "21", "22", 
@@ -31,7 +44,10 @@ public class EecbConstants {
 											 "43", "44", "45"};
 	
 	/** debug topics */
-	public static final String[] debugTopics = {"1", "38", "3", "20"};
+	public static final String[] debugTopics = {"16", "38", "3", "44"};
+	
+	/** debug development topics */
+	public static final String[] debugDevelopmentTopics = {"2"};
 	
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
@@ -55,10 +71,14 @@ public class EecbConstants {
 	public static final String DEBUG_PROP = "dcoref.debug";
 	public static final String STOPPING_CRITERION = "dcoref.stoppingcriterion";
 	public static final String STOPPING_RATE = "dcoref.stoppingrate";
-	public static final String TRAINING_VALIDATION_PROP = "dcoref.training.validation";
+	public static final String TRAINING_VALIDATION_PROP = "dcoref.training.testing";
 	public static final String ANNOTATORS_PROP = "dcoref.annotators";
 	public static final String FILTERSINGLETONS_PROP = "dcoref.filtersingletons";
 	public static final String POSTPROCESS_PROP = "dcoref.postprocess";
 	public static final String WEIGHT_PROP = "dcoref.weight";
+	public static final String LOSSFUNCTION_SCORE_PROP = "dcoref.lossfunction.score";
+	public static final String TUNING_PROP = "dcoref.tuning";
+	public static final String FEATURE_EXTEND_PROP = "dcoref.feature.extend";
+	public static final String STOPPING_PROP = "dcoref.stopping";
 	
 }

@@ -1,6 +1,5 @@
 package edu.oregonstate.lossfunction;
 
-
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Mention;
@@ -12,7 +11,6 @@ import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
 import edu.stanford.nlp.dcoref.Document;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.general.DoubleOperation;
-import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.score.ScorerCEAF;
 import edu.oregonstate.search.State;
 import edu.oregonstate.util.DocumentMerge;
@@ -20,21 +18,26 @@ import edu.oregonstate.util.EecbConstants;
 
 public class MetricLossFunction implements ILossFunction {
 
+	/** score type: Pairwise */
 	private ScoreType mtype;
 	
+	/** document */
 	private Document mdocument;
 	
+	/** state */
 	private State<CorefCluster> mstate;
 	
+	/** scores */
 	private double[] scores;
 	
+	/** numerator and denominator of  precision and recall */
 	private double precisionNumSum;
     private double precisionDenSum;
     private double recallNumSum;
     private double recallDenSum;
 	
 	public MetricLossFunction() {
-		mtype = CorefScorer.ScoreType.Pairwise;
+		mtype = CorefScorer.ScoreType.valueOf(ExperimentConstructor.property.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP));
 		scores = new double[3];
 	}
 	

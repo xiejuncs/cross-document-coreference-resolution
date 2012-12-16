@@ -213,8 +213,8 @@ public class StochasticGradient implements IClassifier {
 	 */
 	private double[] convertSingleFeature(Counter<String> ifeature) {
 		double[] features = new double[row]; 
-		for (int i = 0; i < Feature.featuresName.length; i++) {
-			String feature = Feature.featuresName[i];
+		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
+			String feature = ExperimentConstructor.features[i];
 			double ivalue = ifeature.getCount(feature);
 			features[i] = ivalue;
 		}
@@ -225,8 +225,8 @@ public class StochasticGradient implements IClassifier {
 	/** convert two feature vector to a double array */
 	private double[] convertFeature(Counter<String> ifeature, Counter<String> jfeature) {
 		double[] difference = new double[row]; 
-		for (int i = 0; i < Feature.featuresName.length; i++) {
-			String feature = Feature.featuresName[i];
+		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
+			String feature = ExperimentConstructor.features[i];
 			double ivalue = ifeature.getCount(feature);
 			double jvalue = jfeature.getCount(feature);
 			difference[i] = ivalue - jvalue;

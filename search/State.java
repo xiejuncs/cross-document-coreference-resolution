@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
@@ -63,10 +64,10 @@ public class State<T> implements Serializable {
 		
 		StringBuffer sb = new StringBuffer();
 		sb.append("[");
-		for (int i = 0; i < Feature.featuresName.length; i++) {
-			String feature = Feature.featuresName[i];
+		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
+			String feature = ExperimentConstructor.features[i];
 			double value = mfeatures.getCount(feature);
-			if (i == Feature.featuresName.length - 1) {
+			if (i == ExperimentConstructor.features.length - 1) {
 				sb.append(value);
 			} else {
 				sb.append(value + ", ");

@@ -5,6 +5,7 @@ import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.IterativeResolution;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.Document;
 import Jama.Matrix;
 
@@ -38,8 +39,8 @@ public class Train {
 	 */
 	public Train( String[] trainingTopics) {
 		mTrainingTopics = trainingTopics;
-		mIteration = Integer.parseInt(ExperimentConstructor.property.getProperty("dcoref.classifier.epoch"));
-		String option = ExperimentConstructor.property.getProperty("dcoref.classifier.options");
+		mIteration = Integer.parseInt(ExperimentConstructor.property.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP));
+		String option = ExperimentConstructor.property.getProperty(EecbConstants.CLASSIFIER_OPTIONS_PROP);
 		String[] options = option.split("-"); 
 		mCoefficient = Double.parseDouble(options[0]);
 		mLamda = Double.parseDouble(options[1]);
@@ -84,7 +85,7 @@ public class Train {
 			model = new Matrix(comodel.getRowDimension(), comodel.getColumnDimension());
 			model = comodel.plus(coupdateModel);
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "Finish train the model: "+ i +"th iteration ===================================================");
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "the current weight\n" + ResultOutput.printModel(model, Feature.featuresName));
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "the current weight\n" + ResultOutput.printModel(model, ExperimentConstructor.features));
 		}
 		
 		return model;
@@ -100,7 +101,7 @@ public class Train {
 	public Matrix assignInitialWeights() {		
 		LinearRegression lr = new LinearRegression(ExperimentConstructor.linearRegressionTrainingPath + "/initial.csv", mCoefficient);
 		Matrix initialModel = lr.calculateWeight();
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "initial weight: " + ResultOutput.printModel(initialModel, Feature.featuresName));
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "initial weight: " + ResultOutput.printModel(initialModel, ExperimentConstructor.features));
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "Finish train the initial model: ===================================================");
 		return initialModel;
 	}

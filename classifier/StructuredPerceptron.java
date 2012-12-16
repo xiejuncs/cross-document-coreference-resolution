@@ -255,9 +255,9 @@ public class StructuredPerceptron implements IClassifier {
 	private void updateFature(State<CorefCluster> good, State<CorefCluster> bad) {
 		Counter<String> goodFeature = good.getFeatures();
 		Counter<String> badFeature = bad.getFeatures();
-		double[] weightUpdate = new double[Feature.featuresName.length];
-		for (int i = 0; i < Feature.featuresName.length; i++) {
-			String feature = Feature.featuresName[i];
+		double[] weightUpdate = new double[ExperimentConstructor.features.length];
+		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
+			String feature = ExperimentConstructor.features[i];
 			double goodValue = goodFeature.getCount(feature);
 			double badValue = badFeature.getCount(feature);
 			weightUpdate[i] = goodValue - badValue;
@@ -296,12 +296,12 @@ public class StructuredPerceptron implements IClassifier {
 	
 	private String outputFeature(State<CorefCluster> goodState, State<CorefCluster> badState) {
 		StringBuffer sb = new StringBuffer();
-		for (String feature : Feature.featuresName) {
+		for (String feature : ExperimentConstructor.features) {
 			double count = goodState.getFeatures().getCount(feature);
 			sb.append(count + ",");
 		}
 		sb.append("-");
-		for (String feature : Feature.featuresName) {
+		for (String feature : ExperimentConstructor.features) {
 			double count = badState.getFeatures().getCount(feature);
 			sb.append(count + ",");
 		}

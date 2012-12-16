@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.stanford.nlp.dcoref.CoNLL2011DocumentReader;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
@@ -12,7 +13,9 @@ import edu.stanford.nlp.dcoref.MentionExtractor;
 import edu.stanford.nlp.dcoref.Semantics;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.CoreAnnotations.IndexAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.UtteranceAnnotation;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
@@ -31,14 +34,16 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 	
 	private String documentPath;
 	private String documentIdentifier;
+	private String topic;
+	private String documentID;
 	
 	public EECBMentionExtractorSingleDocument(String singleDocument, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
 		super(dict, semantics);
 		stanfordProcessor = loadStanfordProcessor(props);
 		String[] paras = singleDocument.split("/");
 		int length = paras.length;
-		String topic = paras[length - 2];
-		String documentID = paras[length - 1];
+		topic = paras[length - 2];
+		documentID = paras[length - 1];
 		documentID = documentID.substring(0, documentID.length() - 5);
 		documentIdentifier = topic + "-" + documentID;
 		documentPath = singleDocument;
@@ -63,6 +68,7 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 		List<List<Mention>> allPredictedMentions = null;
 		List<Tree> allTrees = new ArrayList<Tree>();
 		Annotation anno = new Annotation("");
+		CoNLL2011DocumentReader.Document conllDocument = new CoNLL2011DocumentReader.Document();
 		
 		try {
 			// call the eecbReader
@@ -71,14 +77,34 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 			 
 		    List<CoreMap> sentences = anno.get(SentencesAnnotation.class);
 		    for (CoreMap sentence : sentences) {
+		    	
+		    	List<String[]> currentSentence = new ArrayList<String[]>();
 		    	int i = 1;
 		    	for (CoreLabel w : sentence.get(TokensAnnotation.class)) {
+		    		
+		    		// Add by Jun Xie, create the CoNLL format
+		    		String[] words = new String[13];
+		    		words[0] = topic;
+		    		words[1] = documentID;
+		    		words[2] = (i - 1) + "";
+		    		words[3] = w.get(TextAnnotation.class);
+		    		words[4] = w.get(PartOfSpeechAnnotation.class);
+		    		words[5] = "-";
+		    		words[6] = "-";
+		    		words[7] = "-";
+		    		words[8] = "-";
+		    		words[9] = "-";
+		    		words[10] = "-";
+		    		words[11] = "-";
+		    		words[12] = "-";
+		    		
 		    		w.set(IndexAnnotation.class, i++);
 		    		if(!w.containsKey(UtteranceAnnotation.class)) {
 		    	        w.set(UtteranceAnnotation.class, 0);
 		    	    }
 		    	}
 		   
+		    	conllDocument.addSentence(currentSentence);
 		    	allTrees.add(sentence.get(TreeAnnotation.class));
 		    	allWords.add(sentence.get(TokensAnnotation.class));
 		    	EntityComparator comparator = new EntityComparator();
@@ -119,6 +145,7 @@ public class EECBMentionExtractorSingleDocument extends EmentionExtractor {
 		dcorfMentionExtractor.setCurrentDocumentID(documentIdentifier);
 		Document document = dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
 		document.extractGoldCorefClusters();
+		document.conllDoc = conllDocument;
 		return document;
 	}
 	

@@ -30,7 +30,7 @@ public class CorefSystem {
 	
 	// use the default sieve configuration
 	public CorefSystem() {
-		this(ExperimentConstructor.property.getProperty("dcoref.sievePasses").equals("partial") ? EecbConstants.PARTIAL_SIEVE_STRING : EecbConstants.FULL_SIEVE_STRING);
+		this(ExperimentConstructor.property.getProperty(EecbConstants.SIEVES_PROP).equals("partial") ? EecbConstants.PARTIAL_SIEVE_STRING : EecbConstants.FULL_SIEVE_STRING);
 	}
 	
 	public CorefSystem(String sieve) {
@@ -42,10 +42,10 @@ public class CorefSystem {
 	protected void setProperties(String sieve) {
 		//The configuration for EECB corpus, 
 		props = new Properties();
-		props.setProperty("annotators", ExperimentConstructor.property.getProperty("dcoref.annotators"));
+		props.setProperty("annotators", ExperimentConstructor.property.getProperty(EecbConstants.ANNOTATORS_PROP));
 		props.setProperty("dcoref.eecb", ExperimentConstructor.DATA_PATH);
 		//TODO
-		props.setProperty("dcoref.score", "false");
+		props.setProperty("dcoref.score", ExperimentConstructor.property.getProperty(EecbConstants.SCORE_PROP));
 		props.setProperty("dcoref.sievePasses", sieve);
 	}
 	

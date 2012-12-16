@@ -101,7 +101,7 @@ public class ResultOutput {
 	public static String buildString(Counter<String> features, double quality) {
 		StringBuilder sb = new StringBuilder();
 		boolean add = false;
-		for (String feature : Feature.featuresName){
+		for (String feature : ExperimentConstructor.features){
 			double value = features.getCount(feature);
 			if (value > 0.0) add = true;
 			sb.append(value + ",");
