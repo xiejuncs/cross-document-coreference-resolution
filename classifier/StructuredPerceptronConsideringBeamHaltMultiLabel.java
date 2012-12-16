@@ -15,7 +15,7 @@ import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.Counter;
 
-public class StructuredPerceptronConsideringBeamHalt implements IClassifier {
+public class StructuredPerceptronConsideringBeamHaltMultiLabel implements IClassifier {
 
 	// the right links according to the gold corpus
 	private Set<String> mrightLinks;
@@ -103,7 +103,7 @@ public class StructuredPerceptronConsideringBeamHalt implements IClassifier {
 
 	}
 
-	public StructuredPerceptronConsideringBeamHalt() {
+	public StructuredPerceptronConsideringBeamHaltMultiLabel() {
 	}
 
 	/** test whether the candidate states exist good links*/
@@ -139,7 +139,7 @@ public class StructuredPerceptronConsideringBeamHalt implements IClassifier {
 		}
 
 		if (beamLists.size() == 1) {
-			updateWeightGreedyCase(beamLists);
+			updateWeightGreedyCase();
 		} else {
 			updateWeightBeamCase(beamLists);
 		}
@@ -213,78 +213,57 @@ public class StructuredPerceptronConsideringBeamHalt implements IClassifier {
 	}
 
 	/** update in greedy case */
-	private void updateWeightGreedyCase(List<State<CorefCluster>> beamLists) {
-		for (String id : mstates.keySet()) {			
-			State<CorefCluster> state = mstates.get(id);
-
-			if (beamLists.get(0).getScore()[0] == state.getScore()[0]) {
-				continue;
-			}
-
-			if ( beamLists.get(0).getCostScore() <= state.getCostScore()) {
-
-				if (ExperimentConstructor.outputFeature) {
-					outputFeatureFurther(beamLists.get(0), state);
+	private void updateWeightGreedyCase() {
+		State<CorefCluster> haltState = mstates.get("HALT");
+		double haltScore = haltState.getScore()[0];
+		List<State<CorefCluster>> positiveStates = new ArrayList<State<CorefCluster>>();
+		List<State<CorefCluster>> negativeStates = new ArrayList<State<CorefCluster>>();
+		for (String id : mstates.keySet()) {
+			if (!id.equals("HALT")) {
+				State<CorefCluster> state = mstates.get(id);
+				double stateScore = state.getScore()[0];
+				if (stateScore >= haltScore) {
+					positiveStates.add(state);
+				} else {
+					negativeStates.add(state);
 				}
-
-				updateFature(beamLists.get(0), state);
-				noOfVilotions++;
 			}
 		}
 
-		/*
-			State<CorefCluster> haltState = mstates.get("HALT");
-			double haltScore = haltState.getScore()[0];
-			List<State<CorefCluster>> positiveStates = new ArrayList<State<CorefCluster>>();
-			List<State<CorefCluster>> negativeStates = new ArrayList<State<CorefCluster>>();
-			for (String id : mstates.keySet()) {
-				if (!id.equals("HALT")) {
-					State<CorefCluster> state = mstates.get(id);
-					double stateScore = state.getScore()[0];
-					if (stateScore >= haltScore) {
-						positiveStates.add(state);
-					} else {
-						negativeStates.add(state);
-					}
+		// three constraints
+		// positive should larger than halt
+		for (State<CorefCluster> state : positiveStates) {
+			if (state.getScore()[0] == haltScore) {
+				continue;
+			} else {
+				if (state.getCostScore() <= haltState.getCostScore()) {
+					updateFature(state, haltState);
 				}
 			}
+		}
 
-			// three constraints
-			// positive should larger than halt
-			for (State<CorefCluster> state : positiveStates) {
-				if (state.getScore()[0] == haltScore) {
-					continue;
-				} else {
-					if (state.getCostScore() <= haltState.getCostScore()) {
-						updateFature(state, haltState);
-					}
+		// halt should larger than negative
+		for (State<CorefCluster> state : negativeStates) {
+			if (state.getScore()[0] == haltScore) {
+				continue;
+			} else {
+				if (haltState.getCostScore() <= state.getCostScore()) {
+					updateFature(haltState, state);
 				}
 			}
+		}
 
-			// halt should larger than negative
-			for (State<CorefCluster> state : negativeStates) {
-				if (state.getScore()[0] == haltScore) {
-					continue;
-				} else {
-					if (haltState.getCostScore() <= state.getCostScore()) {
-						updateFature(haltState, state);
-					}
+		// positive should larger than negative
+		for (int i = 0; i < positiveStates.size(); i++) {
+			State<CorefCluster> positiveState = positiveStates.get(i);
+			for (int j = 0; j < negativeStates.size(); j++) {
+				State<CorefCluster> negativeState = negativeStates.get(j);
+
+				if (positiveState.getCostScore() <= negativeState.getCostScore()) {
+					updateFature(positiveState, negativeState);
 				}
 			}
-
-			// positive should larger than negative
-			for (int i = 0; i < positiveStates.size(); i++) {
-				State<CorefCluster> positiveState = positiveStates.get(i);
-				for (int j = 0; j < negativeStates.size(); j++) {
-					State<CorefCluster> negativeState = negativeStates.get(j);
-
-					if (positiveState.getCostScore() <= negativeState.getCostScore()) {
-						updateFature(positiveState, negativeState);
-					}
-				}
-			}
-		 */
-
+		}
 	}
 
 	/** 

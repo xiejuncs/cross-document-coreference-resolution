@@ -426,6 +426,7 @@ public class BeamSearchWithHaltAction implements ISearch {
 							}
 						}
 						
+						initial.setFeatures(features);
 						initial.setID("HALT");
 					} else {
 						for (Integer key : indexState.getState().keySet()) {
@@ -623,14 +624,9 @@ public class BeamSearchWithHaltAction implements ISearch {
 			lossFunction.setState(initialState);
 			double[] scores = lossFunction.getMetricScore();
 			printScoreInformation(scores, type);
-			printScoreInformation(calculateF1Score(indexState, ScoreType.MUC), ScoreType.MUC);
-			printScoreInformation(calculateF1Score(indexState, ScoreType.BCubed), ScoreType.BCubed);
-			printScoreInformation(calculateF1Score(indexState, ScoreType.CEAF), ScoreType.CEAF);
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type + " F1 score " + scores[0]);
 			ResultOutput.writeTextFile(ExperimentConstructor.mscorePath, Double.toString(scores[0]) + " " + indexState.getCostScore());
 			
-			
-					
 			double localScore = indexState.getCostScore();
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type.toString() +" Cost score: " + localScore);
 			

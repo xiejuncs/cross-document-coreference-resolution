@@ -2,7 +2,6 @@ package edu.oregonstate.experiment;
 
 import java.io.FileInputStream;
 import java.util.*;
-import java.util.prefs.PreferenceChangeEvent;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -14,7 +13,6 @@ import edu.oregonstate.costfunction.ICostFunction;
 import edu.oregonstate.featureExtractor.WordSimilarity;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;
-import edu.oregonstate.general.FinalScore;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.lossfunction.ILossFunction;
 import edu.oregonstate.search.ISearch;
