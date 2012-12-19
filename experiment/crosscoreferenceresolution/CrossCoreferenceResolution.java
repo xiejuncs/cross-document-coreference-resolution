@@ -288,14 +288,15 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 	 * Needs the following properties:
 	 *  -props 'Location of coref.properties'
 	 * @throws Exception
+	 * 
 	 */
 	public static void main(String[] args) {
 		//TODO
 		boolean debug = true;
 		String configurationPath = "";
 		if (debug) {
-			configurationPath = "/scratch/JavaFile/stanford-corenlp-2012-05-22/src/edu/oregonstate/experimentconfigs/pairwise-flat-halt/" +
-								"debug-predicted-flat-oregonstatement-pairwise-halt-postprocess-pairwise.properties";
+			configurationPath = "/scratch/JavaFile/stanford-corenlp-2012-05-22/src/edu/oregonstate/experimentconfigs/pairwise-flat-tuning/" +
+								"debug-predicted-flat-oregonstate-pairwise-tuning-postprocess-pairwise.properties";
 		} else {
 			if (args.length > 1) {
 				System.out.println("there are more parameters, you just can specify one path parameter.....");
