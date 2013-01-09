@@ -1,6 +1,9 @@
 package edu.oregonstate.general;
 
 import java.text.DecimalFormat;
+import java.util.List;
+
+import edu.oregonstate.io.ResultOutput;
 
 public class DoubleOperation {
 
@@ -178,4 +181,48 @@ public class DoubleOperation {
 		return learningRates;
 	}
 	
+	/**
+	 * calculate weights
+	 * 
+	 * @param weights
+	 */
+	public static void calcualateWeightDifference(List<double[]> weights, String weightFile) {
+		for (int i = 0; i < weights.size() - 1; i++) {
+			double[] differences = DoubleOperation.minus(weights.get(i), weights.get(i+1));
+			double sum = 0.0;
+			for (double difference : differences) {
+				sum += difference * difference;
+			}
+			double length = Math.sqrt(sum);
+			ResultOutput.writeTextFile(weightFile, length + "");
+		}
+	}
+	
+	/**
+	 * transform string arrays to double arrays
+	 * 
+	 * @param stringArrays
+	 * @return
+	 */
+	public static double[] transformStringArray(String[] stringArrays) {
+		double[] doubleArrays = new double[stringArrays.length];
+		for (int i = 0; i < stringArrays.length; i++) {
+			doubleArrays[i] = Double.parseDouble(stringArrays[i]);
+		}
+		
+		return doubleArrays;
+	}
+	
+	/**
+	 * transform string to double arrays
+	 * 
+	 * @param string
+	 * @param separator
+	 * @return
+	 */
+	public static double[] transformString(String string, String separator) {
+		String[] stringArrays = string.split(separator);
+		double[] doubleArrays = transformStringArray(stringArrays);
+		return doubleArrays;
+	}
 }

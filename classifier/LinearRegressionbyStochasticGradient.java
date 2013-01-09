@@ -34,21 +34,29 @@ public class LinearRegressionbyStochasticGradient {
 	/* log file */
 	private String logFile;
 	
-	/* sse error */
-	private List<Double> SSE;
+	/* weights collection */
+	private List<double[]> weights;
+	
+	/* stopping criteria */
+	private double mEplison;
 	
 	public LinearRegressionbyStochasticGradient(String trainingFile, double regularizer, boolean useEpoch ) {
 		this(trainingFile, regularizer, useEpoch, 10);
 	}
 	
-	public LinearRegressionbyStochasticGradient(String trainingFile, double regularizer, boolean useEpoch, int epoch) {
+	public LinearRegressionbyStochasticGradient(String trainingFile, double regularizer, boolean useEpoch, int epoch ) {
+		this(trainingFile, regularizer, useEpoch, 1, 100.0);
+	}
+	
+	public LinearRegressionbyStochasticGradient(String trainingFile, double regularizer, boolean useEpoch, int epoch, double eplison) {
 		mRegularizer = regularizer;
 		mTrainingFile = trainingFile;
 		mUseEpoch = useEpoch;
 		mEpoch = epoch;
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		logFile = timeStamp + "-linear-regression-log";
-		SSE = new ArrayList<Double>();
+		weights = new ArrayList<double[]>();
+		mEplison = eplison;
 	}
 	
 	/**
@@ -144,8 +152,11 @@ public class LinearRegressionbyStochasticGradient {
 		
 		int featureSize = dataSet.get(0).length - 1;
 		double[] weight = new double[featureSize];
-		double[] learningRates = DoubleOperation.createDescendingArray(1.0, 0.0, mEpoch);
-		System.out.println(" learning rates used in the experiment : " + DoubleOperation.printArray(learningRates));
+		double[] learningRates = new double[mEpoch];
+		if (mUseEpoch) {
+			learningRates = DoubleOperation.createDescendingArray(1.0, 0.0, mEpoch);
+			System.out.println(" learning rates used in the experiment : " + DoubleOperation.printArray(learningRates));
+		}
 		
 		if (mUseEpoch) {
 			for (int i = 0; i < mEpoch; i++) {
@@ -174,6 +185,33 @@ public class LinearRegressionbyStochasticGradient {
 			
 		} else {
 			
+			boolean continueLoop = true;
+			int i = 1;
+			while (continueLoop) {
+				System.out.println("the itreation number : " + (i + 1));
+				double learningRate = 1.0 / dataSet.size();
+				System.out.println("learning rate : " + learningRate);
+				String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+				System.out.println(timeStamp);
+				
+				// shuffle the data set
+				Collections.shuffle(dataSet);
+				
+				// train the model
+				weight = train(dataSet, weight, learningRate);
+				
+				System.out.println(DoubleOperation.printArray(weight));
+				
+				System.out.println("finish the iteration number :" + (i + 1));
+				timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+				System.out.println(timeStamp);
+				
+				if (getEndCondition()) {
+					continueLoop = false;
+				}
+				
+				i++;
+			}
 		}
 		
 		return weight;
@@ -182,14 +220,17 @@ public class LinearRegressionbyStochasticGradient {
 	/* the end condition */
 	private boolean getEndCondition() {
 		boolean end = false;
-		int size = SSE.size();
-		double currentSSE = SSE.get(size - 1);
-		double previousSSE = 0.0;
+		int size = weights.size();
+		double[] currentWeight = weights.get(size - 1);
+		double[] previousWeight = new double[currentWeight.length];
 		if (size > 1){
-			previousSSE = SSE.get(size - 2);
+			previousWeight = weights.get(size - 2);
 		}
 		
-		if (Math.abs(currentSSE - previousSSE) < 1) {
+		double[] difference = DoubleOperation.minus(currentWeight, previousWeight);
+		double norm = Math.sqrt(DoubleOperation.time(difference, difference));
+		System.out.println("the norm is " + norm);
+		if (norm < mEplison) {
 			end = true;
 		}
 		
@@ -230,7 +271,8 @@ public class LinearRegressionbyStochasticGradient {
 			double[] learningMargin = DoubleOperation.time(marginDifference, learningRate);
 			weight = DoubleOperation.add(weight, learningMargin);
 			
-			System.out.println(DoubleOperation.printArray(weight));
+			weight = DoubleOperation.normalize(weight);
+			//System.out.println(DoubleOperation.printArray(weight));
 		}
 		
 		timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
@@ -238,8 +280,11 @@ public class LinearRegressionbyStochasticGradient {
 		System.out.println(timeStamp);
 		
 		// evaluate the model
-		double sse = evaluate(features, targets, weight);
-		SSE.add(sse);
+		evaluate(features, targets, weight);
+		
+		double[] copyweight = new double[weight.length];
+		System.arraycopy(weight, 0, copyweight, 0, weight.length);
+		weights.add(copyweight);
 		
 		return weight;
 	}
@@ -251,7 +296,7 @@ public class LinearRegressionbyStochasticGradient {
 	 * @param targets
 	 * @param weight
 	 */
-	private double evaluate(List<double[]> features, double[] targets, double[] weight) {
+	private void evaluate(List<double[]> features, double[] targets, double[] weight) {
 		// go through every training examples
 		double sum = 0.0;
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
@@ -267,7 +312,7 @@ public class LinearRegressionbyStochasticGradient {
 			double square = difference * difference;
 			sum += square;
 			
-			System.out.println(sum);
+			//System.out.println(sum);
 		}
 		
 		System.out.println(" the SSE error for current iteration is " + (sum / 2));
@@ -276,7 +321,6 @@ public class LinearRegressionbyStochasticGradient {
 		System.out.println("end evaluation");
 		System.out.println(timeStamp);
 		
-		return sum;
 	}
 	
 	
@@ -288,7 +332,7 @@ public class LinearRegressionbyStochasticGradient {
 	 */
 	public static void main(String[] args) {
 		LinearRegressionbyStochasticGradient lr = new LinearRegressionbyStochasticGradient("/nfs/guille/xfern/users/xie/Experiment/corpus/initial.csv", 
-				1.0, true, 100);
+				1.0, false, 0, 1e-2);
 		System.out.println("begin read the data");
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
 		System.out.println(timeStamp);

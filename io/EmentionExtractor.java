@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -59,12 +60,14 @@ public class EmentionExtractor {
 	protected EecbReader eecbReader;
 	
 	public static final boolean VERBOSE = false;
+	protected String mentionRepositoryPath;
 	
 	public EmentionExtractor(Dictionaries dict, Semantics semantics) {
 		this.dictionaries = dict;
 		this.semantics = semantics;
 		logger = Logger.getLogger(EmentionExtractor.class.getName());
 		this.mentionFinder = new RuleBasedCorefMentionFinder();
+		mentionRepositoryPath = ExperimentConstructor.experimentResultFolder + "/mentionResult";
 	}
 	
 	protected class EntityComparator implements Comparator<EntityMention> {

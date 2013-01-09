@@ -1,11 +1,20 @@
 package edu.oregonstate.example;
 
-import java.io.File;
-
 public class StringTrim {
 
 	public static void main(String[] args) {
-		StringTrim st = new StringTrim();
-		System.out.println(st.getClass().getName());
+		int x = 2;
+		for (int i = 0; i < 10; i++) {
+			plus(x);
+		}
+		
+		System.out.println(x);
 	}
+	
+	private static void plus(int x) {
+		x = x * x;
+	}
+	
+	
+	
 }

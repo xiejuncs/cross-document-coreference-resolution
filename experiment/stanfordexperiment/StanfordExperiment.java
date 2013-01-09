@@ -8,6 +8,7 @@ import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.experiment.dataset.CorefSystem;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.io.ResultOutput;
+import edu.oregonstate.score.CoNLLScorerHelper;
 import edu.oregonstate.search.JointCoreferenceResolution;
 import edu.oregonstate.training.Train;
 import edu.stanford.nlp.dcoref.Document;
@@ -62,7 +63,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 			
 			// before search parameters
 			ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail before merge");
-			printParameters(document, topic);
+			ResultOutput.printParameters(document, topic, logFile);
 			
 			JointCoreferenceResolution ir = new JointCoreferenceResolution(document, model);
 	    	ir.merge();
@@ -73,7 +74,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 		    SieveCoreferenceSystem.printConllOutput(document, writerPredictedWithoutPronoun, false, postProcess);
 	    	
 		    ResultOutput.writeTextFile(logFile, "topic " + topic + "'s after after merge");
-			printParameters(document, topic);
+		    ResultOutput.printParameters(document, topic, logFile);
 		}
 		
 		writerPredictedWithoutPronoun.close();
@@ -85,7 +86,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 			
 			// before search parameters
 			ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail before merge");
-			printParameters(document, topic);
+			ResultOutput.printParameters(document, topic, logFile);
 			
 			JointCoreferenceResolution ir = new JointCoreferenceResolution(document, model);
 	    	ir.merge();
@@ -106,7 +107,7 @@ public class StanfordExperiment extends ExperimentConstructor {
 		    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
 		    
 		    ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail after merge");
-			printParameters(document, topic);
+		    ResultOutput.printParameters(document, topic, logFile);
 		}
 		
 		writerPredictedWithPronoun.close();
@@ -115,22 +116,19 @@ public class StanfordExperiment extends ExperimentConstructor {
 		// do scoring
 		try {
 			ResultOutput.writeTextFile(logFile, "the score summary of resolution without pronoun resolution");
-			String summaryWithoutPronoun = SieveCoreferenceSystem.getConllEvalSummary(conllScorerPath, goldCorefCluster, predictedCorefClusterWithoutPronoun);
-			printScoreSummary(summaryWithoutPronoun, true);
-			printFinalScore(summaryWithoutPronoun);
+			CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(0, logFile);
+			conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefClusterWithoutPronoun, "without pronoun");
 			
 			ResultOutput.writeTextFile(logFile, "\n\n");
 			ResultOutput.writeTextFile(logFile, "the score summary of resolution with pronoun resolution");
-			String summaryWithPronoun = SieveCoreferenceSystem.getConllEvalSummary(conllScorerPath, goldCorefCluster, predictedCorefClusterWithPronoun);
-			printScoreSummary(summaryWithPronoun, true);
-			printFinalScore(summaryWithPronoun);
+			conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefClusterWithoutPronoun, "with pronoun");
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 		
 		// delete serialized objects and mention result
 		ResultOutput.deleteResult(serializedOutput);
-		if (goldOnly) {
+		if (trainGoldOnly || testGoldOnly) {
 			ResultOutput.deleteResult(mentionRepositoryPath);
 		}
 		

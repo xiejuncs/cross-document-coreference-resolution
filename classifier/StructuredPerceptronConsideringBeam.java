@@ -14,6 +14,7 @@ import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.stats.Counter;
 import edu.oregonstate.search.State;
+import edu.oregonstate.util.EecbConstants;
 
 /**
  * define search constraint here
@@ -55,6 +56,9 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 	
 	// search index, for output feature
 	private int mSearchStep;
+	
+	/* enable previous/current constraint */
+	private boolean enablePreviousCurrentConstraint;
 	
 	/** return the number of violations */	
 	public int getViolations() {
@@ -110,6 +114,7 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 	}
 	
 	public StructuredPerceptronConsideringBeam() {
+		enablePreviousCurrentConstraint = Boolean.parseBoolean(ExperimentConstructor.property.getProperty(EecbConstants.CLASSIFIER_PREVIOUSCURRENT_PROP));
 	}
 	
 	/** test whether the candidate states exist good links*/
@@ -150,31 +155,22 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 			updateWeightBeamCase(beamLists);
 		}
 
-		// third constraint
-		if (mBestState.getCostScore() <= mpreviousBestState.getCostScore()) {
+		// third constraint: true, enable this constraint, false, disable this constraint
+		if (enablePreviousCurrentConstraint) {
+			if (mBestState.getCostScore() <= mpreviousBestState.getCostScore()) {
 
-			if (ExperimentConstructor.outputFeature) {
-				outputFeatureFurther(beamLists.get(0), mBestState);
+				if (ExperimentConstructor.outputFeature) {
+					ResultOutput.outputFeature(beamLists.get(0), mBestState, ExperimentConstructor.featurePath);
+				}
+
+				updateFature(mBestState, mpreviousBestState);
+				noOfVilotions++;
 			}
-
-			updateFature(mBestState, mpreviousBestState);
-			noOfVilotions++;
 		}
 //		}
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "No of violated constraints : " + noOfVilotions);
 	}
-	
-	/**
-	 * output feature for further analysis
-	 * 
-	 * @param goodState
-	 * @param badState
-	 */
-	private void outputFeatureFurther(State<CorefCluster> goodState, State<CorefCluster> badState) {
-		String filePath = ExperimentConstructor.currentExperimentFolder + "/" + mSearchStep;
-		String features = outputFeature(goodState, badState);
-		ResultOutput.writeTextFile(filePath, features);
-	}
+
 	
 	/** update in beam case*/ 
 	private void updateWeightBeamCase(List<State<CorefCluster>> beamLists) {
@@ -192,7 +188,7 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 				
 				if (beamState.getCostScore() <= unBeamState.getCostScore()) {
 					if (ExperimentConstructor.outputFeature) {
-						outputFeatureFurther(beamState, unBeamState);
+						ResultOutput.outputFeature(beamState, unBeamState, ExperimentConstructor.featurePath);
 					}
 					
 					updateFature(beamState, unBeamState);
@@ -209,7 +205,7 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 			
 			if ( beamLists.get(0).getCostScore() <= beamState.getCostScore()) {
 				if (ExperimentConstructor.outputFeature) {
-					outputFeatureFurther(beamLists.get(0), beamState);
+					ResultOutput.outputFeature(beamLists.get(0), beamState, ExperimentConstructor.featurePath);
 				}
 				updateFature(beamLists.get(0), beamState);
 				noOfVilotions++;
@@ -230,7 +226,7 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 			if ( beamLists.get(0).getCostScore() <= state.getCostScore()) {
 				
 				if (ExperimentConstructor.outputFeature) {
-					outputFeatureFurther(beamLists.get(0), state);
+					ResultOutput.outputFeature(beamLists.get(0), state, ExperimentConstructor.featurePath);
 				}
 				
 				updateFature(beamLists.get(0), state);
@@ -285,7 +281,7 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 			String feature = ExperimentConstructor.features[i];
 			double goodValue = goodFeature.getCount(feature);
 			double badValue = badFeature.getCount(feature);
-			weightUpdate[i] = goodValue - badValue;
+			weightUpdate[i] = ExperimentConstructor.learningRate * (goodValue - badValue);
 		}
 		
 		mWeight = DoubleOperation.add(mWeight, weightUpdate);
@@ -308,7 +304,7 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 					
 					// output feature in order for optimize
 					if (ExperimentConstructor.outputFeature) {
-						outputFeatureFurther(goodState, badState);
+						ResultOutput.outputFeature(goodState, badState, ExperimentConstructor.featurePath);
 					}
 					
 					updateFature(goodState, badState);
@@ -317,23 +313,6 @@ public class StructuredPerceptronConsideringBeam implements IClassifier {
 			}
 		}
 	}
-	
-	
-	private String outputFeature(State<CorefCluster> goodState, State<CorefCluster> badState) {
-		StringBuffer sb = new StringBuffer();
-		for (String feature : ExperimentConstructor.features) {
-			double count = goodState.getFeatures().getCount(feature);
-			sb.append(count + ",");
-		}
-		sb.append("-");
-		for (String feature : ExperimentConstructor.features) {
-			double count = badState.getFeatures().getCount(feature);
-			sb.append(count + ",");
-		}
-		
-		return sb.toString().trim();
-	}
-	
 	
 	/** test whether there exists good links */
 	private boolean[] existGoodMerge(PriorityQueue<State<CorefCluster>> statesLossFunction){

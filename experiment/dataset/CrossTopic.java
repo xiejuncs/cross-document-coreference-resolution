@@ -25,7 +25,7 @@ public class CrossTopic implements IDataSet {
 	private String dataPath;
 	
 	/** used for scoring */
-	private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
+	//private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
 
 	public CrossTopic() {
 	}
@@ -45,7 +45,6 @@ public class CrossTopic implements IDataSet {
 				corpus = documentExtraction.getDocument(topic);
 				ResultOutput.writeTextFile(statisPath, topic + " " + corpus.allGoldMentions.size() + " " + corpus.goldCorefClusters.size() + " " + corpus.allPredictedMentions.size() + " " +
 						corpus.corefClusters.size());
-				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\n");
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -58,9 +57,11 @@ public class CrossTopic implements IDataSet {
 		    	cluster.regenerateFeature();
 		    }
 			
+		    /*
 			CorefScorer pairscore = new ScorerPairwise();
     		pairscore.calculateScore(corpus);
     		pairscore.printF1(logger, true);
+    		*/
     		
     		// set topic ID
     		corpus.setID(topic);

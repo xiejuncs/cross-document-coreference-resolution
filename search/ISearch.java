@@ -1,5 +1,6 @@
 package edu.oregonstate.search;
 
+import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
 import Jama.Matrix;
 
@@ -38,5 +39,8 @@ public interface ISearch {
 	/** set document */
 	public void setDocument(Document document);
 	
+	/** return document */
+	public Document getDocument();
 	
+	public State<CorefCluster> getBestLostState();
 }

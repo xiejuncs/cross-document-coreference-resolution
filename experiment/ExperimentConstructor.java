@@ -1,31 +1,28 @@
 package edu.oregonstate.experiment;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import net.didion.jwnl.JWNL;
-
-import edu.oregonstate.classifier.IClassifier;
-import edu.oregonstate.cluster.IClustering;
-import edu.oregonstate.costfunction.ICostFunction;
 import edu.oregonstate.featureExtractor.WordSimilarity;
 import edu.oregonstate.features.Feature;
-import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.lossfunction.ILossFunction;
-import edu.oregonstate.search.ISearch;
+import edu.oregonstate.score.CoNLLScorerHelper;
 import edu.oregonstate.training.Train;
 import edu.oregonstate.util.Command;
+import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
+import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.stats.Counter;
 import edu.stanford.nlp.util.StringUtils;
 import edu.oregonstate.experiment.dataset.CorefSystem;
+import edu.oregonstate.experiment.dataset.DatasetFactory;
 import edu.oregonstate.experiment.dataset.IDataSet;
 
 /**
@@ -37,7 +34,7 @@ import edu.oregonstate.experiment.dataset.IDataSet;
 public abstract class ExperimentConstructor {
 	
 	//
-	// properties for the experiment
+	// properties of the experiment
 	//
 	public static Properties property;
 	
@@ -45,7 +42,7 @@ public abstract class ExperimentConstructor {
 	// topics used for experiment, training and testing
 	//
 	/** the topics used for conducting the experiment */
-	protected static String[] experimentTopics;
+	protected String[] experimentTopics;
 	
 	/** training topics */
 	protected String[] trainingTopics;
@@ -66,7 +63,7 @@ public abstract class ExperimentConstructor {
 	public static String corpusPath;
 	
 	/** store the mention result, used for gold mentions, delete after the experiment */
-	public static String mentionRepositoryPath;
+	protected String mentionRepositoryPath;
 	
 	/** current experiment folder, each topic is an directory, used for storing the intermediate results */
 	public static String currentExperimentFolder;
@@ -110,11 +107,23 @@ public abstract class ExperimentConstructor {
 	/** conll output folder used for scoring */
 	public static String conllResultPath;
 	
+	/** feature folder path */
+	public static String featureFolderPath;
+	
+	/* output feature path */
+	public static String featurePath;
+	
 	//
 	// scoring results path
 	//
 	/** just output the train and test result, for example pairwise */
 	public static String mscorePath;
+	
+	/* overall training result path */
+	public static String trainingPath;
+	
+	/* overall testing result path */
+	public static String testingPath;
 	
 	//
 	// conditions
@@ -161,6 +170,20 @@ public abstract class ExperimentConstructor {
 	/** whether extend the feature */
 	public static boolean extendFeature;
 	
+	/* train gold and test gold */
+	protected boolean trainGoldOnly;
+	protected boolean testGoldOnly;
+	
+	/* train post process and test post process */
+	protected boolean trainPostProcess;
+	protected boolean testPostProcess;
+	
+	/* HALT feature PA algorithm */
+	public static boolean paHalt;
+	
+	/* only testing */
+	protected boolean onlyTesting;
+	
 	//
 	// data used for experiment 
 	//
@@ -178,6 +201,12 @@ public abstract class ExperimentConstructor {
 	
 	/** features used in the experiment */
 	public static String[] features;
+	
+	/* score interval */
+	protected int mInterval;
+	
+	/* the loss score type */
+	public static String lossScoreType;
 	
 	/**
 	 * initialize the Parameters
@@ -216,11 +245,18 @@ public abstract class ExperimentConstructor {
 		sb.append(corpusPath + "corpus/TEMPORYRESUT/" + timeStamp);
 		
 		/*gold mention or predicted mention */
-		goldOnly = Boolean.parseBoolean(property.getProperty(EecbConstants.GOLD_PROP, "false"));
-		if (goldOnly) {
-			sb.append("-gold");
+		trainGoldOnly = Boolean.parseBoolean(property.getProperty(EecbConstants.TRAIN_GOLD_PROP, "true"));
+		if (trainGoldOnly) {
+			sb.append("-traingold");
 		} else {
-			sb.append("-predicted");
+			sb.append("-trainpredicted");
+		}
+		
+		testGoldOnly = Boolean.parseBoolean(property.getProperty(EecbConstants.TEST_GOLD_PROP, "true"));
+		if (testGoldOnly) {
+			sb.append("-testgold");
+		} else {
+			sb.append("-testpredicted");
 		}
 		
 		/* flat or hierarchy */
@@ -254,39 +290,66 @@ public abstract class ExperimentConstructor {
 		sb.append("-" + classifierNoOfIteration);
 		
 		/* tuning or halt */
-		String stopping = property.getProperty(EecbConstants.STOPPING_PROP);
+		String stopping = property.getProperty(EecbConstants.STOPPING_PROP, "none");
 		if (stopping.equals("tuning")) {
 			sb.append("-tuning");
 			stoppingCriterion = true;
 			tuningParameter = true;
 			extendFeature = false;
-		} else {
+		} else if (stopping.equals("halt")) {
 			sb.append("-halt");
 			stoppingCriterion = false;
 			tuningParameter = false;
 			extendFeature = true;
+			
+			paHalt = Boolean.parseBoolean(property.getProperty(EecbConstants.HALT_PATRAINING_PROP, "false"));
+			if (paHalt) {
+				sb.append("-PA");
+			} else {
+				sb.append("-notPA");
+			}
+		} else {
+			sb.append("none");
+			stoppingCriterion = false;
+			tuningParameter = false;
+			extendFeature = false;
 		}
 		
 		/* whether process or not process */
-		postProcess = Boolean.parseBoolean(property.getProperty(EecbConstants.POSTPROCESS_PROP, "false"));
-		if (postProcess) {
-			sb.append("-PostProcess");
+		trainPostProcess = Boolean.parseBoolean(property.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
+		if (trainPostProcess) {
+			sb.append("-trainPostProcess");
 		} else {
-			sb.append("-notPostProcess");
+			sb.append("-trainNotPostProcess");
+		}
+		testPostProcess = Boolean.parseBoolean(property.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
+		if (testPostProcess) {
+			sb.append("-testPostProcess");
+		} else {
+			sb.append("-testNotPostProcess");
 		}
 		
 		/* score type */
-		String lossScoreType = property.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP);
+		lossScoreType = property.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP);
 		sb.append("-" + lossScoreType);
+		
+		outputFeature = Boolean.parseBoolean(property.getProperty(EecbConstants.CLASSIFIER_OUTPUTFEATURE_PROP, "false"));
+		if (outputFeature) {
+			sb.append("-outputfeature");
+		} 
 		
 		experimentResultFolder = sb.toString();
 		Command.createDirectory(experimentResultFolder);
-		if (goldOnly) {
+		if (trainGoldOnly || testGoldOnly) {
 			mentionRepositoryPath = experimentResultFolder + "/mentionResult";
 			Command.createDirectory(mentionRepositoryPath);
 		}
 		
 		logFile = experimentResultFolder + "/" + "experimentlog";
+		trainingPath = experimentResultFolder + "/training.csv";
+		testingPath = experimentResultFolder + "/testing.csv";
+		featureFolderPath = experimentResultFolder + "/featureFolder";
+		Command.createDirectory(featureFolderPath);
 		
 		/** create document serialization folder which store document serialization object */
 		serializedOutput = experimentResultFolder + "/documentobject";
@@ -298,7 +361,6 @@ public abstract class ExperimentConstructor {
 		WORD_SIMILARITY_PATH = corpusPath + "corpus/sims.lsp";
 		WORD_NET_CONFIGURATION_PATH = corpusPath + "corpus/file_properties.xml";
 		STOPWORD_PATH = corpusPath + "corpus/english.stop";
-		conllScorerPath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
 		
 		weightFile = experimentResultFolder + "/weights";
 		violatedFile = experimentResultFolder + "/violatedFile";
@@ -311,11 +373,18 @@ public abstract class ExperimentConstructor {
 		}
 		
 		/** some features are constant across all experiments */
-		outputFeature = false;
+		
 		outputText = false;
 		enableZeroCondition = false;
 		enableNull = false;
 		normalizeWeight = false;
+		onlyTesting  = Boolean.parseBoolean(property.getProperty(EecbConstants.TESTING_PROP, "true"));
+		// do not need tune parameter on development set
+		if (onlyTesting) {
+			tuningParameter = false;
+		}
+		
+		mInterval = Integer.parseInt(property.getProperty(EecbConstants.INTERVAL_PROP));
 		
 		/** initialize the dictionary */
 		CorefSystem cs = new CorefSystem();
@@ -334,153 +403,11 @@ public abstract class ExperimentConstructor {
 		} else {
 			features = Feature.featuresName;
 		}
+		
 	}
 	
 	/** all subclass need to implement the train method */
 	protected abstract void performExperiment();
-	
-	/**
-	 * create dataset model
-	 * 
-	 * @param datasetModel
-	 * @return
-	 */
-	protected IDataSet createDataSetModel(String datasetModel) {
-		if (datasetModel == null) throw new RuntimeException("dataset model not specified");
-		
-		if (!datasetModel.contains(".")) {
-			datasetModel = "edu.oregonstate.experiment.dataset." + datasetModel;
-		}
-		
-		try {
-			Class datasetClass = Class.forName(datasetModel);
-			IDataSet dataset = (IDataSet) datasetClass.newInstance();
-			return dataset;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
-	 * according to the model name, create a classifier to do classification
-	 * 
-	 * @param modelName
-	 * @return
-	 */
-	public static IClassifier createClassifier(String classficationModel) {
-		if (classficationModel == null) throw new RuntimeException("classifier not specified");
-		
-		if (!classficationModel.contains(".")) {
-			classficationModel = "edu.oregonstate.classifier." + classficationModel;
-		}
-		
-		try{
-			Class classifierClass = Class.forName(classficationModel);
-			IClassifier classifier = (IClassifier) classifierClass.newInstance();
-			return classifier;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
-	 * according to the cost function name, create a cost function
-	 * 
-	 * @param costfunction
-	 */
-	public static ICostFunction createCostFunction(String costfunction) {
-		if (costfunction == null) throw new RuntimeException("cost function not specified");
-		
-		if (!costfunction.contains(".")) {
-			costfunction = "edu.oregonstate.costfunction." + costfunction;
-		}
-		
-		try {
-			Class costfunctionClass = Class.forName(costfunction);
-			ICostFunction costFunction = (ICostFunction) costfunctionClass.newInstance();
-			return costFunction;
-		} catch (Exception e) {
-			throw new RuntimeException("e");
-		}
-	}
-	
-	/**
-	 * create a loss function
-	 * 
-	 * @param lossFunction
-	 */
-	public static ILossFunction createLossFunction(String lossFunction) {
-		if (lossFunction == null) throw new RuntimeException("loss function not specified");
-		
-		if (!lossFunction.contains(".")) {
-			lossFunction = "edu.oregonstate.lossfunction." + lossFunction;
-		}
-		
-		try {
-			Class lossfunctionClass = Class.forName(lossFunction);
-			ILossFunction mlossFunction = (ILossFunction) lossfunctionClass.newInstance();
-			return mlossFunction;
-		} catch (Exception e) {
-			throw new RuntimeException("e");
-		}
-	}
-	
-	/**
-	 * create a search method
-	 * 
-	 * @param searchMethod
-	 */
-	public static ISearch createSearchMethod(String searchMethod) {
-		if (searchMethod == null) throw new RuntimeException("search method not specified");
-		
-		if (!searchMethod.contains(".")) {
-			searchMethod = "edu.oregonstate.search." + searchMethod;
-		}
-		
-		try {
-			Class searchMethodClass = Class.forName(searchMethod);
-			ISearch SearchMethod = (ISearch) searchMethodClass.newInstance();
-			return SearchMethod;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
-	 * create a clustering method
-	 * 
-	 * @param clusteringModel
-	 */
-	public static IClustering createClusteringModel(String clusteringModel) {
-		if (clusteringModel == null) throw new RuntimeException("clustering method not specified");
-		
-		if (!clusteringModel.contains(".")) {
-			clusteringModel = "edu.oregonstate.cluster" + clusteringModel;
-		}
-		
-		try {
-			Class clusteringClass = Class.forName(clusteringModel);
-			IClustering ClusteringModel = (IClustering) clusteringClass.newInstance();
-			return ClusteringModel;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	/**
-	 * print debug information for topic
-	 * 
-	 * @param document
-	 * @param topic
-	 */
-	public static void printParameters(Document document, String topic) {
-		ResultOutput.writeTextFile(logFile, "Number of Gold Mentions of " + topic +  " : " + document.allGoldMentions.size());
-		ResultOutput.writeTextFile(logFile, "Number of predicted Mentions of " + topic +  " : " + document.allPredictedMentions.size());
-		ResultOutput.writeTextFile(logFile, "Number of gold clusters of " + topic + " : " + document.goldCorefClusters.size());
-		ResultOutput.writeTextFile(logFile, "Gold clusters : \n" + ResultOutput.printCluster(document.goldCorefClusters));
-		ResultOutput.writeTextFile(logFile, "Number of coref clusters of " + topic + " : " + document.corefClusters.size());
-		ResultOutput.writeTextFile(logFile, "Coref Clusters: \n" + ResultOutput.printCluster(document.corefClusters));
-	}
 	
 	/** split the topics */
 	protected void splitTopics(int index) {
@@ -501,103 +428,116 @@ public abstract class ExperimentConstructor {
 	protected void createDataSet() {
 		int totalPredictedMentions = 0;
 		int totalGoalMentions = 0;
-		
-		IDataSet mDatasetMode;
-		
-		if (dataSetMode) {
-			mDatasetMode = createDataSetModel("CrossTopic");
-		} else {
-			mDatasetMode = createDataSetModel("WithinCross");
-		}
-		
+		IDataSet mDatasetMode = DatasetFactory.createDataSet(dataSetMode);
 		String corpusStatisticsPath = experimentResultFolder + "/corpusStatisticsPath";
 		
 		if (stanfordExperiment) {
 			Train.currentOutputFileName = linearRegressionTrainingPath + "/initial.csv";
 		}
 		
+		String initialResult = experimentResultFolder + "/initialResult.csv";
 		// training set
-		for(String topic : trainingTopics) {
-			
-			currentExperimentFolder = experimentResultFolder + "/" + topic;
-			Command.createDirectory(currentExperimentFolder);
-			
-			ResultOutput.writeTextFile(logFile, "create training data set for " + topic);
-			ResultOutput.writeTextFile(logFile, "\n");
-			
-			String[] tops = {topic};
-			Document document = mDatasetMode.getData(tops);
-			
-			// create the training examples
-			if (stanfordExperiment) {
-				ResultOutput.writeTextFile(logFile, "create verb training examples for " + topic+ "................");
-				
-				// for verb pair case, noun pair case is generating during seven high precision sieves
-				trainingVerbPairExample(document, Train.currentOutputFileName);
-			}
-
-			ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
-			ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());
-			ResultOutput.writeTextFile(corpusStatisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
-					document.corefClusters.size());
-			
-			totalGoalMentions += document.allGoldMentions.size();
-			totalPredictedMentions += document.allPredictedMentions.size();
-			ResultOutput.serialize(document, topic, serializedOutput);
-			ResultOutput.writeTextFile(logFile, "\n");
-		}
+		goldOnly = trainGoldOnly;
+		int[] trainStatistics = generateDateSet(trainingTopics, "training", mDatasetMode, corpusStatisticsPath, trainPostProcess, initialResult);
+		totalGoalMentions += trainStatistics[0];
+		totalPredictedMentions += trainStatistics[1];
 		
 		Train.currentOutputFileName = "";
-		
-		// validation set
 		if (tuningParameter) {
-			for (String topic : developmentTopics) {
-				ResultOutput.writeTextFile(logFile, "create validation data set for " + topic);
-				ResultOutput.writeTextFile(logFile, "\n");
-				currentExperimentFolder = experimentResultFolder + "/" + topic;
-				Command.createDirectory(currentExperimentFolder);
-				
-				String[] tops = {topic};
-				Document document = mDatasetMode.getData(tops);
-				ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
-				ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());
-				
-				ResultOutput.writeTextFile(corpusStatisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
-						document.corefClusters.size());
-				totalPredictedMentions += document.allPredictedMentions.size();
-				totalGoalMentions += document.allGoldMentions.size();
-				ResultOutput.serialize(document, topic, serializedOutput);
-				
-				ResultOutput.writeTextFile(logFile, "\n");
-			}
+			int[] valiadtionStatistics = generateDateSet(developmentTopics, "validation", mDatasetMode, corpusStatisticsPath, trainPostProcess, initialResult);
+			totalGoalMentions += valiadtionStatistics[0];
+			totalPredictedMentions += valiadtionStatistics[1];
 		}
 		
-		// testing set
-		for (String topic : testingTopics) {
-			
-			ResultOutput.writeTextFile(logFile, "create testing data set for " + topic);
-			ResultOutput.writeTextFile(logFile, "\n");
-			currentExperimentFolder = experimentResultFolder + "/" + topic;
-			Command.createDirectory(currentExperimentFolder);
-			
-			String[] tops = {topic};
-			Document document = mDatasetMode.getData(tops);
-			ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
-			ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());
-			
-			ResultOutput.writeTextFile(corpusStatisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
-					document.corefClusters.size());
-			totalPredictedMentions += document.allPredictedMentions.size();
-			totalGoalMentions += document.allGoldMentions.size();
-			ResultOutput.serialize(document, topic, serializedOutput);
-			
-			ResultOutput.writeTextFile(logFile, "\n");
-		}
+		goldOnly = testGoldOnly;
+		int[] testStatistics = generateDateSet(testingTopics, "testing", mDatasetMode, corpusStatisticsPath, testPostProcess, initialResult);
+		totalGoalMentions += testStatistics[0];
+		totalPredictedMentions += testStatistics[1];
+		
 		// total mentions : 7980
-		
 		ResultOutput.writeTextFile(logFile, "the total number of gold mentions :" + totalGoalMentions );
 		ResultOutput.writeTextFile(logFile, "the total number of predicted mentions :" + totalPredictedMentions );
 		ResultOutput.writeTextFile(corpusStatisticsPath, totalGoalMentions + " " + totalPredictedMentions);
+	}
+	
+	/**
+	 * genearate the dataset according to different phases
+	 * 
+	 * @param topics training, testing, or validation
+	 * @param phase
+	 * @param mDatasetMode
+	 * @param corpusStatisticsPath
+	 * @param doPostProcess
+	 * @param initialResult
+	 * @return
+	 */
+	private int[] generateDateSet(String[] topics, String phase, IDataSet mDatasetMode, String corpusStatisticsPath, boolean doPostProcess, String initialResult) {
+		int totalGoalMentions = 0;
+		int totalPredictedMentions = 0;
+		boolean training = false;
+		if (phase.equals("training")) {
+			training = true;
+		}
+		
+		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase;
+		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phase;
+		PrintWriter writerPredicted = null;
+		PrintWriter writerGold = null;
+		try {
+			writerPredicted = new PrintWriter(new FileOutputStream(predictedCorefCluster));
+			writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster));
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		for(String topic : topics) {
+			ResultOutput.writeTextFile(logFile, "create " + phase + " data set for " + topic);
+			Document document = createDocument(topic, mDatasetMode, training, corpusStatisticsPath);
+			totalGoalMentions += document.allGoldMentions.size();
+			totalPredictedMentions += document.allPredictedMentions.size();
+			DocumentAlignment.updateOrderedPredictedMentions(document);
+			SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, doPostProcess);
+		    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
+		}
+		
+		CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(0, logFile);
+		conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefCluster, phase);
+		double predictedCoNLL = conllScorerHelper.getFinalCoNllF1Result();
+		double predictedScore = conllScorerHelper.getLossScoreF1Result();
+		
+		ResultOutput.writeTextFile(initialResult, phase + "," + predictedCoNLL + "," + predictedScore);
+		return new int[]{totalGoalMentions, totalPredictedMentions};
+	}
+	
+	/**
+	 * create document according to the topic and serialize the document
+	 * 
+	 * @param topic
+	 * @param training
+	 * @return
+	 */
+	private Document createDocument(String topic, IDataSet mDatasetMode, boolean training, String corpusStatisticsPath) {
+		currentExperimentFolder = experimentResultFolder + "/" + topic;
+		Command.createDirectory(currentExperimentFolder);
+		ResultOutput.writeTextFile(logFile, "create data set for " + topic);
+
+		String[] tops = {topic};
+		Document document = mDatasetMode.getData(tops);
+
+		// create the training examples
+		if (stanfordExperiment && training) {
+			ResultOutput.writeTextFile(logFile, "create verb training examples for " + topic+ "................");
+			// for verb pair case, noun pair case is generating during seven high precision sieves
+			trainingVerbPairExample(document, Train.currentOutputFileName);
+		}
+
+		ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
+		ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());
+		ResultOutput.writeTextFile(corpusStatisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
+				document.corefClusters.size());
+		ResultOutput.serialize(document, topic, serializedOutput);
+		ResultOutput.writeTextFile(logFile, "\n");
+		
+		return document;
 	}
 	
 	/**
@@ -630,7 +570,7 @@ public abstract class ExperimentConstructor {
 	    	for (int j = 0; j < i; j++) {
 	    		CorefCluster ci = verbSingletonCluster.get(i);
 	    		CorefCluster cj = verbSingletonCluster.get(j);
-	    		Counter<String> features = Feature.getFeatures(document, ci, cj, false, ExperimentConstructor.mdictionary); // get the feature
+	    		Counter<String> features = Feature.getFeatures(document, ci, cj, false, mdictionary); // get the feature
 	    		Mention ciFirstMention = ci.getFirstMention();
 	    		Mention cjFirstMention = cj.getFirstMention();
 	    		double correct = 0.0;
@@ -651,28 +591,8 @@ public abstract class ExperimentConstructor {
 	}
 	
 	/**
-	 * print objects
-	 * 
-	 * @param objects
-	 * @return
+	 * configure the WORDNET
 	 */
-	protected String buildString(Object[] objects) {
-		StringBuffer sb = new StringBuffer();
-		assert objects.length > 0;
-		sb.append("[ ");
-		for (int i = 0; i < objects.length; i++) {
-			Object object = objects[i];
-			if (i == objects.length - 1) {
-				sb.append(object);
-			} else {
-				sb.append(object + ", ");
-			}
-		}
-		sb.append(" ]");
-		return sb.toString();
-	}
-	
-	/** configure the WORDNET */
 	protected void configureJWordNet() {
 		try {
 			System.out.println("begin configure WORDNET");
@@ -684,95 +604,13 @@ public abstract class ExperimentConstructor {
 		}
 	}
 	
-	/** configure word similarity matrix */
+	/** 
+	 * configure word similarity matrix 
+	 */
 	protected void configureWordSimilarity() {
 		WordSimilarity wordSimilarity = new WordSimilarity(WORD_SIMILARITY_PATH);
 		wordSimilarity.initialize();
 		datas = wordSimilarity.datas;
-	}
-	
-	protected void printConfiguration() {
-		
-	}
-	
-	/**
-	 * calculate weights
-	 * 
-	 * @param weights
-	 */
-	protected void calcualateWeightDifference(List<double[]> weights) {
-		for (int i = 0; i < weights.size() - 1; i++) {
-			double[] differences = DoubleOperation.minus(weights.get(i), weights.get(i+1));
-			double sum = 0.0;
-			for (double difference : differences) {
-				sum += difference * difference;
-			}
-			double length = Math.sqrt(sum);
-			ResultOutput.writeTextFile(weightFile, length + "");
-		}
-	}
-	
-	public static void printScoreSummary(String summary, boolean afterPostProcessing) {
-		String[] lines = summary.split("\n");
-		if(!afterPostProcessing) {
-			for(String line : lines) {
-				if(line.startsWith("Identification of Mentions")) {
-					ResultOutput.writeTextFile(logFile, line);
-					return;
-				}
-			}
-		} else {
-			StringBuilder sb = new StringBuilder();
-			for(String line : lines) {
-				if(line.startsWith("METRIC")) sb.append(line);
-				if(!line.startsWith("Identification of Mentions") && line.contains("Recall")) {
-					sb.append(line).append("\n");
-				}
-			}
-			ResultOutput.writeTextFile(logFile, sb.toString());
-		}
-	}
-	
-	/** Print average F1 of MUC, B^3, CEAF_E */
-	protected void printFinalScore(String summary) {
-		Pattern f1 = Pattern.compile("Coreference:.*F1: (.*)%");
-		Matcher f1Matcher = f1.matcher(summary);
-		double[] F1s = new double[5];
-		int i = 0;
-		while (f1Matcher.find()) {
-			F1s[i++] = Double.parseDouble(f1Matcher.group(1));
-		}
-		ResultOutput.writeTextFile(logFile, "Final score ((muc+bcub+ceafe)/3) = "+(F1s[0]+F1s[1]+F1s[3])/3);
-	}
-	
-	/**
-	 * update the corefcluster ID of each mention in the orderedPredictionMentions
-	 * 
-	 * @param document
-	 */
-	public static void updateOrderedPredictedMentions(Document document) {
-		List<List<Mention>> predictedOrderedMentionsBySentence = document.getOrderedMentions();
-		Map<Integer, CorefCluster> corefClusters = document.corefClusters;
-		for (Integer clusterID : corefClusters.keySet()) {
-			CorefCluster cluster = corefClusters.get(clusterID);
-			for (Mention m : cluster.getCorefMentions()) {
-				int sentenceID = m.sentNum;
-				List<Mention> mentions = predictedOrderedMentionsBySentence.get(sentenceID);
-				int mStartIndex = m.startIndex;
-				int mEndIndex = m.endIndex;
-				for (Mention mention : mentions) {
-					int mentionStartIndex = mention.startIndex;
-					int mentionEndIndex = mention.endIndex;
-					if (mentionStartIndex == mStartIndex && mentionEndIndex == mEndIndex) {
-						mention.corefClusterID = m.corefClusterID;
-					}
-				}
-				
-				int mentionID = m.mentionID;
-				Mention correspondingMention = document.allPredictedMentions.get(mentionID);
-				correspondingMention.corefClusterID = clusterID;
-			}
-		}
 	}
 	
 }

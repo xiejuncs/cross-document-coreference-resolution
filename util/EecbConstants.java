@@ -44,10 +44,10 @@ public class EecbConstants {
 											 "43", "44", "45"};
 	
 	/** debug topics */
-	public static final String[] debugTopics = {"16", "38", "3", "44"};
+	public static final String[] debugTopics = {"16", "10", "38", "20"};
 	
 	/** debug development topics */
-	public static final String[] debugDevelopmentTopics = {"2"};
+	public static final String[] debugDevelopmentTopics = {"6"};
 	
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
@@ -56,7 +56,9 @@ public class EecbConstants {
 	public static final String DATASET_PROP = "dcoref.dataset";
 	public static final String CLASSIFIER_PROP = "dcoref.classifier";
 	public static final String CLASSIFIER_EPOCH_PROP = "dcoref.classifier.epoch";
+	public static final String CLASSIFIER_PREVIOUSCURRENT_PROP = "dcoref.classifier.previouscurrent";
 	public static final String CLASSIFIER_OPTIONS_PROP = "dcoref.classifier.options";
+	public static final String CLASSIFIER_OUTPUTFEATURE_PROP = "dcoref.classifier.outputfeature";
 	public static final String COSTFUNCTION_PROP = "dcoref.costfunction";
 	public static final String LOSSFUNCTION_PROP = "dcoref.lossfunction";
 	public static final String CLUSTERING_PROP = "dcoref.clustering";
@@ -67,18 +69,24 @@ public class EecbConstants {
 	public static final String STOPWORD_PROP = "dcoref.stopword";
 	public static final String SIEVES_PROP = "dcoref.sievePasses";
 	public static final String SCORE_PROP = "dcoref.score";
-	public static final String GOLD_PROP = "dcoref.gold";
+	public static final String TRAIN_GOLD_PROP = "dcoref.train.gold";
+	public static final String TEST_GOLD_PROP = "dcoref.test.gold";
 	public static final String DEBUG_PROP = "dcoref.debug";
 	public static final String STOPPING_CRITERION = "dcoref.stoppingcriterion";
 	public static final String STOPPING_RATE = "dcoref.stoppingrate";
 	public static final String TRAINING_VALIDATION_PROP = "dcoref.training.testing";
 	public static final String ANNOTATORS_PROP = "dcoref.annotators";
 	public static final String FILTERSINGLETONS_PROP = "dcoref.filtersingletons";
-	public static final String POSTPROCESS_PROP = "dcoref.postprocess";
+	public static final String TRAIN_POSTPROCESS_PROP = "dcoref.train.postprocess";
+	public static final String TEST_POSTPROCESS_PROP = "dcoref.test.postprocess";
 	public static final String WEIGHT_PROP = "dcoref.weight";
 	public static final String LOSSFUNCTION_SCORE_PROP = "dcoref.lossfunction.score";
 	public static final String TUNING_PROP = "dcoref.tuning";
 	public static final String FEATURE_EXTEND_PROP = "dcoref.feature.extend";
 	public static final String STOPPING_PROP = "dcoref.stopping";
+	public static final String INTERVAL_PROP = "dcoref.interval";
+	public static final String HALT_PATRAINING_PROP = "dcoref.halt.patraining";
+	public static final String TESTING_PROP = "dcoref.testing";
+	public static final String TESTING_WEIGHTPATH_PROP = "dcoref.testing.weightpath";
 	
 }

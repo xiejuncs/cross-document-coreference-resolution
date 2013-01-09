@@ -52,8 +52,10 @@ import edu.stanford.nlp.dcoref.MentionExtractor;
  * Extract single topic <COREF> mentions from eecb corpus  
  */
 public class EECBMentionExtractor extends EmentionExtractor {
+	
 	private String topicPath;
 	protected ArrayList<String> files;
+	
 
 	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
 		super(dict, semantics);
@@ -138,14 +140,14 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
-		    if (ExperimentConstructor.goldOnly) {		    	
+		    if (ExperimentConstructor.goldOnly) {	    	
 		        allPredictedMentions = new ArrayList<List<Mention>>();
 		        for (int i = 0; i < allGoldMentions.size(); i++) {
 		        	List<Mention> sentence = new ArrayList<Mention>();
 		        	for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
 		        		Mention mention = allGoldMentions.get(i).get(j);
-		        		ResultOutput.serialize(mention, mention.mentionID, ExperimentConstructor.mentionRepositoryPath);
-		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), ExperimentConstructor.mentionRepositoryPath, true);
+		        		ResultOutput.serialize(mention, mention.mentionID, mentionRepositoryPath);
+		        		Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), mentionRepositoryPath, true);
 		        		copyMention.goldCorefClusterID = -1;
 		        		sentence.add(copyMention);
 		        		

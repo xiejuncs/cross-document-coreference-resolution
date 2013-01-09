@@ -13,24 +13,30 @@ import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.score.ScorerCEAF;
 import edu.oregonstate.search.State;
-import edu.oregonstate.util.DocumentMerge;
 import edu.oregonstate.util.EecbConstants;
+import edu.oregonstate.util.EecbConstructor;
 
+/**
+ * Loss Function used to calculate the loss score
+ * 
+ * @author Jun Xie (xie@eecs.oregonstate.edu)
+ *
+ */
 public class MetricLossFunction implements ILossFunction {
 
-	/** score type: Pairwise */
+	/* score type: Pairwise */
 	private ScoreType mtype;
 	
-	/** document */
+	/* document */
 	private Document mdocument;
 	
-	/** state */
+	/* state */
 	private State<CorefCluster> mstate;
 	
-	/** scores */
+	/* scores: F1, precision and recall */
 	private double[] scores;
 	
-	/** numerator and denominator of  precision and recall */
+	/* numerator and denominator of  precision and recall */
 	private double precisionNumSum;
     private double precisionDenSum;
     private double recallNumSum;
@@ -53,16 +59,16 @@ public class MetricLossFunction implements ILossFunction {
 		mstate = state;
 	}
 	
+	/* calculate loss function according to different state, but with the same document */
 	public void calculateLossFunction() {
-		Document documentState = new Document();
-		DocumentMerge dm = new DocumentMerge(mdocument, documentState);
-		dm.addDocument();
-    	setNextDocument(documentState, mstate);
-    	scores = calculateF1(documentState, mtype);
+    	setNextDocument(mdocument, mstate);
+    	scores = calculateF1(mdocument, mtype);
 	}
 	
+	/* make the fields of the document used for scoring consistent with the fields of the state */
 	private void setNextDocument(Document documentState, State<CorefCluster> state) {
 		documentState.corefClusters = state.getState();
+		
 		for (Integer id : documentState.corefClusters.keySet()) {
 			CorefCluster cluster = documentState.corefClusters.get(id);
 			for (Mention m : cluster.corefMentions) {
@@ -74,27 +80,10 @@ public class MetricLossFunction implements ILossFunction {
 		}
 	}
 	
-	// calculate F1, Precision and Recall according to the Score Type
+	/* calculate F1, Precision and Recall according to the Score Type */
     private double[] calculateF1(Document document, ScoreType type) {
         double F1 = 0.0;
-        CorefScorer score;
-        switch(type) {
-            case MUC:
-                score = new ScorerMUC();
-                break;
-            case BCubed:
-                score = new ScorerBCubed(BCubedType.Bconll);
-                break;
-            case CEAF:
-                score = new ScorerCEAF();
-                break;
-            case Pairwise:
-                score = new ScorerPairwise();
-                break;
-            default:
-                score = new ScorerMUC();
-                break;
-        }
+        CorefScorer score = EecbConstructor.createCorefScorer(type);
         
         score.calculateScore(document);
         F1 = score.getF1();
@@ -110,10 +99,12 @@ public class MetricLossFunction implements ILossFunction {
         return result;
     }
     
+    /* the detail information of a score */
     public String getDetailScoreInformation() {
     	return precisionNumSum + " " + precisionDenSum + " " + recallNumSum + " " + recallDenSum;
     }
     
+    /* scoring the document at the first time */
     public double[] getMetricScore() {
     	return calculateF1(mdocument, mtype);
     }

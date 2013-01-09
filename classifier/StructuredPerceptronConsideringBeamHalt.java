@@ -231,60 +231,6 @@ public class StructuredPerceptronConsideringBeamHalt implements IClassifier {
 				noOfVilotions++;
 			}
 		}
-
-		/*
-			State<CorefCluster> haltState = mstates.get("HALT");
-			double haltScore = haltState.getScore()[0];
-			List<State<CorefCluster>> positiveStates = new ArrayList<State<CorefCluster>>();
-			List<State<CorefCluster>> negativeStates = new ArrayList<State<CorefCluster>>();
-			for (String id : mstates.keySet()) {
-				if (!id.equals("HALT")) {
-					State<CorefCluster> state = mstates.get(id);
-					double stateScore = state.getScore()[0];
-					if (stateScore >= haltScore) {
-						positiveStates.add(state);
-					} else {
-						negativeStates.add(state);
-					}
-				}
-			}
-
-			// three constraints
-			// positive should larger than halt
-			for (State<CorefCluster> state : positiveStates) {
-				if (state.getScore()[0] == haltScore) {
-					continue;
-				} else {
-					if (state.getCostScore() <= haltState.getCostScore()) {
-						updateFature(state, haltState);
-					}
-				}
-			}
-
-			// halt should larger than negative
-			for (State<CorefCluster> state : negativeStates) {
-				if (state.getScore()[0] == haltScore) {
-					continue;
-				} else {
-					if (haltState.getCostScore() <= state.getCostScore()) {
-						updateFature(haltState, state);
-					}
-				}
-			}
-
-			// positive should larger than negative
-			for (int i = 0; i < positiveStates.size(); i++) {
-				State<CorefCluster> positiveState = positiveStates.get(i);
-				for (int j = 0; j < negativeStates.size(); j++) {
-					State<CorefCluster> negativeState = negativeStates.get(j);
-
-					if (positiveState.getCostScore() <= negativeState.getCostScore()) {
-						updateFature(positiveState, negativeState);
-					}
-				}
-			}
-		 */
-
 	}
 
 	/** 
@@ -318,7 +264,20 @@ public class StructuredPerceptronConsideringBeamHalt implements IClassifier {
 			String feature = ExperimentConstructor.features[i];
 			double goodValue = goodFeature.getCount(feature);
 			double badValue = badFeature.getCount(feature);
-			weightUpdate[i] = goodValue - badValue;
+			
+			if (ExperimentConstructor.paHalt && feature.equals("HALT")) {
+
+				// use PA algorithm to update the HALT value
+				double loss = good.getScore()[0] - bad.getScore()[0];
+				double direction = goodValue - badValue;
+				double length = Math.abs(direction);
+
+				if (length != 0.0) {
+					weightUpdate[i] = (loss * direction) / length; 
+				}
+			} else {
+				weightUpdate[i] = goodValue - badValue;
+			}
 		}
 
 		mWeight = DoubleOperation.add(mWeight, weightUpdate);

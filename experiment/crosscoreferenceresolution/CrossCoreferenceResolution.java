@@ -1,17 +1,28 @@
 package edu.oregonstate.experiment.crosscoreferenceresolution;
 
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.experiment.dataset.CorefSystem;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
+import edu.oregonstate.score.CoNLLScorerHelper;
 import edu.oregonstate.search.ISearch;
+import edu.oregonstate.search.State;
 import edu.oregonstate.training.Development;
 import edu.oregonstate.util.Command;
+import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
+import edu.oregonstate.util.EecbConstructor;
+import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 
@@ -38,72 +49,217 @@ import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
  */
 public class CrossCoreferenceResolution extends ExperimentConstructor {
 
-	/**
-	 * define the configuration file path and instantiate the property which can be used
-	 * in the whole experiment
-	 * 
-	 * @param configurationPath
-	 */
+	/* used for print the score */
+	public static final Logger logger = Logger.getLogger(CrossCoreferenceResolution.class.getName());
+	
+	private double[] weight;
+	private double[] totalWeight;
+	private int totalViolations;
+	private List<double[]> learnedWeights;
+	
+	/* configure the experiment */
 	public CrossCoreferenceResolution(String configurationPath) {
 		super(configurationPath);
+	}
+	
+	/**
+	 * learn the weight according to the true loss function
+	 * 
+	 * @param currentEpoch
+	 * @param searchMethod
+	 * @return
+	 */
+	private int trainingBySearch(int currentEpoch, String searchMethod) {
+		// training part
+		int currentViolations = 0;
+		for (int j = 0; j < trainingTopics.length; j++) {
+			ResultOutput.writeTextFile(logFile, "\n");
+			String topic = trainingTopics[j];
+			ResultOutput.writeTextFile(logFile, "Starting to do training on " + topic + " in the " + currentEpoch + "th training phase" );
+			Document document = ResultOutput.deserialize(topic, serializedOutput, false);
+			
+			// before search : document parameters
+			ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail before search");
+			ResultOutput.printParameters(document, topic, logFile);
+			
+			// configure dynamic file and folder path
+			currentExperimentFolder = experimentResultFolder + "/" + topic;
+			Command.createDirectory(currentExperimentFolder);
+			mscorePath = currentExperimentFolder + "/" + "train-iteration" + currentEpoch + "-" + topic;
+			
+			// use search to update weight
+			ISearch mSearchMethod = EecbConstructor.createSearchMethod(searchMethod);
+			mSearchMethod.setWeight(weight);
+			mSearchMethod.setTotalWeight(totalWeight);
+			mSearchMethod.setDocument(document);
+			mSearchMethod.trainingSearch();
+			weight = mSearchMethod.getWeight();
+			totalWeight = mSearchMethod.getTotalWeight();
+			currentViolations += mSearchMethod.getViolations();
+			Document documentState = mSearchMethod.getDocument();
+			ResultOutput.printDocumentScoreInformation(documentState, "document after search: ", logFile, logger);
+			
+			// after search : document parameters
+			ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail after search");
+			ResultOutput.printParameters(documentState, topic, logFile);
+		}
+		return currentViolations;
+	}
+	
+	/**
+	 * train the model using the Dagger algorithm
+	 * 
+	 * @param currentEpoch
+	 * @param searchMethod
+	 * @param totalEpoch
+	 * @param N
+	 */
+	private void trainUsingDagger(int currentEpoch, String searchMethod, int totalEpoch, int N) {
+		boolean trainTesting = Boolean.parseBoolean(property.getProperty(EecbConstants.TRAINING_VALIDATION_PROP));
+		String classifierLearningModel = property.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
+		List<double[]> leanredWeights = new ArrayList<double[]>();
+		int currentViolations = trainingBySearch(currentEpoch, searchMethod);
+		// print weight information
+		ResultOutput.writeTextFile(logFile, "weight vector : " + DoubleOperation.printArray(weight));
+		ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
+		ResultOutput.writeTextFile(logFile, "the number of violated constraints for the " + currentEpoch + "th iteration : " + currentViolations);
+		ResultOutput.writeTextFile(violatedFile, currentViolations + "");
+		totalViolations += currentViolations;
+		ResultOutput.writeTextFile(logFile, "total violation : " + totalViolations + " until " + currentEpoch + "th iteration");
+		double[] averageWeight;
+		if (classifierLearningModel.startsWith("Structured")) {
+			averageWeight = DoubleOperation.divide(totalWeight, totalViolations);
+		} else {
+			averageWeight = DoubleOperation.divide(totalWeight, currentEpoch);
+		}
+		
+		ResultOutput.writeTextFile(logFile, "average weight vector : " + DoubleOperation.printArray(averageWeight));
+		ResultOutput.writeTextFile(logFile, "\n");
+		leanredWeights.add(averageWeight);
+		
+		for (int i = 0; i < totalEpoch; i++ ) {
+			for (int j = 0; j < N; j++) {
+				double[] learnedWeight = learnedWeights.get(i);
+				
+				postProcess = trainPostProcess;
+				
+				// validation part
+				if (trainTesting) {
+					doTesting(currentEpoch, learnedWeight, searchMethod, "trainTesting", trainingTopics);
+				}
+				
+				postProcess = testPostProcess;
+				doTesting(currentEpoch, learnedWeight, searchMethod, "testing", testingTopics);
+				
+				currentViolations = trainingByFile(currentEpoch, featurePath);
+				
+				ResultOutput.writeTextFile(logFile, "weight vector : " + DoubleOperation.printArray(weight));
+				ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
+				ResultOutput.writeTextFile(logFile, "the number of violated constraints for the " + currentEpoch + "th iteration : " + currentViolations);
+				ResultOutput.writeTextFile(violatedFile, currentViolations + "");
+				totalViolations += currentViolations;
+				ResultOutput.writeTextFile(logFile, "total violation : " + totalViolations + " until " + currentEpoch + "th iteration");
+				if (classifierLearningModel.startsWith("Structured")) {
+					averageWeight = DoubleOperation.divide(totalWeight, totalViolations);
+				} else {
+					averageWeight = DoubleOperation.divide(totalWeight, currentEpoch);
+				}
+				
+				ResultOutput.writeTextFile(logFile, "average weight vector : " + DoubleOperation.printArray(averageWeight));
+				ResultOutput.writeTextFile(logFile, "\n");
+				leanredWeights.add(averageWeight);
+			}
+		}
+	}
+	
+	/**
+	 * learn the weight based on file
+	 * 
+	 * @param currentEpoch
+	 * @param path
+	 * @return
+	 */
+	private int trainingByFile(int currentEpoch, String path) {
+		int currentViolations = 0;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String currentLine;
+			while((currentLine = br.readLine()) != null) {
+				String[] segments = currentLine.split("-");
+				String goodStateFeatures = segments[0];
+				String badStateFeatures = segments[1];
+				double[] goodNumericFeatures = DoubleOperation.transformString(goodStateFeatures, ",");
+				double[] badNumericFeatures = DoubleOperation.transformString(badStateFeatures, ",");
+				double goodActionScore = DoubleOperation.time(weight, goodNumericFeatures);
+				double badActionScore = DoubleOperation.time(weight, badNumericFeatures);
+				if (goodActionScore <= badActionScore) {
+					double[] difference = DoubleOperation.minus(goodNumericFeatures, badNumericFeatures);
+					double[] weightDifference = DoubleOperation.time(difference, learningRate);
+					weight = DoubleOperation.add(weight, weightDifference);
+					totalWeight = DoubleOperation.add(totalWeight, weight);
+				}
+			}
+			br.close();
+		} catch (Exception e) {
+			
+		}
+		return currentViolations;
 	}
 	
 	@Override
 	protected void performExperiment() {
 		// set parameters
 		int epoch = Integer.parseInt(property.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP));
-		int numberOfFeatures = features.length;
-		double[] weight = new double[numberOfFeatures];
-		double[] totalWeight = new double[numberOfFeatures];
-		int totalViolations = 0;
-		boolean trainTesting = Boolean.parseBoolean(property.getProperty(EecbConstants.TRAINING_VALIDATION_PROP));
 		String searchMethod = property.getProperty(EecbConstants.SEARCH_PROP);
-		boolean experimentWeight = Boolean.parseBoolean(property.getProperty(EecbConstants.WEIGHT_PROP));    // true average weight, false latest weight
-		double[] learningRates = DoubleOperation.createDescendingArray(1.0, 0.0, epoch);
-		String classifierLearningModel = property.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
+		boolean trainTesting = Boolean.parseBoolean(property.getProperty(EecbConstants.TRAINING_VALIDATION_PROP));
 		
-		for (int i = 0; i < epoch; i++) {
-			ResultOutput.writeTextFile(logFile, "The " + (i + 1) + "th iteration training....");
-			int currentViolations = 0;
-			learningRate = learningRates[i];
+		if (onlyTesting) {
+			//TODO
+			String weightPath = property.getProperty(EecbConstants.TESTING_WEIGHTPATH_PROP);
+			List<double[]> weights = readWeights(weightPath);
+			double[] stoppingRates = DoubleOperation.createDescendingArray(1.0, 3.0, 10);
 			
-			// training part
-			for (int j = 0; j < trainingTopics.length; j++) {
-				String topic = trainingTopics[j];
-				ResultOutput.writeTextFile(logFile, "Starting to do training on " + topic + " in the " + (i + 1) + " training phase" );
-				Document document = ResultOutput.deserialize(topic, serializedOutput, false);
+			for (int i = 0; i < epoch; i++) {
+				double[] learnedWeight = weights.get(i);
+				for (double stoppingrate : stoppingRates) {
+					ResultOutput.writeTextFile(logFile, "Now stoppingrate : " + stoppingrate);
+					stoppingRate = stoppingrate;
+					// test on training set
+					if (trainTesting) {
+						postProcess = trainPostProcess;
+						doTesting(i, learnedWeight, searchMethod, "trainTesting", trainingTopics);
+					}
+					
+					// test on testing set
+					postProcess = testPostProcess;
+					doTesting(i, learnedWeight, searchMethod, "testing", testingTopics);
+				}
 				
-				// before search : document parameters
-				ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail before search");
-				printParameters(document, topic);
-				
-				// configure dynamic file and folder path
-				currentExperimentFolder = experimentResultFolder + "/" + topic;
-				Command.createDirectory(currentExperimentFolder);
-				mscorePath = currentExperimentFolder + "/" + "train-iteration" + (i + 1) + "-" + topic;
-				
-				// use search to update weight
-				ISearch mSearchMethod = createSearchMethod(searchMethod);
-				mSearchMethod.setWeight(weight);
-				mSearchMethod.setTotalWeight(totalWeight);
-				mSearchMethod.setDocument(document);
-				mSearchMethod.trainingSearch();
-				weight = mSearchMethod.getWeight();
-				totalWeight = mSearchMethod.getTotalWeight();
-				currentViolations += mSearchMethod.getViolations();
-				
-				// after search : document parameters
-				ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail after search");
-				printParameters(document, topic);
 			}
-				
+		} else if (outputFeature) {
+			// just with one training epoch
+			int numberOfFeatures = features.length;
+			weight = new double[numberOfFeatures];
+			totalWeight = new double[numberOfFeatures];
+			totalViolations = 0;
+			int currentEpoch = 1;
+			String classifierLearningModel = property.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
+			boolean experimentWeight = Boolean.parseBoolean(property.getProperty(EecbConstants.WEIGHT_PROP));    // true: average weight, false: latest weight
+			if (experimentWeight) {
+				ResultOutput.writeTextFile(logFile, "the learned weight used for testing is average weight");
+			} else {
+				ResultOutput.writeTextFile(logFile, "the learned weight used for testing is the latest weight");
+			}
+			double[] learningRates = DoubleOperation.createDescendingArray(1.0, 0.0, epoch);
+			learningRate = learningRates[0];
+			int currentViolations = trainingBySearch(currentEpoch, searchMethod);
 			// print weight information
 			ResultOutput.writeTextFile(logFile, "weight vector : " + DoubleOperation.printArray(weight));
 			ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
-			ResultOutput.writeTextFile(logFile, "the number of violated constraints for the " + (i + 1) + "th iteration : " + currentViolations);
+			ResultOutput.writeTextFile(logFile, "the number of violated constraints for the " + currentEpoch + "th iteration : " + currentViolations);
 			ResultOutput.writeTextFile(violatedFile, currentViolations + "");
 			totalViolations += currentViolations;
-			ResultOutput.writeTextFile(logFile, "total violation : " + totalViolations + " until " + (i + 1) + "th iteration");
+			ResultOutput.writeTextFile(logFile, "total violation : " + totalViolations + " until " + currentEpoch + "th iteration");
 			
 			/* pairwise: average weight is over the total number of violated constraints, while for 
 			 * pairwise & singleton : average weight is over the number of iterations
@@ -112,7 +268,7 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 			if (classifierLearningModel.startsWith("Structured")) {
 				averageWeight = DoubleOperation.divide(totalWeight, totalViolations);
 			} else {
-				averageWeight = DoubleOperation.divide(totalWeight, (i + 1));
+				averageWeight = DoubleOperation.divide(totalWeight, currentEpoch);
 			}
 			
 			ResultOutput.writeTextFile(logFile, "average weight vector : " + DoubleOperation.printArray(averageWeight));
@@ -126,166 +282,335 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 				learnedWeight = weight;
 			}
 			
-			// do tuning parameter, focus on stopping rate
-			if (tuningParameter) {
-				Development development = new Development(developmentTopics, i, learnedWeight, 1.0, 3.0);
-				development.tuning();
-				stoppingRate = development.getStoppingRate();
-				ResultOutput.writeTextFile(logFile, "After tuning (1.0 - 3.0), the stopping rate is :" + stoppingRate + " for the " + (i + 1) + " iteration");
-			}
+			learnedWeights.add(learnedWeight);
 			
-			// validation part
-			if (trainTesting) {
-				String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-validation-" + (i + 1);
-				String goldCorefCluster = conllResultPath + "/goldCorefCluster-validation-" + (i + 1);
+			if (currentEpoch % mInterval == 0) {
 				
-				PrintWriter writerPredicted = null;
-				PrintWriter writerGold = null;
-				try {
-					writerPredicted = new PrintWriter(new FileOutputStream(predictedCorefCluster));
-					writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster));
-				} catch (Exception e) {
-					throw new RuntimeException(e);
+				postProcess = trainPostProcess;
+				
+				// do tuning parameter, focus on stopping rate
+				if (tuningParameter) {
+					stoppingRate = tuneParameter(currentEpoch, learnedWeight);
+					ResultOutput.writeTextFile(logFile, "After tuning (1.0 - 3.0), the stopping rate is :" + stoppingRate + " for the " + currentEpoch + " iteration");
 				}
 				
-				for (int j = 0; j < trainingTopics.length; j++) {
-					String topic = trainingTopics[j];
-					ResultOutput.writeTextFile(logFile, "Training Testing : Starting to do testing on " + topic);
-					Document document = ResultOutput.deserialize(topic, serializedOutput, false);
-
-					// before search parameters
-					ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail before search");
-					printParameters(document, topic);
-
-					// configure dynamic file and folder path
-					currentExperimentFolder = experimentResultFolder + "/" + topic;
-					Command.createDirectory(currentExperimentFolder);
-					mscorePath = currentExperimentFolder + "/" + "traintest-iteration" + (i + 1) + "-" + topic;
-
-					// use search to update weight
-					ISearch mSearchMethod = createSearchMethod(searchMethod);
-					mSearchMethod.setWeight(learnedWeight);
-					mSearchMethod.setDocument(document);
-					mSearchMethod.testingSearch();
-
-					updateOrderedPredictedMentions(document);
+				// validation part
+				if (trainTesting) {
+					doTesting(currentEpoch, learnedWeight, searchMethod, "trainTesting", trainingTopics);
+				}
+				
+				postProcess = testPostProcess;
+				doTesting(currentEpoch, learnedWeight, searchMethod, "testing", testingTopics);
+			}
+			
+			// learn the weight from the file
+			for (int i = 1; i < epoch; i++) {
+				currentEpoch = i + 1;
+				currentViolations = trainingByFile(currentEpoch, featurePath);
+				
+				ResultOutput.writeTextFile(logFile, "weight vector : " + DoubleOperation.printArray(weight));
+				ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
+				ResultOutput.writeTextFile(logFile, "the number of violated constraints for the " + currentEpoch + "th iteration : " + currentViolations);
+				ResultOutput.writeTextFile(violatedFile, currentViolations + "");
+				totalViolations += currentViolations;
+				ResultOutput.writeTextFile(logFile, "total violation : " + totalViolations + " until " + currentEpoch + "th iteration");
+				
+				/* pairwise: average weight is over the total number of violated constraints, while for 
+				 * pairwise & singleton : average weight is over the number of iterations
+				 * */
+				if (classifierLearningModel.startsWith("Structured")) {
+					averageWeight = DoubleOperation.divide(totalWeight, totalViolations);
+				} else {
+					averageWeight = DoubleOperation.divide(totalWeight, currentEpoch);
+				}
+				
+				ResultOutput.writeTextFile(logFile, "average weight vector : " + DoubleOperation.printArray(averageWeight));
+				ResultOutput.writeTextFile(logFile, "\n");
+				
+				// average weight or current weight
+				if (experimentWeight) {
+					learnedWeight = averageWeight;
+				} else {
+					learnedWeight = weight;
+				}
+				learnedWeights.add(learnedWeight);
+				if (currentEpoch % mInterval == 0) {
 					
-					// after search parameters
-					ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail after search");
-					printParameters(document, topic);
+					postProcess = trainPostProcess;
 					
-					// do pronoun sieve on the document
-					try {
-						DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-						CorefSystem cs = new CorefSystem();
-						cs.corefSystem.coreference(document, pronounSieve);
-					} catch (Exception e) {
-						throw new RuntimeException(e);
+					// do tuning parameter, focus on stopping rate
+					if (tuningParameter) {
+						stoppingRate = tuneParameter(currentEpoch, learnedWeight);
+						ResultOutput.writeTextFile(logFile, "After tuning (1.0 - 3.0), the stopping rate is :" + stoppingRate + " for the " + currentEpoch + " iteration");
 					}
 					
-					if (postProcess) {
-				    	SieveCoreferenceSystem.postProcessing(document);
-				    }
-				    SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
-				    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
+					// validation part
+					if (trainTesting) {
+						doTesting(currentEpoch, learnedWeight, searchMethod, "trainTesting", trainingTopics);
+					}
+					
+					postProcess = testPostProcess;
+					doTesting(currentEpoch, learnedWeight, searchMethod, "testing", testingTopics);
+				}
+			}
+			
+		} else {
+			// with training
+			int numberOfFeatures = features.length;
+			weight = new double[numberOfFeatures];
+			totalWeight = new double[numberOfFeatures];
+			totalViolations = 0;
+			String classifierLearningModel = property.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
+			boolean experimentWeight = Boolean.parseBoolean(property.getProperty(EecbConstants.WEIGHT_PROP));    // true: average weight, false: latest weight
+			if (experimentWeight) {
+				ResultOutput.writeTextFile(logFile, "the learned weight used for testing is average weight");
+			} else {
+				ResultOutput.writeTextFile(logFile, "the learned weight used for testing is the latest weight");
+			}
+			double[] learningRates = DoubleOperation.createDescendingArray(1.0, 0.0, epoch);
+			
+			/* each epoch */
+			for (int i = 0; i < epoch; i++) {
+				int currentEpoch = i + 1;
+				ResultOutput.writeTextFile(logFile, "The " + currentEpoch + "th iteration training....");
+				learningRate = learningRates[i];
+				
+				// training part
+				int currentViolations = trainingBySearch(currentEpoch, searchMethod);
+				// print weight information
+				ResultOutput.writeTextFile(logFile, "weight vector : " + DoubleOperation.printArray(weight));
+				ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
+				ResultOutput.writeTextFile(logFile, "the number of violated constraints for the " + currentEpoch + "th iteration : " + currentViolations);
+				ResultOutput.writeTextFile(violatedFile, currentViolations + "");
+				totalViolations += currentViolations;
+				ResultOutput.writeTextFile(logFile, "total violation : " + totalViolations + " until " + currentEpoch + "th iteration");
+				
+				/* pairwise: average weight is over the total number of violated constraints, while for 
+				 * pairwise & singleton : average weight is over the number of iterations
+				 * */
+				double[] averageWeight;
+				if (classifierLearningModel.startsWith("Structured")) {
+					averageWeight = DoubleOperation.divide(totalWeight, totalViolations);
+				} else {
+					averageWeight = DoubleOperation.divide(totalWeight, currentEpoch);
 				}
 				
-				try {
-					ResultOutput.writeTextFile(logFile, "\n\n");
-					ResultOutput.writeTextFile(logFile, "the score summary of resolution for train testing on the " + (i + 1) + "th iteration");
-					String summary = SieveCoreferenceSystem.getConllEvalSummary(conllScorerPath, goldCorefCluster, predictedCorefCluster);
-					printScoreSummary(summary, true);
-					printFinalScore(summary);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
+				ResultOutput.writeTextFile(logFile, "average weight vector : " + DoubleOperation.printArray(averageWeight));
+				ResultOutput.writeTextFile(logFile, "\n");
+				
+				// average weight or current weight
+				double[] learnedWeight;
+				if (experimentWeight) {
+					learnedWeight = averageWeight;
+				} else {
+					learnedWeight = weight;
 				}
 				
-				writerPredicted.close();
-				writerGold.close();
+				// print test result every five epochs
+				if (currentEpoch % mInterval == 0) {
+				
+					postProcess = trainPostProcess;
+					
+					// do tuning parameter, focus on stopping rate
+					if (tuningParameter) {
+						stoppingRate = tuneParameter(currentEpoch, learnedWeight);
+						ResultOutput.writeTextFile(logFile, "After tuning (1.0 - 3.0), the stopping rate is :" + stoppingRate + " for the " + currentEpoch + " iteration");
+					}
+					
+					// validation part
+					if (trainTesting) {
+						doTesting(currentEpoch, learnedWeight, searchMethod, "trainTesting", trainingTopics);
+					}
+					
+					postProcess = testPostProcess;
+					doTesting(currentEpoch, learnedWeight, searchMethod, "testing", testingTopics);
+				}
 			}
-			
-			
-			// testing part
-			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-testing-" + (i + 1);
-			String goldCorefCluster = conllResultPath + "/goldCorefCluster-testing-" + (i + 1);
-			
-			PrintWriter writerPredicted = null;
-			PrintWriter writerGold = null;
-			try {
-				writerPredicted = new PrintWriter(new FileOutputStream(predictedCorefCluster));
-				writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster));
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			for (int j = 0; j < testingTopics.length; j++) {
-				String topic = testingTopics[j];
-				ResultOutput.writeTextFile(logFile, "Starting to do testing on " + topic + " for the " + (i + 1) + "th iteration");
-				Document document = ResultOutput.deserialize(topic, serializedOutput, false);
-				
-				// before search parameters
-				ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail before search");
-				printParameters(document, topic);
-				
-				// configure dynamic file and folder path
-				currentExperimentFolder = experimentResultFolder + "/" + topic;
-				Command.createDirectory(currentExperimentFolder);
-				mscorePath = currentExperimentFolder + "/" + "test-iteration" + (i + 1) + "-" + topic;
-				
-				// use search to do testing
-				ISearch mSearchMethod = createSearchMethod(searchMethod);
-				mSearchMethod.setWeight(learnedWeight);
-				mSearchMethod.setDocument(document);
-				mSearchMethod.testingSearch();
-				
-				updateOrderedPredictedMentions(document);
-				
-				// after search parameters
-				ResultOutput.writeTextFile(logFile, topic +  "'s detail after search");
-				printParameters(document, topic);
-				
-				// do pronoun sieve on the document
-				try {
-			    	DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
-				    CorefSystem cs = new CorefSystem();
-			    	cs.corefSystem.coreference(document, pronounSieve);
-			    } catch (Exception e) {
-			    	throw new RuntimeException(e);
-			    }
-				
-				// do post-process
-				if (postProcess) {
-			    	SieveCoreferenceSystem.postProcessing(document);
-			    }
-				
-			    SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
-			    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
-			}
-			
-			try {
-				ResultOutput.writeTextFile(logFile, "\n\n");
-				ResultOutput.writeTextFile(logFile, "the score summary of resolution for testing on the " + (i + 1) + "th iteration");
-				String summary = SieveCoreferenceSystem.getConllEvalSummary(conllScorerPath, goldCorefCluster, predictedCorefCluster);
-				printScoreSummary(summary, true);
-				printFinalScore(summary);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			
-			writerGold.close();
-			writerPredicted.close();
 		}
-		
+
 		// delete serialized objects and mention result
 		ResultOutput.deleteResult(serializedOutput);
-		if (goldOnly) {
+		if (trainGoldOnly || testGoldOnly) {
 			ResultOutput.deleteResult(mentionRepositoryPath);
 		}
 
 		ResultOutput.printTime();
 	}
 	
+	
+	
+	/* tune parameter based on the development topics */
+	private double tuneParameter(int currentEpoch, double[] learnedWeight) {
+		double rate = 0.0;
+		//TODO
+		Development development = new Development(developmentTopics, currentEpoch, learnedWeight, 2.0, 3.0, 5);
+		rate = development.tuning();
+		return rate;
+	}
+	
+	/* do testing */
+	private void doTesting(int currentEpoch, double[] learnedWeight, String searchMethod, String phase, String[] topics) {
+
+		String finalResultPath = "";
+		if (phase.equals("testing")) {
+			finalResultPath = testingPath;
+		} else {
+			finalResultPath = trainingPath;
+		}
+		
+		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase + "-" + currentEpoch;
+		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phase + "-" + currentEpoch;
+		String lossPredictedCorefCluster = conllResultPath + "/losspredictedCorefCluster-" + phase + "-" + currentEpoch;
+		
+		PrintWriter writerPredicted = null;
+		PrintWriter writerGold = null;
+		PrintWriter lossWriterPredicted = null;
+		try {
+			writerPredicted = new PrintWriter(new FileOutputStream(predictedCorefCluster));
+			writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster));
+			lossWriterPredicted = new PrintWriter(new FileOutputStream(lossPredictedCorefCluster));
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		
+		for (int j = 0; j < topics.length; j++) {
+			ResultOutput.writeTextFile(logFile, "\n");
+			String topic = topics[j];
+			ResultOutput.writeTextFile(logFile, phase + " : Starting to do testing on " + topic);
+			Document document = ResultOutput.deserialize(topic, serializedOutput, false);
+
+			// before search parameters
+			ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail before search");
+			ResultOutput.printParameters(document, topic, logFile);
+
+			// configure dynamic file and folder path
+			currentExperimentFolder = experimentResultFolder + "/" + topic;
+			Command.createDirectory(currentExperimentFolder);
+			mscorePath = currentExperimentFolder + "/" + phase + "-iteration" + (currentEpoch + 1) + "-" + topic;
+
+			// use search to update weight
+			ISearch mSearchMethod = EecbConstructor.createSearchMethod(searchMethod);
+			mSearchMethod.setWeight(learnedWeight);
+			mSearchMethod.setDocument(document);
+			mSearchMethod.testingSearch();
+			Document afterDocument = mSearchMethod.getDocument();
+			ResultOutput.printDocumentScoreInformation(afterDocument, "document after search: ", logFile, logger);
+			
+			DocumentAlignment.updateOrderedPredictedMentions(afterDocument);
+			ResultOutput.printDocumentScoreInformation(afterDocument, "document after search before pronoun : ", logFile, logger);
+			ResultOutput.writeTextFile(logFile, "topic " + topic + "'s detail after search");
+			ResultOutput.printParameters(afterDocument, topic, logFile);
+			
+			// do pronoun sieve on the document
+			try {
+				DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
+				CorefSystem cs = new CorefSystem();
+				cs.corefSystem.coreference(afterDocument, pronounSieve);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			
+			ResultOutput.printDocumentScoreInformation(afterDocument, "document after search after pronoun : ", logFile, logger);
+			
+			if (postProcess) {
+		    	SieveCoreferenceSystem.postProcessing(afterDocument);
+		    }
+
+		    SieveCoreferenceSystem.printConllOutput(afterDocument, writerPredicted, false, postProcess);
+		    SieveCoreferenceSystem.printConllOutput(afterDocument, writerGold, true);
+		    
+		    //
+		    // for bestLossState case
+		    //
+		    Document documentState = ResultOutput.deserialize(topic, serializedOutput, false);
+		    State<CorefCluster> copyBestLossState = mSearchMethod.getBestLostState();
+		    List<Integer> removeSets = new ArrayList<Integer>();
+		    for (Integer key : copyBestLossState.getState().keySet()) {
+		    	CorefCluster cluster = copyBestLossState.getState().get(key);
+		    	if (cluster.corefMentions.size() > 1) {
+		    		for (Mention mention : cluster.corefMentions) {
+		    			int mentionID = mention.mentionID;
+		    			if (copyBestLossState.getState().get(mentionID) != null && copyBestLossState.getState().get(mentionID).corefMentions.size() == 1) {
+		    				removeSets.add(mentionID);
+		    			}
+		    		}
+		    	}
+		    }
+		    for (Integer key : removeSets) {
+		    	copyBestLossState.remove(key);
+		    }
+		    
+		    documentState.corefClusters = copyBestLossState.getState();
+		    DocumentAlignment.updateOrderedPredictedMentions(documentState);
+		    ResultOutput.printParameters(documentState, topic, logFile);
+		    ResultOutput.printDocumentScoreInformation(documentState, "best loss state : ", logFile, logger);
+
+			if (postProcess) {
+		    	SieveCoreferenceSystem.postProcessing(documentState);
+		    }
+
+		    SieveCoreferenceSystem.printConllOutput(documentState, lossWriterPredicted, false, postProcess);
+		}
+		
+		printFinalCoNLLScoreResult(goldCorefCluster, predictedCorefCluster, lossPredictedCorefCluster, phase, finalResultPath, currentEpoch);
+		
+		writerPredicted.close();
+		writerGold.close();
+		lossWriterPredicted.close();
+	}
+	
 	/**
-	 * Needs the following properties:
+	 * print the final CoNLL score result
+	 * 
+	 * @param goldCorefCluster
+	 * @param predictedCorefCluster
+	 * @param lossPredictedCorefCluster
+	 * @param phase
+	 * @param finalResultPath
+	 * @param currentEpoch
+	 */
+	private void printFinalCoNLLScoreResult(String goldCorefCluster, String predictedCorefCluster, String lossPredictedCorefCluster, 
+			String phase, String finalResultPath, int currentEpoch) {
+		CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(currentEpoch, logFile);
+		conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefCluster, phase);
+		double predictedCoNLL = conllScorerHelper.getFinalCoNllF1Result();
+		double predictedScore = conllScorerHelper.getLossScoreF1Result();
+		conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, lossPredictedCorefCluster, "loss" + phase);
+		double lossCoNLL = conllScorerHelper.getFinalCoNllF1Result();
+		double lossScore = conllScorerHelper.getLossScoreF1Result();
+		ResultOutput.writeTextFile(finalResultPath, currentEpoch + "-" + stoppingRate + "," + predictedCoNLL + "," + lossCoNLL + "," + predictedScore + ","  + lossScore);
+	}
+	
+	/**
+	 * Read the weights
+	 * 
+	 * @param path
+	 * @return
+	 */
+	private List<double[]> readWeights(String path) {
+		List<double[]> weights = new ArrayList<double[]>();
+
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(path));
+			String currentLine;
+			while((currentLine = br.readLine()) != null) {
+				String[] segments = currentLine.split(",");
+				double[] weight = new double[segments.length];
+				for (int i = 0; i < segments.length; i++) {
+					weight[i] = Double.parseDouble(segments[i]);
+				}
+				weights.add(weight);
+			}
+			br.close();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		
+		return weights;
+	}
+	
+	/**
+	 * Need the following properties:
 	 *  -props 'Location of coref.properties'
 	 * @throws Exception
 	 * 
@@ -295,8 +620,8 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		boolean debug = true;
 		String configurationPath = "";
 		if (debug) {
-			configurationPath = "/scratch/JavaFile/stanford-corenlp-2012-05-22/src/edu/oregonstate/experimentconfigs/pairwise-flat-tuning/" +
-								"debug-predicted-flat-oregonstate-pairwise-tuning-postprocess-pairwise.properties";
+			configurationPath = "/scratch/JavaFile/stanford-corenlp-2012-05-22/src/edu/oregonstate/experimentconfigs/pairwise-flat/" +
+								"debug-flat-oregonstate-pairwise-none-pairwise.properties";
 		} else {
 			if (args.length > 1) {
 				System.out.println("there are more parameters, you just can specify one path parameter.....");

@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
@@ -19,8 +20,12 @@ import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
 import edu.oregonstate.search.State;
 import edu.oregonstate.util.EecbConstants;
+import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.CorefCluster;
+import edu.stanford.nlp.dcoref.CorefScorer;
+import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
+import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 import edu.stanford.nlp.stats.Counter;
 
 import Jama.Matrix;
@@ -141,21 +146,7 @@ public class ResultOutput {
 		assert success == true;
 	}
 	
-	public static <T> void serialize(T object, int id, String directory) {
-		try
-	      {
-	         FileOutputStream fileOut = new FileOutputStream(directory + "/" + id +".ser");
-	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
-	         out.writeObject(object);
-	         out.close();
-	         fileOut.close();
-	      }catch(IOException i)
-	      {
-	          i.printStackTrace();
-	      }
-	}
-	
-	public static <T> void serialize(T object, String id, String directory) {
+	public static <T> void serialize(T object, Object id, String directory) {
 		try {
 			FileOutputStream fileOut = new FileOutputStream(directory + "/" + id +".ser");
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -233,5 +224,65 @@ public class ResultOutput {
 			sb.append(priority + " " + state.toString() + "\n");
 		}
 		return sb.toString();
+	}
+	
+	/**
+	 * print debug information for topic
+	 * 
+	 * @param document
+	 * @param topic
+	 */
+	public static void printParameters(Document document, String topic, String logFile) {
+		ResultOutput.writeTextFile(logFile, "Number of Gold Mentions of " + topic +  " : " + document.allGoldMentions.size());
+		ResultOutput.writeTextFile(logFile, "Number of predicted Mentions of " + topic +  " : " + document.allPredictedMentions.size());
+		ResultOutput.writeTextFile(logFile, "Number of gold clusters of " + topic + " : " + document.goldCorefClusters.size());
+		//ResultOutput.writeTextFile(logFile, "Gold clusters : \n" + ResultOutput.printCluster(document.goldCorefClusters));
+		ResultOutput.writeTextFile(logFile, "Number of coref clusters of " + topic + " : " + document.corefClusters.size());
+		//ResultOutput.writeTextFile(logFile, "Coref Clusters: \n" + ResultOutput.printCluster(document.corefClusters));
+	}
+	
+	/**
+	 * print document score information
+	 * 
+	 * @param document
+	 * @param logInformation
+	 * @param logPath
+	 * @param logger
+	 */
+	public static void printDocumentScoreInformation(Document document, String logInformation, String logPath, Logger logger) {
+		CorefScorer score = EecbConstructor.createCorefScorer(ScoreType.valueOf(ExperimentConstructor.lossScoreType));
+		score.calculateScore(document);
+		ResultOutput.writeTextFile(logPath, logInformation);
+		score.printF1(logger, true);
+	}
+	
+	/** print the local score */
+	public static void printScoreInformation(double[] localScores, ScoreType mtype) {
+		assert localScores.length == 3;
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " F1 Score: " + Double.toString(localScores[0]));
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " precision Score: " + Double.toString(localScores[1]));
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " recall Score: " + Double.toString(localScores[2]));
+	}
+	
+	/**
+	 * output feature
+	 * 
+	 * @param goodState
+	 * @param badState
+	 * @param path
+	 */
+	public static void outputFeature(State<CorefCluster> goodState, State<CorefCluster> badState, String path) {
+		StringBuffer sb = new StringBuffer();
+		for (String feature : ExperimentConstructor.features) {
+			double count = goodState.getFeatures().getCount(feature);
+			sb.append(count + ",");
+		}
+		sb.append("-");
+		for (String feature : ExperimentConstructor.features) {
+			double count = badState.getFeatures().getCount(feature);
+			sb.append(count + ",");
+		}
+		
+		ResultOutput.writeTextFile(path, sb.toString().trim());
 	}
 }

@@ -17,8 +17,8 @@ import edu.oregonstate.general.PriorityQueue;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.lossfunction.ILossFunction;
 import edu.oregonstate.score.ScorerCEAF;
-import edu.oregonstate.util.DocumentMerge;
 import edu.oregonstate.util.EecbConstants;
+import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;
@@ -26,13 +26,10 @@ import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
-import edu.stanford.nlp.dcoref.ScorerBCubed.BCubedType;
-import edu.stanford.nlp.dcoref.ScorerMUC;
-import edu.stanford.nlp.dcoref.ScorerPairwise;
-import edu.stanford.nlp.dcoref.ScorerBCubed;
 import edu.stanford.nlp.dcoref.Dictionaries.Animacy;
 import edu.stanford.nlp.dcoref.Dictionaries.Gender;
 import edu.stanford.nlp.dcoref.Dictionaries.Number;
+import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
 
 /**
@@ -99,15 +96,22 @@ public class BeamSearch implements ISearch {
     /** score type */
     private ScoreType type;
     
+    /* best loss state */
+    private State<CorefCluster> bestLostState;
+    
+    public State<CorefCluster> getBestLostState() {
+    	return bestLostState;
+    }
+    
     /** constructor */
     public BeamSearch() {
     	mBeamWidth = Integer.parseInt(ExperimentConstructor.property.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP));
     	maximumSearch = Integer.parseInt(ExperimentConstructor.property.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP));
         mdictionary = ExperimentConstructor.mdictionary;
         mrightLinks = new HashSet<String>();
-        lossFunction = ExperimentConstructor.createLossFunction(ExperimentConstructor.property.getProperty(EecbConstants.LOSSFUNCTION_PROP));
-        costFunction = ExperimentConstructor.createCostFunction(ExperimentConstructor.property.getProperty(EecbConstants.COSTFUNCTION_PROP));
-        classifier = ExperimentConstructor.createClassifier(ExperimentConstructor.property.getProperty(EecbConstants.CLASSIFIER_PROP));
+        lossFunction = EecbConstructor.createLossFunction(ExperimentConstructor.property.getProperty(EecbConstants.LOSSFUNCTION_PROP));
+        costFunction = EecbConstructor.createCostFunction(ExperimentConstructor.property.getProperty(EecbConstants.COSTFUNCTION_PROP));
+        classifier = EecbConstructor.createClassifier(ExperimentConstructor.property.getProperty(EecbConstants.CLASSIFIER_PROP));
         type = CorefScorer.ScoreType.valueOf(ExperimentConstructor.property.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP));
     }
     
@@ -139,6 +143,10 @@ public class BeamSearch implements ISearch {
     	mdocument = document;
     }
     
+    public Document getDocument() {
+    	return mdocument;
+    }
+    
     /** build the right links for the gold clusters */
     private void initializeRightLinks() {
     	for (CorefCluster cluster : mdocument.goldCorefClusters.values()) {
@@ -157,7 +165,6 @@ public class BeamSearch implements ISearch {
                 }
     		}
     	}
-    	
     }
     
     /**
@@ -205,6 +212,10 @@ public class BeamSearch implements ISearch {
         }
         
         ResultOutput.writeTextFile(ExperimentConstructor.logFile, "after create children: total of clusters : " + (size - 1));
+        // Add HALT action
+        if (ExperimentConstructor.extendFeature) {
+        	actions.add("HALT");
+        }
         ResultOutput.writeTextFile(ExperimentConstructor.logFile, "the number of candidate sets :" + actions.size());
         return actions;
     }
@@ -264,15 +275,6 @@ public class BeamSearch implements ISearch {
         }
     }
     
-	
-	/** print the local score */
-	private void printScoreInformation(double[] localScores, ScoreType mtype) {
-		assert localScores.length == 3;
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " F1 Score: " + Double.toString(localScores[0]));
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " precision Score: " + Double.toString(localScores[1]));
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " recall Score: " + Double.toString(localScores[2]));
-	}
-	
 	/** reach gold state */
 	private void reachGoldState() {
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\n=====================================");
@@ -281,7 +283,7 @@ public class BeamSearch implements ISearch {
 	}
 	
 	/**
-	 * update the allPredictedMentions
+	 * update the allPredictedMentions, which is used for Stanford scoring function
 	 * The reason for this is that the corefClusters information has been updated. The mention id should be consistent 
 	 * with the allPredictedMentions and corefClusters
 	 * 
@@ -366,7 +368,7 @@ public class BeamSearch implements ISearch {
 		msearchStep = 0;
 		mviolations = 0;
 		Double globalScore = 0.0;
-		Double globalCostScore = 0.0;
+		Double localCostScore = 0.0;
 		
 		// beam and closed list
 		//Set<State<CorefCluster>> closedList = new HashSet<State<CorefCluster>>();
@@ -384,43 +386,39 @@ public class BeamSearch implements ISearch {
 		
 		// keep search
 		while (beam.size() != 0 && (msearchStep < maximumSearch)) {
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "action " + msearchStep);
 			
 			// the state with the highest score
 			State<CorefCluster> indexState = beam.next();
 			double[] localScore = indexState.getScore();
 			double score = localScore[0];
-			printScoreInformation(localScore, type);
-			
-			String id = indexState.getID();
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "Merge clusters : " + id);
-			/*
-			if (!id.equals("")) {
-				CorefCluster cluster = indexState.getState().get(Integer.parseInt(id.split("-")[0]));
-				ResultOutput.writeTextFile(ExperimentConstructor.logFile, cluster.toString());
-			}
-			*/
-			
 			// whether continue
 			if (score >= globalScore) {
 				globalScore = score;
-				
+
 				// best state
 				previousBestState = bestState;
 				bestState = indexState;
-				globalCostScore = indexState.getCostScore();
+				localCostScore = indexState.getCostScore();
 			}
-			if (globalScore > score) break;
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "global " + type.toString() +" F1 score: " + globalScore.toString());
-			ResultOutput.writeTextFile(ExperimentConstructor.mscorePath, globalScore.toString() + " " + globalCostScore);
-			
+
 			// first check whether it is a goal state
 			if (globalScore == 1.0) {
 				regenerateFeatures(indexState);
 				reachGoldState();
 				break;
 			}
-
+			
+			// second check whether continue
+			if ((globalScore > score) || (indexState.getID().equals("HALT")) ) {
+				regenerateFeatures(bestState);
+				break;
+			}
+		
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "action " + msearchStep);
+			ResultOutput.printScoreInformation(localScore, type);
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "global " + type.toString() +" F1 score: " + globalScore.toString());
+			ResultOutput.writeTextFile(ExperimentConstructor.mscorePath, globalScore.toString() + " " + localCostScore);
+			
 			// add the node to the explored list
 			//closedList.add(indexState);
 			
@@ -434,21 +432,37 @@ public class BeamSearch implements ISearch {
 				for (String action : actions) {
 					// make a copy of indexState
 					State<CorefCluster> initial = new State<CorefCluster>();
-					for (Integer key : indexState.getState().keySet()) {
-						initial.add(key, indexState.getState().get(key));
+					double[] stateScore = {globalScore, 0.0, 0.0};
+					if (action.equals("HALT")) {
+						initial.setScore(stateScore);
+						initial.setCostScore(mweight[ExperimentConstructor.features.length - 1]);
+						Counter<String> features = new ClassicCounter<String>();
+						for (String feature : ExperimentConstructor.features) {
+							if (feature.equals("HALT")) {
+								features.setCount(feature, 1.0);
+							} else {
+								features.setCount(feature, 0.0);
+							}
+						}
+
+						initial.setFeatures(features);
+						initial.setID("HALT");
+					} else {
+						for (Integer key : indexState.getState().keySet()) {
+							initial.add(key, indexState.getState().get(key));
+						}
+
+						calculateCostScore(initial, action);
+						//boolean beamContains = detectBeamDuplicate(beam, initial);
+						//boolean closedContains = detectClosedDuplicate(closedList, initial);
+
+						//if (closedContains) continue;
+
+						lossFunction.setState(initial);
+						lossFunction.calculateLossFunction();
+						stateScore = lossFunction.getLossScore();
+						initial.setScore(stateScore);
 					}
-					
-					calculateCostScore(initial, action);
-					//boolean beamContains = detectBeamDuplicate(beam, initial);
-					//boolean closedContains = detectClosedDuplicate(closedList, initial);
-					
-					//if (closedContains) continue;
-					
-					lossFunction.setState(initial);
-					lossFunction.calculateLossFunction();
-					double[] stateScore = lossFunction.getLossScore();
-					initial.setScore(stateScore);
-					
 					
 					if (beam.isEmpty()) {
 						beam.add(initial, stateScore[0]);
@@ -511,8 +525,7 @@ public class BeamSearch implements ISearch {
  				isallzerofeature = false;
  			}
  		}
-		
-		
+
 		return isallzerofeature;
 	}
 	
@@ -540,59 +553,6 @@ public class BeamSearch implements ISearch {
 		}
 	}
 	
-	/**
-	 * calculate F1 score
-	 * 
-	 * @param mstate
-	 * @param mtype
-	 * @return
-	 */
-	private double[] calculateF1Score(State<CorefCluster> mstate, ScoreType mtype) {
-		Document documentState = new Document();
-		DocumentMerge dm = new DocumentMerge(mdocument, documentState);
-		dm.addDocument();
-    	setNextDocument(documentState, mstate);
-    	double[] scores = calculateF1(documentState, mtype);
-    	return scores;
-	}
-	
-	private double[] calculateF1(Document document, ScoreType type) {
-        double F1 = 0.0;
-        CorefScorer score;
-        switch(type) {
-            case MUC:
-                score = new ScorerMUC();
-                break;
-            case BCubed:
-                score = new ScorerBCubed(BCubedType.Bconll);
-                break;
-            case CEAF:
-                score = new ScorerCEAF();
-                break;
-            case Pairwise:
-                score = new ScorerPairwise();
-                break;
-            default:
-                score = new ScorerMUC();
-                break;
-        }
-        
-        score.calculateScore(document);
-        F1 = score.getF1();
-        double precision = score.getPrecision();
-        double recall = score.getRecall();
-        
-        double precisionNumSum = score.precisionNumSum;
-        double precisionDenSum = score.precisionDenSum;
-        double recallNumSum = score.recallNumSum;
-        double recallDenSum = score.recallDenSum;
-       
-        
-        double[] result = {DoubleOperation.transformNaN(F1), DoubleOperation.transformNaN(precision), DoubleOperation.transformNaN(recall)};
-        return result;
-    }
-	
-	
 	// apply the weight to guide the search
 	// In this case, we should choose which one to expand, the minimum cost score or the maximum cost score 
 	// In addition, we need to decide in the training part, is the states and costs are the same, maybe they are not same
@@ -604,33 +564,37 @@ public class BeamSearch implements ISearch {
 		
 		// begin time
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "do testing");
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, ResultOutput.printStructredModel(mweight, ExperimentConstructor.features));
+		//ResultOutput.writeTextFile(ExperimentConstructor.logFile, ResultOutput.printStructredModel(mweight, ExperimentConstructor.features));
 		moffset = 2;
 		msearchStep = 0;
 		
 		double globalCostScore = 0.0;
 		double stopscore = 0.0;
+		
+		double bestLossScore = 0.0;        // in order to track the state with the highest loss score
+		bestLostState = new State<CorefCluster>();
+		
 		// closed list to track duplicate method
 		//Set<State<CorefCluster>> closedList = new HashSet<State<CorefCluster>>();
 		FixedSizePriorityQueue<State<CorefCluster>> beam = new FixedSizePriorityQueue<State<CorefCluster>>(mBeamWidth);
 		State<CorefCluster> initialState = new State<CorefCluster>();
 		initialize(mdocument, initialState);
+		lossFunction.setDocument(mdocument);
+		double[] localScores = lossFunction.getMetricScore();
+		initialState.setScore(localScores);
 		beam.add(initialState, 0.0);
+		State<CorefCluster> previousBestState = new State<CorefCluster>();
 		
 		while(beam.size() != 0 && (msearchStep < maximumSearch)) {
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "action " + msearchStep);
-			
 			// the state with the highest cost score and print its related information
 			State<CorefCluster> indexState = beam.next();
-			lossFunction.setDocument(mdocument);
-			lossFunction.setState(initialState);
-			double[] scores = lossFunction.getMetricScore();
-			String id = indexState.getID();
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "Merge clusters : " + id);
-			printScoreInformation(scores, type);
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type + " F1 score " + scores[0]);
-			ResultOutput.writeTextFile(ExperimentConstructor.mscorePath, Double.toString(scores[0]) + " " + indexState.getCostScore());
-			
+			if (indexState.getID().equals("HALT")) {
+				regenerateFeatures(previousBestState);
+				break;
+			} else {
+				previousBestState = indexState;
+			}
+
 			if (globalCostScore < indexState.getCostScore()) {
 				globalCostScore = indexState.getCostScore();
 				stopscore = globalCostScore / ExperimentConstructor.stoppingRate;
@@ -638,49 +602,101 @@ public class BeamSearch implements ISearch {
 			
 			if (ExperimentConstructor.stoppingCriterion) {
 				if ((indexState.getCostScore() < stopscore)) {
+					regenerateFeatures(previousBestState);
 					break;
+				} else {
+					previousBestState = indexState;
 				}
 			}
-			
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "action " + msearchStep);
+			double[] scores = indexState.getScore();
+			ResultOutput.printScoreInformation(scores, type);
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type + " F1 score " + scores[0]);
+			ResultOutput.writeTextFile(ExperimentConstructor.mscorePath, Double.toString(scores[0]) + " " + indexState.getCostScore());
 			double localScore = indexState.getCostScore();
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type.toString() +" Cost score: " + localScore);
 			
 			//closedList.add(indexState);
 			regenerateFeatures(indexState);  // update the mdocument
-			List<Double> costScores = new ArrayList<Double>();
 			try {
 				/** get the candidate lists*/
 				Set<String> actions = generateCandidateSets(indexState);
+				Map<String, State<CorefCluster>> states = new HashMap<String, State<CorefCluster>>();
 				for (String action : actions) {
 					State<CorefCluster> initial = new State<CorefCluster>();
-					for (Integer key : indexState.getState().keySet()) {
-						initial.add(key, indexState.getState().get(key));
+					if (action.equals("HALT")) {
+						initial.setID("HALT");
+						initial.setCostScore(mweight[ExperimentConstructor.features.length - 1]);
+					} else {
+						for (Integer key : indexState.getState().keySet()) {
+							initial.add(key, indexState.getState().get(key));
+						}
+
+						calculateCostScore(initial, action);
+
+						/* the best loss score uncovered during search*/
+						lossFunction.setState(initial);
+						lossFunction.calculateLossFunction();
+						double[] stateScore = lossFunction.getLossScore();
+						initial.setScore(stateScore);
+						if (stateScore[0] > bestLossScore) {
+							bestLostState = initial;
+							bestLossScore = stateScore[0];
+						}
+						//boolean closedContains = detectClosedDuplicate(closedList, initial);
+
+						//if (closedContains) continue;
 					}
 					
-					calculateCostScore(initial, action);
-					costScores.add(initial.getCostScore());
-					//boolean closedContains = detectClosedDuplicate(closedList, initial);
-					
-					//if (closedContains) continue;
-					
+					states.put(action, initial);
 	            	beam.add(initial, initial.getCostScore());
 				}				
 				
+				if(ExperimentConstructor.outputFeature) {
+					List<State<CorefCluster>> beamLists = beam.getElements();
+					for (State<CorefCluster> state : beamLists) {
+						states.remove(state.getID());
+					}
+					
+					for (String id : states.keySet()) {			
+						State<CorefCluster> state = states.get(id);
+						
+						for (State<CorefCluster> stateInBeam : beamLists) {
+							double stateLossScore = state.getScore()[0];
+							double stateInBeamLossScore = stateInBeam.getScore()[0];
+							if (stateLossScore > stateInBeamLossScore) {
+								outputFeature(state, stateInBeam);
+							} else {
+								outputFeature(stateInBeam, state);
+							}
+							
+						}
+					}
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
 			
-			// if enable the zero condition, then if all the cost score of the candidate states are below zero, then 
-			// stop the search
-			if (ExperimentConstructor.enableZeroCondition) {
-				if (allNegative(costScores)) {
-					break;
-				}
-			}
-			
 			msearchStep++;			
 		}
+		
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "the best loss state score for " + mdocument.getID() + " is " + bestLossScore);
+	}
+	
+	private String outputFeature(State<CorefCluster> goodState, State<CorefCluster> badState) {
+		StringBuffer sb = new StringBuffer();
+		for (String feature : ExperimentConstructor.features) {
+			double count = goodState.getFeatures().getCount(feature);
+			sb.append(count + ",");
+		}
+		sb.append("-");
+		for (String feature : ExperimentConstructor.features) {
+			double count = badState.getFeatures().getCount(feature);
+			sb.append(count + ",");
+		}
+		
+		return sb.toString().trim();
 	}
 	
 	/**
