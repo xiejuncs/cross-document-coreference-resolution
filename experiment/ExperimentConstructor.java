@@ -41,6 +41,7 @@ public abstract class ExperimentConstructor {
 	public static String[] developmentTopics;
 
 	/**
+	 * configure the experiment
 	 * 
 	 * @param props
 	 */
@@ -71,16 +72,16 @@ public abstract class ExperimentConstructor {
         //
         boolean trainGoldOnly = Boolean.parseBoolean(props.getProperty(EecbConstants.TRAIN_GOLD_PROP, "true"));
         if (trainGoldOnly) {
-                sb.append("-traingold");
+                sb.append("-trg");
         } else {
-                sb.append("-trainpredicted");
+                sb.append("-trp");
         }
 
         boolean testGoldOnly = Boolean.parseBoolean(props.getProperty(EecbConstants.TEST_GOLD_PROP, "true"));
         if (testGoldOnly) {
-                sb.append("-testgold");
+                sb.append("-teg");
         } else {
-                sb.append("-testpredicted");
+                sb.append("-tep");
         }
         
         //
@@ -88,9 +89,9 @@ public abstract class ExperimentConstructor {
         //
         boolean dataSetMode = Boolean.parseBoolean(props.getProperty(EecbConstants.DATASET_PROP, "true"));
         if (dataSetMode) {
-                sb.append("-flat");
+                sb.append("-f");
         } else {
-                sb.append("-hierarchy");
+                sb.append("-h");
         }
         
         //
@@ -100,9 +101,9 @@ public abstract class ExperimentConstructor {
                 String searchModel = props.getProperty(EecbConstants.SEARCH_PROP);
                 String searchWidth = props.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP);
                 String searchStep = props.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP);
-                sb.append("-oregonstate-" + searchModel + "-" + searchWidth + "-" + searchStep);
+                sb.append("-os-" + searchModel);
         } else {
-                sb.append("-stanford");
+                sb.append("-st");
         }
 		
         //
@@ -110,7 +111,7 @@ public abstract class ExperimentConstructor {
         //
         String classifierLearningModel = props.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
         String classifierNoOfIteration = props.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP);   // epoch of classification model
-        sb.append("-" + classifierLearningModel + "-" + classifierNoOfIteration);
+        sb.append("-" + classifierLearningModel);
         
         //
         // stopping criterion
@@ -123,15 +124,15 @@ public abstract class ExperimentConstructor {
         //
         boolean trainPostProcess = Boolean.parseBoolean(props.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
         if (trainPostProcess) {
-                sb.append("-trainPostProcess");
+                sb.append("-trP");
         } else {
-                sb.append("-trainNotPostProcess");
+                sb.append("-trNP");
         }
         boolean testPostProcess = Boolean.parseBoolean(props.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
         if (testPostProcess) {
-                sb.append("-testPostProcess");
+                sb.append("-teP");
         } else {
-                sb.append("-testNotPostProcess");
+                sb.append("-teNP");
         }
         
         //
