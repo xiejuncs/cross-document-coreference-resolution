@@ -22,6 +22,11 @@ import edu.stanford.nlp.util.StringUtils;
  */
 public class CrossCoreferenceResolution extends ExperimentConstructor {
 	
+	/**
+	 * set experiment properties
+	 * 
+	 * @param props
+	 */
 	public CrossCoreferenceResolution(Properties props) {
 		super(props);
 	}
@@ -83,7 +88,7 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		if (args.length == 0) {
 			// run the experiment in the local machine for debugging
 			args = new String[1];
-			args[0] = "src/edu/oregonstate/experimentconfigs/config.properties";
+			args[0] = "../corpus/config.properties";
 		}
 		
 		String[] propArgs = new String[]{"-props", args[0]};

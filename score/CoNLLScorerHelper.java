@@ -58,7 +58,8 @@ public class CoNLLScorerHelper {
 	public CoNLLScorerHelper(int epoch, String logFile) {
 		mEpoch = epoch;
 		mLogFile = logFile;
-		mConllScorerPath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
+		String clusterScorePath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
+		mConllScorerPath = ExperimentConstructor.experimentProps.getProperty(EecbConstants.CONLL_SCORER_PROP, clusterScorePath);
 		finalCoNllF1Result = 0.0;
 		lossScoreF1Result = 0.0;
 		experimentProps = ExperimentConstructor.experimentProps;

@@ -1,6 +1,5 @@
 package edu.oregonstate.example;
 
-import edu.oregonstate.training.Train;
 
 public class CurreentOutputFile {
 
