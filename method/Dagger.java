@@ -104,16 +104,9 @@ public class Dagger implements IMethod {
 			
 			// training
 			for (int j = 0; j < numberOfFunctions; j++) {
-<<<<<<< HEAD
-				String phaseID = i + "-" + j;
-				ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "\n\n");
-				ResultOutput.printParameter(para, logFile);
-				para = trainModel(para, i, j, phaseID);
-=======
 				ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "\n\n");
 				ResultOutput.printParameter(para, logFile);
 				para = trainModel(para, i, j);
->>>>>>> 000357641b6c86164f65052921529ed64e6733e2
 				
 				ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Testing Iteration Epoch : " + i + "; Testing Model : " + j + "\n\n");
 				testModel(generateWeightForTesting(para), i, j);
@@ -136,16 +129,10 @@ public class Dagger implements IMethod {
 	 * @param phaseID
 	 * @return
 	 */
-<<<<<<< HEAD
-	private Parameter trainModel(Parameter para, int i, int j, String phaseID) {
-		ISearch search = EecbConstructor.createSearchMethod(searchMethod);
-		Parameter returnPara = para.makeCopy();
-=======
 	private Parameter trainModel(Parameter para, int i, int j) {
 		ISearch search = EecbConstructor.createSearchMethod(searchMethod);
 		Parameter returnPara = para.makeCopy();
 		String phaseID = "training-" + i + "-" + j;
->>>>>>> 000357641b6c86164f65052921529ed64e6733e2
 		for (String topic : trainingTopics) {
 			ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "; Document : " + topic + "\n\n");
 			Document document = ResultOutput.deserialize(topic, serializeOutput, false);
@@ -184,12 +171,8 @@ public class Dagger implements IMethod {
 			
 			for (int it = 0; it <= i; it++) {
 				for (int jt = 0; jt <= j; jt++) {
-<<<<<<< HEAD
-					fileMap.remove(it + "-" + jt);
-=======
 					fileMap.remove("training-" + it + "-" + jt);
 					fileMap.remove("testing-" + it + "-" + jt);
->>>>>>> 000357641b6c86164f65052921529ed64e6733e2
 				}
 			}
 			
@@ -235,11 +218,7 @@ public class Dagger implements IMethod {
 			throw new RuntimeException(e);
 		}
 		
-<<<<<<< HEAD
-		String phaseID = i + "-" + j;
-=======
 		String phaseID = "testing-" + i + "-" + j;
->>>>>>> 000357641b6c86164f65052921529ed64e6733e2
 		for(String topic : topics) {
 			
 			ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Testing Iteration Epoch : " + phaseID + "; Document :" + topic + "\n\n");
