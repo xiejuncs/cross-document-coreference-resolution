@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -496,7 +495,8 @@ public class EecbTopic extends EecbElement {
 		// put all documents into one document
 		for (String file : mFiles) {
 			try {
-				String filename = ExperimentConstructor.DATA_PATH + mID + File.separator + file;
+				String dataPath = ExperimentConstructor.corpusPath + "corpus/EECB1.0/data/";
+				String filename = dataPath + mID + File.separator + file;
 				BufferedReader br = new BufferedReader(new FileReader(filename));
 				int i = 0;
 				// filename : 1.eecb
@@ -621,7 +621,7 @@ public class EecbTopic extends EecbElement {
 	 */
 	public static HashMap<String, ArrayList<String>> readAnnotation() {
 		HashMap<String, ArrayList<String>> annotation = new HashMap<String, ArrayList<String>>();
-		String mentionPath = ExperimentConstructor.MENTION_PATH;    // mentions.txt path
+		String mentionPath = ExperimentConstructor.corpusPath + "corpus/mentions.txt";    // mentions.txt path
 		
 		try {
 			BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(mentionPath));

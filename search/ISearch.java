@@ -1,8 +1,8 @@
 package edu.oregonstate.search;
 
+import edu.oregonstate.classifier.Parameter;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
-import Jama.Matrix;
 
 /**
  * search interface, all search method need to implement this interface
@@ -11,36 +11,10 @@ import Jama.Matrix;
  *
  */
 public interface ISearch {
-
-	/** how many search step conducted by the search method */
-	public int getSearchStep();
 	
-	/** how many violations */
-	public int getViolations();
+	/* learn weight according to the parameter, and then print training file into phase */
+	public Parameter trainingBySearch(Document document, Parameter para, String phase);
 	
-	/** weight */
-	public double[] getWeight();
-	
-	/** set weight */
-	public void setWeight(double[] weight);
-	
-	/** average total weight */
-	public double[] getTotalWeight();
-	
-	/** set average total weight */
-	public void setTotalWeight(double[] totalWeight);
-	
-	/** learn weight */
-	public void trainingSearch();
-	
-	/** apply weight and calculate the result */
-	public void testingSearch();
-	
-	/** set document */
-	public void setDocument(Document document);
-	
-	/** return document */
-	public Document getDocument();
-	
-	public State<CorefCluster> getBestLostState();
+	/* apply the learned weight to the testing document, and return the best loss state */
+	public State<CorefCluster> testingBySearch(Document document, double[] weight, String phase, boolean outputFeature);
 }

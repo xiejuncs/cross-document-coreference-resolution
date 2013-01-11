@@ -1,9 +1,10 @@
 package edu.oregonstate.util;
 
+import edu.oregonstate.method.IMethod;
 import edu.oregonstate.classifier.IClassifier;
 import edu.oregonstate.cluster.IClustering;
 import edu.oregonstate.costfunction.ICostFunction;
-import edu.oregonstate.experiment.dataset.IDataSet;
+import edu.oregonstate.dataset.IDataSet;
 import edu.oregonstate.lossfunction.ILossFunction;
 import edu.oregonstate.score.ScorerCEAF;
 import edu.oregonstate.search.ISearch;
@@ -138,13 +139,35 @@ public class EecbConstructor {
 		if (datasetModel == null) throw new RuntimeException("dataset model not specified");
 		
 		if (!datasetModel.contains(".")) {
-			datasetModel = "edu.oregonstate.experiment.dataset." + datasetModel;
+			datasetModel = "edu.oregonstate.dataset." + datasetModel;
 		}
 		
 		try {
 			Class datasetClass = Class.forName(datasetModel);
 			IDataSet dataset = (IDataSet) datasetClass.newInstance();
 			return dataset;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * create dataset model
+	 * 
+	 * @param datasetModel
+	 * @return
+	 */
+	public static IMethod createMethodModel(String methodModel) {
+		if (methodModel == null) throw new RuntimeException("method model not specified");
+		
+		if (!methodModel.contains(".")) {
+			methodModel = "edu.oregonstate.method." + methodModel;
+		}
+		
+		try {
+			Class methodClass = Class.forName(methodModel);
+			IMethod method = (IMethod) methodClass.newInstance();
+			return method;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

@@ -1,45 +1,19 @@
 package edu.oregonstate.classifier;
 
-import java.util.*;
-
-import edu.oregonstate.general.FixedSizePriorityQueue;
-import edu.oregonstate.general.PriorityQueue;
-import edu.oregonstate.search.State;
-import edu.stanford.nlp.dcoref.CorefCluster;
+import java.util.List;
 
 /**
- * The interface of classifier, all methods implemented with this interface should implement all methods, maybe do nothing
+ * interface of classifier
  * 
- * @author Jun Xie (xie@eecs.oregonstate.edu)
+ * @author Jun Xie (xiejuncs@gmail.com)
  *
  */
 public interface IClassifier {
-
-	public void train();
 	
-	public void setRightLinks(Set<String> rightLinks);
+	/* train the model according to file path and parameters */
+	public Parameter train(String path, Parameter para);
 	
-	public void setStatesLossFunction(PriorityQueue<State<CorefCluster>> statesLossFunction);
+	/* train the model according to file paths and parameters */
+	public Parameter train(List<String> path, Parameter para);
 	
-	public void setBeam(FixedSizePriorityQueue<State<CorefCluster>> beam);
-	
-	public void setBestState(State<CorefCluster> bestState);
-	
-	public int getViolations();
-	
-	public void setWeight(double[] weight);
-	
-	public double[] getWeight();
-	
-	public void setTotalWeight(double[] totalWeight);
-	
-	public double[] getTotalWeight();
-	
-	public void setState(Map<String, State<CorefCluster>> states);
-	
-	public void setSearchStep(int searchStep);
-	
-	public void setPreviousBestState(State<CorefCluster> previousBestState);
-	
-	public void setBestScore(double bestScore);
 }

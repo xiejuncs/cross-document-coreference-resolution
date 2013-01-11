@@ -1,6 +1,5 @@
 package edu.oregonstate.costfunction;
 
-import Jama.Matrix;
 import edu.stanford.nlp.stats.Counter;
 
 /**
@@ -13,11 +12,7 @@ import edu.stanford.nlp.stats.Counter;
  */
 public interface ICostFunction {
 
-	public double calculateCostFunction();
-	
-	public void setFeatures(Counter<String> features);
-	
-	public void setWeight(double[] model);
-
+	// calculate cost function according to features and the model
+	public double calculateCostFunction(Counter<String> features, double[] model);
 }
 

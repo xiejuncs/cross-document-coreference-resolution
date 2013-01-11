@@ -52,11 +52,30 @@ public class EecbConstants {
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
 	
+	public static String[] featuresName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
+		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
+		"SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", "SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", 
+		"SRLROLES-A2", "SRLROLES-A2-PROPER", "SRLROLES-A2-NOMINAL", "SRLROLES-AM-LOC", "SRLROLES-AM-LOC-PROPER", 
+		"SRLROLES-AM-LOC-NOMINAL", "SRLPRED-A0-PROPER", "SRLPRED-A0-NOMINAL", "SRLPRED-A1-PROPER", "SRLPRED-A1-NOMINAL",
+		"SRLPRED-A2-PROPER", "SRLPRED-A2-NOMINAL", "SRLPRED-AM-LOC-PROPER", "SRLPRED-AM-LOC-NOMINAL", "MENTION_WORDS-PROPER",
+		"MENTION_WORDS-NOMINAL", "NETYPE-PROPER", "NUMBER-NOMINAL", "ANIMACY-PROPER", "ANIMACY-NOMINAL", 
+		"GENDER-PROPER", "GENDER-NOMINAL", "NUMBER-PROPER", "NETYPE-NOMINAL"};
+	
+	/** introduce the HALT feature */
+	public static String[] extendFeaturesName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
+		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
+		"SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", "SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", 
+		"SRLROLES-A2", "SRLROLES-A2-PROPER", "SRLROLES-A2-NOMINAL", "SRLROLES-AM-LOC", "SRLROLES-AM-LOC-PROPER", 
+		"SRLROLES-AM-LOC-NOMINAL", "SRLPRED-A0-PROPER", "SRLPRED-A0-NOMINAL", "SRLPRED-A1-PROPER", "SRLPRED-A1-NOMINAL",
+		"SRLPRED-A2-PROPER", "SRLPRED-A2-NOMINAL", "SRLPRED-AM-LOC-PROPER", "SRLPRED-AM-LOC-NOMINAL", "MENTION_WORDS-PROPER",
+		"MENTION_WORDS-NOMINAL", "NETYPE-PROPER", "NUMBER-NOMINAL", "ANIMACY-PROPER", "ANIMACY-NOMINAL", 
+		"GENDER-PROPER", "GENDER-NOMINAL", "NUMBER-PROPER", "NETYPE-NOMINAL", "HALT"};
+	
 	/** configuration setting */
 	public static final String DATASET_PROP = "dcoref.dataset";
+	public static final String DATASET_GENERATION_PROP = "dcoref.dataset.generation";
 	public static final String CLASSIFIER_PROP = "dcoref.classifier";
 	public static final String CLASSIFIER_EPOCH_PROP = "dcoref.classifier.epoch";
-	public static final String CLASSIFIER_PREVIOUSCURRENT_PROP = "dcoref.classifier.previouscurrent";
 	public static final String CLASSIFIER_OPTIONS_PROP = "dcoref.classifier.options";
 	public static final String CLASSIFIER_OUTPUTFEATURE_PROP = "dcoref.classifier.outputfeature";
 	public static final String COSTFUNCTION_PROP = "dcoref.costfunction";
@@ -88,5 +107,12 @@ public class EecbConstants {
 	public static final String HALT_PATRAINING_PROP = "dcoref.halt.patraining";
 	public static final String TESTING_PROP = "dcoref.testing";
 	public static final String TESTING_WEIGHTPATH_PROP = "dcoref.testing.weightpath";
+	public static final String ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP = "dcoref.enablepreviouscurrentconstraint";
+	public static final String ENABLEBEAMCONSTRAINT_PROP = "dcoref.enablebeamconstraint";
+	public static final String ENABLEBEAMUNBEAMCONSTRAINT_PROP = "dcoref.enablebeamunbeamconstraint";
+	public static final String STRUCTUREDPERCEPTRON_RATE_PROP = "dcoref.structuredperceptron.rate";
+	public static final String METHOD_PROP = "dcoref.method";
+	public static final String METHOD_EPOCH_PROP = "dcoref.method.epoch";
+	public static final String METHOD_FUNCTION_NUMBER_PROP = "dcoref.method.function.number.prop";
 	
 }

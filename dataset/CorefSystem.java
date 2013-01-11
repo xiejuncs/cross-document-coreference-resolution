@@ -1,4 +1,4 @@
-package edu.oregonstate.experiment.dataset;
+package edu.oregonstate.dataset;
 
 import java.io.FileInputStream;
 import java.util.Properties;
@@ -22,34 +22,61 @@ import edu.stanford.nlp.pipeline.DefaultPaths;
  */
 public class CorefSystem {
 
-	/** Coreference Resolution Properties */
-	protected Properties props;
+	/** Experiment Properties */
+	private final Properties mExperimentProps;
 	
-	public SieveCoreferenceSystem corefSystem;
-	protected LexicalizedParser parser;
+	// SieveCorefCoreferenceSystem
+	private SieveCoreferenceSystem corefSystem;
+	
+	// parser
+	private LexicalizedParser parser;
+	
+	// coref system propery
+	private Properties props;
 	
 	// use the default sieve configuration
 	public CorefSystem() {
-		this(ExperimentConstructor.property.getProperty(EecbConstants.SIEVES_PROP).equals("partial") ? EecbConstants.PARTIAL_SIEVE_STRING : EecbConstants.FULL_SIEVE_STRING);
+		mExperimentProps = ExperimentConstructor.experimentProps;
+		String sieve = "";
+		if (mExperimentProps.getProperty(EecbConstants.SIEVES_PROP).equals("partial")) {
+			sieve = EecbConstants.PARTIAL_SIEVE_STRING;
+		} else {
+			sieve = EecbConstants.FULL_SIEVE_STRING;
+		}
+		
+		generateCorefSystem(sieve);
 	}
 	
-	public CorefSystem(String sieve) {
-		setProperties(sieve);
-		setCorefSystem();
+	private void generateCorefSystem(String sieve) {
+		props = setProperties(sieve);
+		
+		setCorefSystem(props);
+		
+		// set parser for coref system
 		parser = makeParser(props);
 	}
 	
-	protected void setProperties(String sieve) {
-		//The configuration for EECB corpus, 
-		props = new Properties();
-		props.setProperty("annotators", ExperimentConstructor.property.getProperty(EecbConstants.ANNOTATORS_PROP));
-		props.setProperty("dcoref.eecb", ExperimentConstructor.DATA_PATH);
-		//TODO
-		props.setProperty("dcoref.score", ExperimentConstructor.property.getProperty(EecbConstants.SCORE_PROP));
+	private Properties setProperties(String sieve) {
+		Properties props = new Properties();
+		props.setProperty("annotators", mExperimentProps.getProperty(EecbConstants.ANNOTATORS_PROP));
+		
+		boolean debug = Boolean.parseBoolean(mExperimentProps.getProperty(EecbConstants.DEBUG_PROP, "false"));
+		String corpusPath = "";
+		if (debug) {
+			corpusPath = EecbConstants.LOCAL_CORPUS_PATH;
+		} else {
+			corpusPath = EecbConstants.CLUSTER_CPRPUS_PATH;
+		}
+		String dataPath = corpusPath + "corpus/EECB1.0/data/";
+		props.setProperty("dcoref.eecb", dataPath);
+		props.setProperty("dcoref.score", mExperimentProps.getProperty(EecbConstants.SCORE_PROP));
 		props.setProperty("dcoref.sievePasses", sieve);
+		
+		return props;
 	}
 	
-	protected void setCorefSystem() {
+	
+	private void setCorefSystem(Properties props) {
 		try {
 			corefSystem = new SieveCoreferenceSystem(props);
 		} catch (Exception e) {
@@ -72,9 +99,9 @@ public class CorefSystem {
 	 * @return
 	 * @throws Exception
 	 */
-	public Document getDocument(String topic) throws Exception {
+	public Document getDocument(String topic, boolean goldOnly) throws Exception {
 		EmentionExtractor mentionExtractor = null;
-	    mentionExtractor = new EECBMentionExtractor(topic, parser, corefSystem.dictionaries(), props, corefSystem.semantics());
+	    mentionExtractor = new EECBMentionExtractor(topic, parser, corefSystem.dictionaries(), props, corefSystem.semantics(), goldOnly);
 	    
 	    assert mentionExtractor != null;
 	    // Set mention finder
@@ -99,6 +126,10 @@ public class CorefSystem {
 	    Document document = mentionExtractor.inistantiate(topic);
 	    
 	    return document;
+	}
+	
+	public SieveCoreferenceSystem getCorefSystem() {
+		return corefSystem;
 	}
 	
 }

@@ -16,15 +16,12 @@ import edu.stanford.nlp.dcoref.Document;
  */
 public interface ILossFunction {
 	
-	public void calculateLossFunction();
+	/* calculate loss function */
+	public double[] calculateLossFunction(Document document, State<CorefCluster> state);
 	
-	public void setDocument(Document document);
-	
-	public void setState(State<CorefCluster> state);
-	
-	public double[] getLossScore();
-	
-	public double[] getMetricScore();
-	
+	/* the detail information of a score */
 	public String getDetailScoreInformation();
+	
+	/* scoring the document */
+	public double[] getMetricScore(Document document);
 }
