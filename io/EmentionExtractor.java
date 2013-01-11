@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.util.Command;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -62,12 +63,19 @@ public class EmentionExtractor {
 	public static final boolean VERBOSE = false;
 	protected String mentionRepositoryPath;
 	
-	public EmentionExtractor(Dictionaries dict, Semantics semantics) {
+	protected boolean goldOnly;
+	
+	public EmentionExtractor(Dictionaries dict, Semantics semantics, boolean goldonly) {
 		this.dictionaries = dict;
 		this.semantics = semantics;
 		logger = Logger.getLogger(EmentionExtractor.class.getName());
 		this.mentionFinder = new RuleBasedCorefMentionFinder();
-		mentionRepositoryPath = ExperimentConstructor.experimentResultFolder + "/mentionResult";
+		goldOnly = goldonly;
+		
+		if (goldOnly) {
+			mentionRepositoryPath = ExperimentConstructor.experimentResultFolder + "/mentionResult";
+			Command.createDirectory(mentionRepositoryPath);
+		}
 	}
 	
 	protected class EntityComparator implements Comparator<EntityMention> {
@@ -217,12 +225,6 @@ public class EmentionExtractor {
 	    List<EventMention> goldEventMentionList = s.get(MachineReadingAnnotations.EventMentionsAnnotation.class);
 	    
 	    List<CoreLabel> words = s.get(TokensAnnotation.class);
-
-//	    TreeSet<EntityMention> treeForSortGoldMentions = new TreeSet<EntityMention>(comparator);
-//	    if(goldMentionList!=null) treeForSortGoldMentions.addAll(goldMentionList);
-//	    
-//	    TreeSet<EventMention> treeForSortEventGoldMentions = new TreeSet<EventMention>(eventComparator);
-//	    if(goldEventMentionList!=null) treeForSortEventGoldMentions.addAll(goldEventMentionList);
 	    
 	    if (goldMentionList != null) {
 	    	if(!goldMentionList.isEmpty()){

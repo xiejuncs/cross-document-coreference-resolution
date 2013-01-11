@@ -76,8 +76,9 @@ public class Wordnet {
 	}
 
 	public static void configureJWordNet() {
+		String WORD_NET_CONFIGURATION_PATH = ExperimentConstructor.corpusPath + "corpus/file_properties.xml";
 		try {
-			JWNL.initialize(new FileInputStream(ExperimentConstructor.WORD_NET_CONFIGURATION_PATH));
+			JWNL.initialize(new FileInputStream(WORD_NET_CONFIGURATION_PATH));
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(-1);

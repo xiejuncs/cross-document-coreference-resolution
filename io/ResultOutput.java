@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import edu.oregonstate.classifier.Parameter;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;
@@ -54,6 +55,13 @@ public class ResultOutput {
 	      e.printStackTrace();
 	    } 
 	}
+	
+	/** print the current time in order to know the duration of the experiment */
+    public static void printTime(String logPath, String phase) {
+    	String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
+    	ResultOutput.writeTextFile(logPath, phase + "\n" + timeStamp);
+    	ResultOutput.writeTextFile(logPath, "\n\n");
+    }
 	
 	/** get all the sub-directories under the specific directory */
 	public static String[] getTopics(String corpusPath) {
@@ -100,24 +108,6 @@ public class ResultOutput {
 			sb.append("weight: " + model.get(i, 0) + "\n");
 		}
 		return sb.toString().trim();
-	}
-	
-	// put features and quality together in order to create a string for output
-	public static String buildString(Counter<String> features, double quality) {
-		StringBuilder sb = new StringBuilder();
-		boolean add = false;
-		for (String feature : ExperimentConstructor.features){
-			double value = features.getCount(feature);
-			if (value > 0.0) add = true;
-			sb.append(value + ",");
-		}
-		sb.append(quality);
-		sb.append("\n");
-		if (add) {
-			return sb.toString();
-		} else {
-			return "";
-		}
 	}
 	
 	// delete the intermediate result in case of wrong linear model
@@ -249,40 +239,44 @@ public class ResultOutput {
 	 * @param logPath
 	 * @param logger
 	 */
-	public static void printDocumentScoreInformation(Document document, String logInformation, String logPath, Logger logger) {
-		CorefScorer score = EecbConstructor.createCorefScorer(ScoreType.valueOf(ExperimentConstructor.lossScoreType));
-		score.calculateScore(document);
-		ResultOutput.writeTextFile(logPath, logInformation);
-		score.printF1(logger, true);
-	}
+//	public static void printDocumentScoreInformation(Document document, String logInformation, String logPath, Logger logger) {
+//		CorefScorer score = EecbConstructor.createCorefScorer(ScoreType.valueOf(ExperimentConstructor.lossScoreType));
+//		score.calculateScore(document);
+//		ResultOutput.writeTextFile(logPath, logInformation);
+//		score.printF1(logger, true);
+//	}
 	
 	/** print the local score */
-	public static void printScoreInformation(double[] localScores, ScoreType mtype) {
+	public static void printScoreInformation(double[] localScores, ScoreType mtype, String logFile) {
 		assert localScores.length == 3;
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " F1 Score: " + Double.toString(localScores[0]));
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " precision Score: " + Double.toString(localScores[1]));
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "local" + mtype.toString() + " recall Score: " + Double.toString(localScores[2]));
+		ResultOutput.writeTextFile(logFile, "local" + mtype.toString() + " F1 Score: " + Double.toString(localScores[0]));
+		ResultOutput.writeTextFile(logFile, "local" + mtype.toString() + " precision Score: " + Double.toString(localScores[1]));
+		ResultOutput.writeTextFile(logFile, "local" + mtype.toString() + " recall Score: " + Double.toString(localScores[2]));
 	}
 	
 	/**
-	 * output feature
+	 * print Parameter
 	 * 
-	 * @param goodState
-	 * @param badState
-	 * @param path
+	 * @param para
 	 */
-	public static void outputFeature(State<CorefCluster> goodState, State<CorefCluster> badState, String path) {
-		StringBuffer sb = new StringBuffer();
-		for (String feature : ExperimentConstructor.features) {
-			double count = goodState.getFeatures().getCount(feature);
-			sb.append(count + ",");
-		}
-		sb.append("-");
-		for (String feature : ExperimentConstructor.features) {
-			double count = badState.getFeatures().getCount(feature);
-			sb.append(count + ",");
+	public static void printParameter(Parameter para, String logFile) {
+		int violations = para.getNoOfViolation();
+		double[] weight = para.getWeight();
+		double[] totalWeight = para.getTotalWeight();
+		double[] averageWeight;
+		if (violations == 0) {
+			averageWeight = new double[weight.length];
+		} else {
+			double[] copyTotalWeight = new double[weight.length];
+			System.arraycopy(totalWeight, 0, copyTotalWeight, 0, weight.length);
+			averageWeight = DoubleOperation.divide(copyTotalWeight, violations);
 		}
 		
-		ResultOutput.writeTextFile(path, sb.toString().trim());
+		ResultOutput.writeTextFile(logFile, "the number of total violated constraints : " + violations);
+		ResultOutput.writeTextFile(logFile, "weight vector : " + DoubleOperation.printArray(weight));
+        ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
+        ResultOutput.writeTextFile(logFile, "average weight vector : " + DoubleOperation.printArray(averageWeight));
+        ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
 	}
+	
 }

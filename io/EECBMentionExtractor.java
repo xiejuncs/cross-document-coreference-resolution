@@ -57,12 +57,13 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	protected ArrayList<String> files;
 	
 
-	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics) throws Exception {
-		super(dict, semantics);
+	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics, boolean goldonly) throws Exception {
+		super(dict, semantics, goldonly);
 		stanfordProcessor = loadStanfordProcessor(props);
 		baseID = 10000000 * Integer.parseInt(topic);
 		goldBaseID = 10000000 * Integer.parseInt(topic);
-		topicPath = ExperimentConstructor.DATA_PATH + topic + "/";
+		String dataPath = ExperimentConstructor.corpusPath + "corpus/EECB1.0/data/";
+		topicPath = dataPath + "" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
 		files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
@@ -140,7 +141,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
-		    if (ExperimentConstructor.goldOnly) {	    	
+		    // Gold Mention or predicted Mentions
+		    if (goldOnly) {	    	
 		        allPredictedMentions = new ArrayList<List<Mention>>();
 		        for (int i = 0; i < allGoldMentions.size(); i++) {
 		        	List<Mention> sentence = new ArrayList<Mention>();
@@ -155,7 +157,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		        	allPredictedMentions.add(sentence);
 		        }
 		        
-		        //allPredictedMentions = makeCopy(allGoldMentions);
 		    } else {
 		    	// set the mention id here
 		    	allPredictedMentions = mentionFinder.extractPredictedMentions(anno, baseID, dictionaries);
@@ -176,25 +177,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		document.extractGoldCorefClusters();
 		document.conllDoc = conllDocument;
 		return document;
-	}
-	
-	public List<List<Mention>> makeCopy(List<List<Mention>> mentions) {
-		List<List<Mention>> copy = new ArrayList<List<Mention>>(mentions.size());
-		for (List<Mention> sm:mentions) {
-			List<Mention> sm2 = new ArrayList<Mention>(sm.size());
-			for (Mention m:sm) {
-				Mention m2 = new Mention();
-				m2.goldCorefClusterID = m.goldCorefClusterID;
-				m2.mentionID = m.mentionID;
-				m2.startIndex = m.startIndex;
-				m2.endIndex = m.endIndex;
-				m2.originalSpan = m.originalSpan;
-				m2.dependency = m.dependency;
-				sm2.add(m2);
-			}
-			copy.add(sm2);
-		}
-		return copy;
 	}
 	
 	@Override

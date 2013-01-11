@@ -20,12 +20,20 @@ import java.util.List;
  *
  */
 public class WordSimilarity {
+	
+	/* file path */
 	private String filePath;
-	public Map<String, List<String>> datas;
+	
+	/* datas used for mention word feature */
+	private Map<String, List<String>> datas;
 	
 	public WordSimilarity(String path) {
 		this.filePath = path;
 		datas = new HashMap<String, List<String>>();
+	}
+	
+	public Map<String, List<String>> getDatas() {
+		return datas;
 	}
 	
 	/** initialize the word similarity dictionary */
@@ -68,9 +76,7 @@ public class WordSimilarity {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			System.exit(1);
-		}
-		
+		}		
 	}
-	
-	
+
 }

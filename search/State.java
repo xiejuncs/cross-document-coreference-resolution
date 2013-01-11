@@ -6,8 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
-import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.features.Feature;
+import edu.oregonstate.features.FeatureFactory;
 import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
 
@@ -21,7 +20,6 @@ public class State<T> implements Serializable {
 	
 	private static final long serialVersionUID = 8666265337578515592L;
 	// every state consists of a set of CorefClusters, in order to make it generic
-	
 	/** state */
 	private Map<Integer, T> state;
 	
@@ -64,10 +62,11 @@ public class State<T> implements Serializable {
 		
 		StringBuffer sb = new StringBuffer();
 		sb.append("[");
-		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
-			String feature = ExperimentConstructor.features[i];
+		String[] features = FeatureFactory.getFeatures();
+		for (int i = 0; i < features.length; i++) {
+			String feature = features[i];
 			double value = mfeatures.getCount(feature);
-			if (i == ExperimentConstructor.features.length - 1) {
+			if (i == features.length - 1) {
 				sb.append(value);
 			} else {
 				sb.append(value + ", ");

@@ -1,37 +1,24 @@
 package edu.oregonstate.costfunction;
 
-import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.features.Feature;
+import edu.oregonstate.features.FeatureFactory;
 import edu.stanford.nlp.stats.Counter;
 
 public class LinearCostFunction implements ICostFunction {
 	
-	/** features */
-	private Counter<String> mFeatures;
-	
-	/** model */
-	private double[] mModel;
-	
 	public LinearCostFunction() {
 	}
 	
-	public void setFeatures(Counter<String> features) {
-		mFeatures = features;
-	}
-	
-	public void setWeight(double[] model) {
-		mModel = model;
-	}
 	
 	/** 
 	 * according to feature vector and model vector, calculate the cost
 	 */
-	public double calculateCostFunction() {
+	public double calculateCostFunction(Counter<String> features, double[] model) {
  		double sum = 0.0;
- 		for (int i = 0; i < ExperimentConstructor.features.length; i++) {
- 			String feature = ExperimentConstructor.features[i];
- 			double value = mFeatures.getCount(feature);
- 			sum += value * mModel[i];
+ 		String[] featureTemplate = FeatureFactory.getFeatures();
+ 		for (int i = 0; i < featureTemplate.length; i++) {
+ 			String feature = featureTemplate[i];
+ 			double value = features.getCount(feature);
+ 			sum += value * model[i];
  		}
  		return sum;
  	}

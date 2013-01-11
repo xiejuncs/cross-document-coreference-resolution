@@ -7,7 +7,6 @@ import java.util.List;
 
 import edu.oregonstate.io.EgenericDataSetReader;
 import edu.oregonstate.data.EecbCharSeq;
-import edu.oregonstate.data.EecbDocument;
 import edu.oregonstate.data.EecbTopic;
 import edu.oregonstate.data.EecbEntity;
 import edu.oregonstate.data.EecbEntityMention;
@@ -66,99 +65,6 @@ public class EecbReader extends EgenericDataSetReader {
 		allSentences.addAll(readTopic(files, topic, corpus));
 		AnnotationUtils.addSentences(corpus, allSentences);
 		return corpus;
-	}
-	
-	public Annotation read(String singleDocument) {
-		if (singleDocument == null) {
-			new RuntimeException("Therea are no file....");
-		}
-		List<CoreMap> allSentences = new ArrayList<CoreMap>();
-		Annotation corpus = new Annotation("");
-		allSentences.addAll(readDocument(singleDocument, corpus));
-		AnnotationUtils.addSentences(corpus, allSentences);
-		return corpus;
-	}
-	
-	private List<CoreMap> readDocument(String documentIdentifier, Annotation corpus) {
-		List<CoreMap> results = new ArrayList<CoreMap>();
-	    EecbDocument eecbDocument = new EecbDocument(documentIdentifier);
-	    eecbDocument.parse();
-		
-		String docID = eecbDocument.getId();
-		
-		// because tokenset is different from the the acutal tokenize 
-		int offset = 0;
-		for (int sentenceIndex = 0; sentenceIndex < eecbDocument.getSentenceCount(); sentenceIndex++ ) {
-			List<EecbToken> tokens = eecbDocument.getSentence(sentenceIndex);
-			List<CoreLabel> words = new ArrayList<CoreLabel>();
-			StringBuffer textContent = new StringBuffer();
-			for (int i = 0; i < tokens.size(); i++) {
-				CoreLabel l = new CoreLabel();
-				l.setWord(tokens.get(i).getLiteral());
-		        l.set(CoreAnnotations.TextAnnotation.class, l.word());
-		        l.set(CharacterOffsetBeginAnnotation.class, tokens.get(i).getByteStart());
-		        l.set(CharacterOffsetEndAnnotation.class, tokens.get(i).getByteEnd());
-		        words.add(l);
-		        if(i > 0) textContent.append(" ");
-		        textContent.append(tokens.get(i).getLiteral());
-			}
-			
-			CoreMap sentence = new Annotation(textContent.toString());
-		    sentence.set(CoreAnnotations.DocIDAnnotation.class, docID);
-		    sentence.set(CoreAnnotations.TokensAnnotation.class, words);
-		    logger.info("Reading sentence: \"" + textContent + "\"");
-		    
-		    List<EecbEntityMention> entityMentions = eecbDocument.getEntityMentions(sentenceIndex);
-		    List<EecbEventMention> eventMentions = eecbDocument.getEventMentions(sentenceIndex);
-		    
-		    // convert entity mentions
-		    for (EecbEntityMention eecbEntityMention : entityMentions) {
-		    	String corefID = "";
-		    	for (String entityID : eecbDocument.getKeySetEntities()) {
-		    		EecbEntity e = eecbDocument.getEntity(entityID);
-		    		if (e.getMentions().contains(eecbEntityMention)) {
-		    			corefID = entityID;
-		    			break;
-		    		}
-		    	}
-		    
-		    	int extEnd = eecbEntityMention.getExtent().getTokenEnd() - offset + 1;
-		    	int extStart = eecbEntityMention.getExtent().getTokenStart() - offset;
-		    	
-		    	Span extent = new Span(extStart, extEnd);
-		    	EntityMention convertedMention = new EntityMention(eecbEntityMention.getId(), sentence, extent, null, "", "", "");
-		    	convertedMention.setCorefID(corefID);
-		        logger.info("CONVERTED ENTITY MENTION: " + convertedMention);
-		        AnnotationUtils.addEntityMention(sentence, convertedMention);
-		    }
-		    
-		    // convert EventMentions
-		    for (EecbEventMention eecbEventMention : eventMentions) {
-		    	EecbCharSeq anchor = eecbEventMention.getAnchor();
-		    	ExtractionObject anchorObject = new ExtractionObject(
-		    			eecbEventMention.getId() + "-anchor",
-		    	        sentence,
-		    	        new Span(anchor.getTokenStart(), anchor.getTokenEnd()),
-		    	        "ANCHOR",
-		    	        null);
-		    	
-		        List<ExtractionObject> convertedArgs = new ArrayList<ExtractionObject>();
-		    	
-		        int extEnd = eecbEventMention.getExtent().getTokenEnd() - offset + 1;
-		    	int extStart = eecbEventMention.getExtent().getTokenStart() - offset;
-		        
-		        Span extent = new Span(extStart, extEnd);
-		    	EventMention convertedMention = new EventMention(eecbEventMention.getId(), sentence, extent, "", "", anchorObject, convertedArgs, null); // 
-		    	if(convertedMention != null){
-		            logger.info("CONVERTED EVENT MENTION: " + convertedMention);
-		            AnnotationUtils.addEventMention(sentence, convertedMention);
-		        }
-		    }
-		    
-		    results.add(sentence);
-		    offset += tokens.size();
-		}
-		return results;
 	}
 	
 	/**

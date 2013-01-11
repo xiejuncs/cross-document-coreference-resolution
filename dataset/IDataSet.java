@@ -1,4 +1,4 @@
-package edu.oregonstate.experiment.dataset;
+package edu.oregonstate.dataset;
 
 import edu.stanford.nlp.dcoref.Document;
 
@@ -10,5 +10,5 @@ import edu.stanford.nlp.dcoref.Document;
  */
 public interface IDataSet {
 
-	public Document getData(String[] topics);
+	public Document getData(String topics, boolean goldOnly);
 }

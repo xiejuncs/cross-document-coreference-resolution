@@ -172,7 +172,6 @@ public class FixedSizePriorityQueue <E> implements Iterator<E>, Serializable, Cl
 			    priorities[size] = prio;
 			    heapifyUp(size);
 			    size++;
-			    
 			}
 
 	    } else {

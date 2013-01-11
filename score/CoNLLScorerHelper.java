@@ -1,10 +1,12 @@
 package edu.oregonstate.score;
 
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.io.ResultOutput;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 
 /**
@@ -30,18 +32,14 @@ public class CoNLLScorerHelper {
 	/* final loss score result */
 	private double lossScoreF1Result;
 	
+	/* experiment configuration */
+	private final Properties experimentProps;
+	
 	/*
 	 * return final conll F1 result
 	 */
 	public double getFinalCoNllF1Result() {
 		return finalCoNllF1Result;
-	}
-	
-	/* scorer Type */
-	private static String lossScorerType;
-	
-	static {
-		lossScorerType = ExperimentConstructor.lossScoreType;
 	}
 	
 	/*
@@ -60,9 +58,11 @@ public class CoNLLScorerHelper {
 	public CoNLLScorerHelper(int epoch, String logFile) {
 		mEpoch = epoch;
 		mLogFile = logFile;
-		mConllScorerPath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
+		String clusterScorePath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
+		mConllScorerPath = ExperimentConstructor.experimentProps.getProperty(EecbConstants.CONLL_SCORER_PROP, clusterScorePath);
 		finalCoNllF1Result = 0.0;
 		lossScoreF1Result = 0.0;
+		experimentProps = ExperimentConstructor.experimentProps;
 	}
 	
 	/**
@@ -122,6 +122,8 @@ public class CoNLLScorerHelper {
 		while (f1Matcher.find()) {
 			F1s[i++] = Double.parseDouble(f1Matcher.group(1));
 		}
+		
+		String lossScorerType = experimentProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP);
 		
 		// MUC
 		if (lossScorerType.equals("MUC")) {
