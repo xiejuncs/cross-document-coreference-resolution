@@ -115,5 +115,6 @@ public class EecbConstants {
 	public static final String METHOD_EPOCH_PROP = "dcoref.method.epoch";
 	public static final String METHOD_FUNCTION_NUMBER_PROP = "dcoref.method.function.number.prop";
 	public static final String CONLL_SCORER_PROP = "dcoref.conll.scorer";
+	public static final String CONSTRAINT_GENERATION_PROP = "dcoref.constraint.generation";
 	
 }

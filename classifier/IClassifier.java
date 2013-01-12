@@ -16,4 +16,7 @@ public interface IClassifier {
 	/* train the model according to file paths and parameters */
 	public Parameter train(List<String> path, Parameter para);
 	
+	/* use zero vector to train the model */
+	public Parameter train(List<String> path);
+	
 }

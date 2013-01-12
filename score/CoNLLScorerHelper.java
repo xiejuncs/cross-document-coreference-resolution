@@ -29,8 +29,14 @@ public class CoNLLScorerHelper {
 	/* final result */
 	private double finalCoNllF1Result;
 	
-	/* final loss score result */
-	private double lossScoreF1Result;
+	/* MUC loss score result */
+	private double mucScoreF1Result;
+	
+	/* Bcubed loss score result */
+	private double bcubedScoreF1Result;
+	
+	/* ceaf loss score result */
+	private double ceafScoreF1Result;
 	
 	/* experiment configuration */
 	private final Properties experimentProps;
@@ -46,7 +52,32 @@ public class CoNLLScorerHelper {
 	 * return loss score
 	 */
 	public double getLossScoreF1Result() {
-		return lossScoreF1Result;
+		String lossScoreType = experimentProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise");
+		double score = 0.0;
+		
+		if (lossScoreType.equals("MUC")) {
+			score = mucScoreF1Result; 
+		} else if (lossScoreType.equals("BCubed")) {
+			score = bcubedScoreF1Result;
+		} else if (lossScoreType.equals("CEAF")) {
+			score = ceafScoreF1Result;
+		} else {
+			score = 0.0;
+		}
+		
+		return score;
+	}
+	
+	public double getMUCScoreF1Result() {
+		return mucScoreF1Result;
+	}
+	
+	public double getBcubedScoreF1Result() {
+		return bcubedScoreF1Result;
+	}
+	
+	public double getCEAFScoreF1Result() {
+		return ceafScoreF1Result;
 	}
 	
 	/**
@@ -61,7 +92,9 @@ public class CoNLLScorerHelper {
 		String clusterScorePath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
 		mConllScorerPath = ExperimentConstructor.experimentProps.getProperty(EecbConstants.CONLL_SCORER_PROP, clusterScorePath);
 		finalCoNllF1Result = 0.0;
-		lossScoreF1Result = 0.0;
+		mucScoreF1Result = 0.0;
+		bcubedScoreF1Result = 0.0;
+		ceafScoreF1Result = 0.0;
 		experimentProps = ExperimentConstructor.experimentProps;
 	}
 	
@@ -122,24 +155,16 @@ public class CoNLLScorerHelper {
 		while (f1Matcher.find()) {
 			F1s[i++] = Double.parseDouble(f1Matcher.group(1));
 		}
-		
-		String lossScorerType = experimentProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP);
-		
+
 		// MUC
-		if (lossScorerType.equals("MUC")) {
-			lossScoreF1Result = F1s[0];
-		}
-		
+		mucScoreF1Result = F1s[0];
+
 		//BCubed
-		if (lossScorerType.equals("BCubed")) {
-			lossScoreF1Result = F1s[1];
-		}
-		
+		bcubedScoreF1Result = F1s[1];
+
 		//CEAF
-		if (lossScorerType.equals("CEAF")) {
-			lossScoreF1Result = F1s[3];
-		}
-		
+		ceafScoreF1Result = F1s[3];
+
 		finalCoNllF1Result = (F1s[0]+F1s[1]+F1s[3])/3;
 		ResultOutput.writeTextFile(mLogFile, "Final score ((muc+bcub+ceafe)/3) = "+ finalCoNllF1Result);
 	}

@@ -33,12 +33,16 @@ public class ConstraintGeneration {
 	/* enable the constraint enforced between the states in the beam and not in the beam */
 	private final boolean enableBeamUnBeamConstraint;
 	
+	/* generate all constraint (true) or just violated constraint(false) */
+	private final boolean constraintGenerationStyle;
+	
 	public ConstraintGeneration(String path) {
 		mPath = path;
 		Properties props = ExperimentConstructor.experimentProps;
 		enablePreviousCurrentConstraint = Boolean.parseBoolean(props.getProperty( EecbConstants.ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP, "false"));
 		enableBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMCONSTRAINT_PROP, "true"));
 		enableBeamUnBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMUNBEAMCONSTRAINT_PROP, "true"));
+		constraintGenerationStyle = Boolean.parseBoolean(props.getProperty(EecbConstants.CONSTRAINT_GENERATION_PROP, "true"));
 	}
 	
 	/**
@@ -50,7 +54,7 @@ public class ConstraintGeneration {
 	 */
 	public void generateConstraints(Map<String, State<CorefCluster>> states, FixedSizePriorityQueue<State<CorefCluster>> beam,
 			State<CorefCluster> previousBestState, State<CorefCluster> currentBestState) {
-		List<String> constraints = new ArrayList<String>();
+		List<String> allConstraints = new ArrayList<String>();
         
 		// remove the state in the beam from the states
 		List<State<CorefCluster>> beamLists = beam.getElements();
@@ -60,24 +64,24 @@ public class ConstraintGeneration {
 		
 		// beam constraint
 		if (enableBeamConstraint && (beamLists.size() > 1)) {
-			List<String> violatedConstraints = generateBeamConstraint(beamLists);
-			constraints.addAll(violatedConstraints);
+			List<String> constraints = generateBeamConstraint(beamLists);
+			allConstraints.addAll(constraints);
 		}
 		
 		// beam and unbeam constraint
 		if (enableBeamUnBeamConstraint) {
-			List<String> violatedConstraints = generateBeamUnBeamConstraint(beamLists, states);
-			constraints.addAll(violatedConstraints);
+			List<String> constraints = generateBeamUnBeamConstraint(beamLists, states);
+			allConstraints.addAll(constraints);
 		}
 		
 		// previous and current constraint
 		if (enablePreviousCurrentConstraint) {
 			String constraint = generateConstraint(currentBestState, previousBestState);
-			constraints.add(constraint);
+			allConstraints.add(constraint);
 		}
 		
 		// write constraint
-		writeConstraints(constraints, false);
+		writeConstraints(allConstraints, false);
 	}
 	
 	/**
@@ -143,18 +147,40 @@ public class ConstraintGeneration {
 	 * @return
 	 */
 	private String generateConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
+		String constraint = "";
+		
+		if (constraintGenerationStyle) {
+			// generate all constraint
+			constraint = generateAllConstraint(goodState, badState);
+			
+		} else {
+			// generate the violated constraint
+			constraint = generateViolatedConstraint(goodState, badState);
+		}
+		
+		return constraint;
+	}
+	
+	// generate all constraint
+	private String generateAllConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
+		return buildConstraint(goodState, badState);
+	}
+	
+	// generate just violated constraint
+	private String generateViolatedConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
+		String constraint = "";
+		
 		double goodStateLossScore = goodState.getScore()[0];
 		double goodStateCostScore = goodState.getCostScore();
 		
 		double badStateLossScore = badState.getScore()[0];
 		double badStateCostScore = badState.getCostScore();
-		String constraint = "";
 		
 		// if their scores are equal, do not update
 		if (goodStateLossScore != badStateLossScore) {
 			// violated constraint
 			if (goodStateCostScore <= badStateCostScore) {
-				constraint = generateViolatedConstraint(goodState, badState);
+				constraint = buildConstraint(goodState, badState);
 			}
 		}
 		
@@ -168,7 +194,7 @@ public class ConstraintGeneration {
 	 * @param badState
 	 * @return
 	 */
-	public String generateViolatedConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
+	public String buildConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
 		Counter<String> goodFeatures = goodState.getFeatures();
 		Counter<String> badFeatures = badState.getFeatures();
 		
@@ -178,7 +204,7 @@ public class ConstraintGeneration {
 			double count = goodFeatures.getCount(feature);
 			sb.append(count + ",");
 		}
-		sb.append("-");
+		sb.append("=");
 		for (String feature : featureTemplate) {
 			double count = badFeatures.getCount(feature);
 			sb.append(count + ",");

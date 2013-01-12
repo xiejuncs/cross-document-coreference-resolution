@@ -3,11 +3,15 @@ package edu.oregonstate.classifier;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.general.DoubleOperation;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.EecbConstants;
 
 /**
@@ -24,18 +28,34 @@ public class StructuredPerceptron implements IClassifier {
 	/* the total epoch */
 	private final int mEpoch;
 	
-	/* update rate */
-	private double updateStep;
-
+	/* logFile */
+	private final String logFile;
+	
 	public StructuredPerceptron() {
 		mProps = ExperimentConstructor.experimentProps;
 		mEpoch = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "1"));
+		logFile = ExperimentConstructor.logFile;
+		ResultOutput.writeTextFile(logFile, "\nStructured Perceptron with Iteration : " + mEpoch);
 	}
 
 	/**
 	 * train the model
 	 */
 	public Parameter train(String path, Parameter para) {
+		List<String> dataset = readData(path);
+		Parameter finalPara = trainModel(dataset, para);
+		return finalPara;
+	}
+	
+	/**
+	 * train the model based on dataset and parameter
+	 * 
+	 * @param dataset
+	 * @param para
+	 * @return
+	 */
+	private Parameter trainModel(List<String> dataset, Parameter para) {
+		ResultOutput.writeTextFile(logFile, "the number of instances : " + dataset.size());
 		double[] weight = para.getWeight();
 		int violations = para.getNoOfViolation();
 		int length = weight.length;
@@ -43,30 +63,29 @@ public class StructuredPerceptron implements IClassifier {
 		double[] finalTotalWeight = new double[length];
 		System.arraycopy(weight, 0, finalWeight, 0, length);
 		System.arraycopy(para.getTotalWeight(), 0, finalTotalWeight, 0, length);
-		
-		List<String> datas = readMatrix(path);
-		updateStep = Double.parseDouble(mProps.getProperty(EecbConstants.STRUCTUREDPERCEPTRON_RATE_PROP, "" + 1.0));
+		double[] learningRates = DoubleOperation.createDescendingArray(1, 0, mEpoch);
 		
 		for (int i = 0; i < mEpoch; i++) {
+			double learningRate = learningRates[i];
 			
 			// learn the weight using structured perceptron
-			for (String data : datas) {
-				String[] features = data.split("-");
+			for (String data : dataset) {
+				String[] features = data.split("=");
 				String goodFeatures = features[0];
 				String badFeature = features[1];
 				double[] goodNumericFeatures = DoubleOperation.transformString(goodFeatures, ",");
 				double[] badNumericFeatures = DoubleOperation.transformString(badFeature, ",");
 
-				double goodCostScore = DoubleOperation.time(weight, goodNumericFeatures);
-				double badCostScore = DoubleOperation.time(weight, badNumericFeatures);
+				double goodCostScore = DoubleOperation.time(finalWeight, goodNumericFeatures);
+				double badCostScore = DoubleOperation.time(finalWeight, badNumericFeatures);
 				
 				// violated constraint
 				if (goodCostScore <= badCostScore) {
 					violations += 1;
 					double[] direction = DoubleOperation.minus(goodNumericFeatures, badNumericFeatures);
-					double[] term = DoubleOperation.time(direction, updateStep);
+					double[] term = DoubleOperation.time(direction, learningRate);
 					finalWeight = DoubleOperation.add(finalWeight, term);
-					finalTotalWeight = DoubleOperation.add(finalTotalWeight, weight);
+					finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
 				}
 			}
 		}
@@ -78,11 +97,31 @@ public class StructuredPerceptron implements IClassifier {
 	 * train the model according to lots of files
 	 */
 	public Parameter train(List<String> paths, Parameter para) {
+		List<String> dataset = new ArrayList<String>();
+		
+		// read all data
 		for (String path : paths) {
-			para = train(path, para);
+			List<String> data = readData(path);
+			dataset.addAll(data);
 		}
 		
-		return para;
+		Parameter finalPara = trainModel(dataset, para);
+		return finalPara;
+	}
+	
+	/**
+	 * use zero vector to train the model
+	 */
+	public Parameter train(List<String> paths) {
+		String[] featureTemplate = FeatureFactory.getFeatures();
+		int length = featureTemplate.length;
+		double[] weight = new double[length];
+		double[] totalWeight = new double[length];
+		int violation = 0;
+		Parameter para = new Parameter(weight, totalWeight, violation);
+		Parameter trainedPara = train(paths, para);
+		
+		return trainedPara;
 	}
 	
 
@@ -92,7 +131,7 @@ public class StructuredPerceptron implements IClassifier {
 	 * @param path
 	 * @return
 	 */
-	private List<String> readMatrix(String path) {
+	private List<String> readData(String path) {
 		List<String> datas = new ArrayList<String>();
 
 		try {
@@ -111,10 +150,6 @@ public class StructuredPerceptron implements IClassifier {
 		}
 
 		return datas;
-	}
-	
-	public static void main(String[] args) {
-		
 	}
 	
 }

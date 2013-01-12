@@ -69,7 +69,7 @@ public class CrossTopic implements IDataSet {
 			document.fill();                                // incorporate SYNONYM
 			srlIncorporation(topic, document.predictedOrderedMentionsBySentence, srlPath);
 
-			// generate feature for each mention
+			// generate feature for each cluster
 			for (Integer id : document.corefClusters.keySet()) {
 				CorefCluster cluster = document.corefClusters.get(id);
 				cluster.regenerateFeature();

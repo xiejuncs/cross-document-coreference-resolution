@@ -8,6 +8,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
@@ -272,11 +275,57 @@ public class ResultOutput {
 			averageWeight = DoubleOperation.divide(copyTotalWeight, violations);
 		}
 		
-		ResultOutput.writeTextFile(logFile, "the number of total violated constraints : " + violations);
+		ResultOutput.writeTextFile(logFile, "the number of total constraints : " + violations);
 		ResultOutput.writeTextFile(logFile, "weight vector : " + DoubleOperation.printArray(weight));
         ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
         ResultOutput.writeTextFile(logFile, "average weight vector : " + DoubleOperation.printArray(averageWeight));
         ResultOutput.writeTextFile(logFile, "total weight vector : " + DoubleOperation.printArray(totalWeight));
+	}
+	
+	/**
+	 * calculate document score according to the loss type
+	 * 
+	 * @param document
+	 * @param type
+	 * @return
+	 */
+	public static String[] printDocumentScore(Document document, ScoreType type, String logFile, String phase) {
+		CorefScorer scorer = EecbConstructor.createCorefScorer(type);
+		scorer.calculateScore(document);
+		
+		NumberFormat nf = new DecimalFormat("0.00");
+		double r =scorer.getRecall() * 100;
+	    double p = scorer.getPrecision() * 100;
+	    double f1 = scorer.getF1() * 100;
+	    
+	    String R = nf.format(r);
+	    String P = nf.format(p);
+	    String F1 = nf.format(f1);
+	    
+	    String str = "F1 = "+F1+", P = "+P+" ("+(int) scorer.precisionNumSum+"/"+(int) scorer.precisionDenSum+"), R = "
+	    			 +R+" ("+(int) scorer.recallNumSum+"/"+(int) scorer.recallDenSum+")";
+	    writeTextFile(logFile, "\nthe overall testing " + type.toString() + " accuracy on " + phase + " set is " +  str + "\n");
+	    
+	    String[] scores = new String[]{F1, P, R};
+	    
+	    return scores;
+	}
+	
+	/**
+	 * calculate document score according to four loss types, respectively Pairwise, MUC, Bcubed, CEAF
+	 * 
+	 * @param document
+	 * @param logFile
+	 * @param phase
+	 */
+	public static List<String[]> printDocumentScore(Document document, String logFile, String phase) {
+		List<String[]> scores = new ArrayList<String[]>();
+		for (ScoreType type : ScoreType.values()) {
+			String[] scoreInformation = printDocumentScore(document, type, logFile, phase);
+			scores.add(scoreInformation);
+		}
+		
+		return scores;
 	}
 	
 }

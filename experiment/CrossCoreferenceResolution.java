@@ -1,6 +1,7 @@
 package edu.oregonstate.experiment;
 
 import java.io.File;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
@@ -9,6 +10,7 @@ import edu.oregonstate.method.IMethod;
 import edu.oregonstate.util.Command;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
+import edu.oregonstate.classifier.Parameter;
 import edu.oregonstate.dataset.DatasetFactory;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
@@ -68,14 +70,16 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		// 2. do search and training
 		String methodName = experimentProps.getProperty(EecbConstants.METHOD_PROP, "Dagger");
 		IMethod method = EecbConstructor.createMethodModel(methodName);
-		double[] weight = method.executeMethod();
+		List<Parameter> finalParas = method.executeMethod();
 		
 		// do final testing
-		ResultOutput.writeTextFile(logFile, "final learned weight vector : " + DoubleOperation.printArray(weight));
 		boolean debug = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DEBUG_PROP, "false"));
 		if (!debug) {
 			
 		}
+		
+		// remove document object
+		ResultOutput.deleteResult(experimentResultFolder + "/documentobject");
 	}
 	
 	

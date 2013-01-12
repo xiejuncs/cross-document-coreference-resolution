@@ -70,4 +70,33 @@ public class DocumentAlignment {
 			}
 		}
 	}
+	
+	/**
+	 * merge from document to to document: four fields, which is just used for scoring in the system, not output for CoNLL scoring
+	 * 
+	 * @param from
+	 * @param to
+	 */
+	public static void mergeDocument(Document from, Document to) {
+		// add allGoldMentions
+		for (Integer key : from.allGoldMentions.keySet()) {
+			to.allGoldMentions.put(key, from.allGoldMentions.get(key));
+		}
+		
+		// add goldCorefClusters
+		for (Integer key : from.goldCorefClusters.keySet()) {
+			to.goldCorefClusters.put(key, from.goldCorefClusters.get(key));
+		}
+		
+		// add allPredictedMentions
+		for (Integer key : from.allPredictedMentions.keySet()) {
+			to.allPredictedMentions.put(key, from.allPredictedMentions.get(key));
+		}
+		
+		// add corefClusters
+		for (Integer key : from.corefClusters.keySet()) {
+			to.corefClusters.put(key, from.corefClusters.get(key));
+		}
+	}
+	
 }

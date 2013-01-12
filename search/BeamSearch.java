@@ -71,9 +71,6 @@ public class BeamSearch implements ISearch {
     /** cost function */
     private ICostFunction costFunction;
     
-    /** classifier */
-    private IClassifier classifier;
-    
     /** score type */
     private final ScoreType type;
     
@@ -103,7 +100,6 @@ public class BeamSearch implements ISearch {
     	type = CorefScorer.ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP));
         lossFunction = EecbConstructor.createLossFunction(mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP));
         costFunction = EecbConstructor.createCostFunction(mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
-        classifier = EecbConstructor.createClassifier(mProps.getProperty(EecbConstants.CLASSIFIER_PROP));
         
         // set the dictionary
         dictionaries = new Dictionaries();
@@ -115,6 +111,8 @@ public class BeamSearch implements ISearch {
      * do not deal with the pronoun case, because the pronoun is still the singleton cluster all the time
      * so pull out the cluster and determine whether the first mention of the cluster is Pronominal. If the 
      * first mention is Pronominal, then jump out of the loop
+     * 
+     * 
      * 
      * @param state
      * @return
@@ -275,10 +273,11 @@ public class BeamSearch implements ISearch {
 	 * do not need to define a function to check whether the current state is the goal state
 	 * 
 	 */
-	public Parameter trainingBySearch(Document document, Parameter para, String phaseID) {
+	public void trainingBySearch(Document document, Parameter para, String phaseID) {
 		Double globalScore = 0.0;
 		double[] weight = para.getWeight();
 		String mscorePath = experimentResultFolder + "/" + document.getID() + "/" + phaseID;
+		String trainingDataPath = experimentResultFolder + "/" + document.getID() + "/data";
 		
 		// beam and closed list
 		//Set<State<CorefCluster>> closedList = new HashSet<State<CorefCluster>>();
@@ -331,7 +330,6 @@ public class BeamSearch implements ISearch {
 				Set<String> actions = generateCandidateSets(state);
 				Map<String, State<CorefCluster>> states = new HashMap<String, State<CorefCluster>>();
 				
-				
 				for (String action : actions) {
 					// make a copy of state
 					State<CorefCluster> initial = new State<CorefCluster>();
@@ -377,14 +375,11 @@ public class BeamSearch implements ISearch {
 					states.put(action, initial);
 				}
 				
-				// output violated constraints
-				String path = mscorePath + "-" + msearchStep;
+				// output constraints
+				String path = trainingDataPath + "/" + phaseID + "-" + msearchStep;
 				ConstraintGeneration constraintGenerator = new ConstraintGeneration(path);
 				constraintGenerator.generateConstraints(states, beam, previousBestState, bestState);
 				
-				// use classifier to learn the Parameter
-				ResultOutput.printParameter(para, logFile);
-				para = classifier.train(path, para);
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -392,8 +387,7 @@ public class BeamSearch implements ISearch {
 			
 			msearchStep++;
 		}
-		
-		return para.makeCopy();
+	
 	}
 	
 	
@@ -407,6 +401,8 @@ public class BeamSearch implements ISearch {
 	public State<CorefCluster> testingBySearch(Document document, double[] weight, String phaseID, boolean outputFeature) {
 		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION);
 		String mscorePath = experimentResultFolder + "/" + document.getID() + "/" + phaseID;
+		String trainingDataPath = experimentResultFolder + "/" + document.getID() + "/data";
+		String bestLossScorePath = experimentResultFolder + "/" + document.getID() + "/" + phaseID + "-bestlossscore";
 		
 		double globalCostScore = 0.0;
 		double stopscore = 0.0;
@@ -520,9 +516,11 @@ public class BeamSearch implements ISearch {
 				if (outputFeature && beam.size() > 0) {
 					String id = beam.peek().getID();
 					if (!bestLossStateID.equals(id)) {
-						generateOutput(states, bestLossStateID, phaseID, mscorePath, msearchStep);
+						generateOutput(states, bestLossStateID, phaseID, trainingDataPath, msearchStep);
 					}
 				}
+				
+				ResultOutput.writeTextFile(bestLossScorePath, msearchStep + "\t" + bestLossScore);
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -535,7 +533,7 @@ public class BeamSearch implements ISearch {
 		for (Integer key : bestLostState.getState().keySet()) {
 			copyBestLossState.add(key, bestLostState.getState().get(key));
 		}
-		
+	
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "the best loss state score for " + document.getID() + " is " + bestLossScore);
 		return copyBestLossState;
 	}
@@ -550,17 +548,17 @@ public class BeamSearch implements ISearch {
 	 * @param bestLossStateID
 	 * @param phaseID
 	 */
-	private void generateOutput(Map<String, State<CorefCluster>> states, String bestLossStateID, String phaseID, String scorePath, int searchStep) {
+	private void generateOutput(Map<String, State<CorefCluster>> states, String bestLossStateID, String phaseID, String trainingDataPath, int searchStep) {
 		State<CorefCluster> goodState = states.get(bestLossStateID);
 		states.remove(bestLossStateID);
 		
-		String path = scorePath + "-" + searchStep;
+		String path = trainingDataPath + "/" + phaseID + "-" + searchStep;
 		ConstraintGeneration generator = new ConstraintGeneration(path);
 		List<String> constraints = new ArrayList<String>();
 		
 		for (String key : states.keySet()) {
 			State<CorefCluster> state = states.get(key);
-			String constraint = generator.generateViolatedConstraint(goodState, state);
+			String constraint = generator.buildConstraint(goodState, state);
 			constraints.add(constraint);
 		}
 		

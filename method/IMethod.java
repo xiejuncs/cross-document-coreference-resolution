@@ -1,5 +1,9 @@
 package edu.oregonstate.method;
 
+import java.util.List;
+
+import edu.oregonstate.classifier.Parameter;
+
 /**
  * experiment framework
  * 
@@ -9,5 +13,5 @@ package edu.oregonstate.method;
 public interface IMethod {
 
 	/* according different method, execute different method */
-	public double[] executeMethod();
+	public List<Parameter> executeMethod();
 }
