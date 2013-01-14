@@ -67,18 +67,22 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		}
 		
 		// 2. do search and training
-		String methodName = experimentProps.getProperty(EecbConstants.METHOD_PROP, "Dagger");
-		IMethod method = EecbConstructor.createMethodModel(methodName);
-		List<Parameter> finalParas = method.executeMethod();
+		boolean searchTraining = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.SEARCH_TRAINING_PROP, "true"));
 		
-		// do final testing
-		boolean debug = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DEBUG_PROP, "false"));
-		if (!debug) {
-			
+		if (searchTraining) {
+			String methodName = experimentProps.getProperty(EecbConstants.METHOD_PROP, "Dagger");
+			IMethod method = EecbConstructor.createMethodModel(methodName);
+			List<Parameter> finalParas = method.executeMethod();
+
+			// do final testing
+			boolean debug = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DEBUG_PROP, "false"));
+			if (!debug) {
+				
+			}
 		}
-		
+	
 		// remove document object
-		ResultOutput.deleteResult(experimentResultFolder + "/documentobject");
+		//ResultOutput.deleteResult(experimentResultFolder + "/documentobject");
 	}
 	
 	

@@ -371,6 +371,7 @@ public class EecbTopic extends EecbElement {
 					    int[] byteoffset = convertByteOffset(sentence, start, end);
 					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID + 100000 * Integer.parseInt(annos[1]));
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, byteoffset[0], byteoffset[1], documentSentenceID);
+					    //EecbCharSeq mention = new EecbCharSeq(mentionText, start, end, documentSentenceID);
 					    EecbEntityMention entityMention = new EecbEntityMention(ID, mention, null, documentSentenceID); // HEAD will be processed later
 					    addEntityMention(entityMention);
 					    entity.addMention(entityMention);
@@ -394,7 +395,7 @@ public class EecbTopic extends EecbElement {
 						int[] byteoffset = convertByteOffset(sentence, start, end);
 					    String ID = mID + "-" + key + "-" + Integer.toString(idOffset + baseID + 100000 * Integer.parseInt(annos[1]));
 					    EecbCharSeq mention = new EecbCharSeq(mentionText, byteoffset[0], byteoffset[1], documentSentenceID);
-					    
+					    //EecbCharSeq mention = new EecbCharSeq(mentionText, start, end, documentSentenceID);
 					    // because we do not know the extent, so we just use the mention as its extent
 					    EecbEventMention eventMention = new EecbEventMention(ID, mention, mention, documentSentenceID);
 					    addEventMention(eventMention);
@@ -545,7 +546,6 @@ public class EecbTopic extends EecbElement {
 		    pipeline.annotate(seAnno);
 		    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
 		    for(CoreMap ses : seSentences) {
-		    	boolean newline = true;
 		    	for (int j = 0; j < ses.get(TokensAnnotation.class).size(); j++) {
 		    		CoreLabel token = ses.get(TokensAnnotation.class).get(j);
 		    		String word = token.getString(TextAnnotation.class);
@@ -553,10 +553,6 @@ public class EecbTopic extends EecbElement {
 		    		int end = token.get(CharacterOffsetEndAnnotation.class);
 		    		EecbToken eecbToken = new EecbToken(word, "", "", start, end, i);
 		    		sentence.add(eecbToken);
-		    		
-		    		//if (j == (ses.get(TokensAnnotation.class).size() - 1)) newline = false;
-		    		//String tokens = createTokens(j, token, newline);
-		    		//Train.writeTextFile(GlobalConstantVariables.TOKENS_PATH + mPrefix + ".tokens", tokens);
 		    	}
 		    }
 		    sentences.add(sentence);

@@ -140,24 +140,73 @@ public class Dagger implements IMethod {
 		String phaseID = "training-" + i + "-" + j;
 		
 		// generate training data for classification
-		for (String topic : trainingTopics) {
-			ResultOutput.writeTextFile(logFile, "\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "; Document : " + topic + "\n");
-			Document document = ResultOutput.deserialize(topic, serializeOutput, false);
+		if (j == 0) {
+			Document corpus = new Document();
+			corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 			
-			// j == 0 true loss function else the learned model
-			if (j == 0) {
+			boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
+			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-training" + "-" + i + "-" + j;
+			String goldCorefCluster = conllResultPath + "/goldCorefCluster-training" + "-" + i + "-" + j;
+			PrintWriter writerPredicted = null;
+			PrintWriter writerGold = null;
+			try {
+				writerPredicted = new PrintWriter(new FileOutputStream(predictedCorefCluster));
+				writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster));
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			
+			for (String topic : trainingTopics) {
+				ResultOutput.writeTextFile(logFile, "\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "; Document : " + topic + "\n");
+				Document document = ResultOutput.deserialize(topic, serializeOutput, false);
+				
 				// create training data directory
 				String trainingDataPath = experimentResultFolder + "/" + document.getID() + "/data";
 				Command.createDirectory(trainingDataPath);
 				
 				search.trainingBySearch(document, para, phaseID);
-			} else {
-				// stop at cluster no at 1, because there are pronoun case, the number of candidate sets is 0
-				search.testingBySearch(document, generateWeightForTesting(para), phaseID, true);
+				
+				DocumentAlignment.updateOrderedPredictedMentions(document);
+				
+				ResultOutput.printDocumentScore(document, lossType, logFile, "single training" + " document " + topic);
+				
+				try {
+					DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
+					CorefSystem cs = new CorefSystem();
+					cs.getCorefSystem().coreference(document, pronounSieve);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+				
+				// whether post-process the document
+				if (trainPostProcess) {
+					SieveCoreferenceSystem.postProcessing(document);
+				}
+				
+				DocumentAlignment.mergeDocument(document, corpus);
+				
+				SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, trainPostProcess);
+	            SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
 			}
 			
-			// print its result to check with the final search result do by search
-			ResultOutput.printDocumentScore(document, lossType, logFile, "single training document " + topic);
+			// Stanford scoring
+			List<String[]> scoreInformation = ResultOutput.printDocumentScore(corpus, logFile, "training");
+			String[] pairwiseScoreInformation = scoreInformation.get(0);
+			
+			// CoNLL scoring
+			CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(i * 10 + j, logFile);
+			conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefCluster, "training");
+			double predictedCoNLL = conllScorerHelper.getFinalCoNllF1Result();
+			double mucPredictedScore = conllScorerHelper.getMUCScoreF1Result();
+			double bcubedPredictedScore = conllScorerHelper.getBcubedScoreF1Result();
+			double ceafPredictedScore = conllScorerHelper.getCEAFScoreF1Result();
+			
+			ResultOutput.writeTextFile(experimentResultFolder + "/training.csv", pairwiseScoreInformation[0] + "\t" 
+										+ mucPredictedScore + "\t" + bcubedPredictedScore + "\t" + ceafPredictedScore + "\t" + predictedCoNLL);
+			
+		} else {
+			boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
+			testDocument(trainingTopics, generateWeightForTesting(para), i, j, trainPostProcess, "training", true);
 		}
 		
 		// train the model using the specified classifier for several iterations, using small learning rate
@@ -214,17 +263,18 @@ public class Dagger implements IMethod {
 	 * @param i
 	 */
 	private void testModel(double[] weight, int i, int j) {
+		// do not need do testing on training
 		boolean testTraining = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_VALIDATION_PROP, "false"));
 		
-		if (testTraining) {
+		if (testTraining && (j == numberOfFunctions)) {
 			ResultOutput.writeTextFile(logFile, "\n\n(Dagger) testing on training set\n\n");
 			boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
-			testDocument(trainingTopics, weight, i, j, trainPostProcess, "training");
+			testDocument(trainingTopics, weight, i, numberOfFunctions + 1, trainPostProcess, "training", false);
 		}
 		
 		ResultOutput.writeTextFile(logFile, "\n\n(Dagger) testing on testing set\n\n");
 		boolean testPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
-		testDocument(testingTopics, weight, i, j, testPostProcess, "testing");
+		testDocument(testingTopics, weight, i, j, testPostProcess, "testing", false);
 	}
 	
 	/**
@@ -237,14 +287,14 @@ public class Dagger implements IMethod {
 	 * @param postProcess
 	 * @param phase
 	 */
-	private void testDocument(String[] topics, double[] weight, int i, int j, boolean postProcess, String phase){
+	private void testDocument(String[] topics, double[] weight, int i, int j, boolean postProcess, String phase, boolean outputFeature){
 		// store the predicted mentions and gold mentions into corpus
 		Document corpus = new Document();
 		corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 		
 		// conll scoring files
-		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + i + "-" + j;
-		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + i + "-" + j;
+		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase + "-" + i + "-" + j;
+		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phase + "-" + i + "-" + j;
 		PrintWriter writerPredicted = null;
 		PrintWriter writerGold = null;
 		try {
@@ -261,7 +311,7 @@ public class Dagger implements IMethod {
 		
 			Document document = ResultOutput.deserialize(topic, serializeOutput, false);
 			ISearch search = EecbConstructor.createSearchMethod(searchMethod);
-			State<CorefCluster> bestLossState = search.testingBySearch(document, weight, phaseID, false);
+			State<CorefCluster> bestLossState = search.testingBySearch(document, weight, phaseID, outputFeature);
 			
 			document.corefClusters = bestLossState.getState();
 			DocumentAlignment.updateOrderedPredictedMentions(document);

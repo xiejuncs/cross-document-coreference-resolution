@@ -1,20 +1,23 @@
 package edu.oregonstate.example;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class StringTrim {
 
 	public static void main(String[] args) {
-		int x = 2;
-		for (int i = 0; i < 10; i++) {
-			plus(x);
-		}
+		List<Integer> ids = new ArrayList<Integer>();
 		
-		System.out.println(x);
+		ids.add(1);
+		ids.add(8);
+		ids.add(2);
+		ids.add(6);
+		
+		Collections.sort(ids, Collections.reverseOrder());
+		
+		System.out.println("done");
 	}
 	
-	private static void plus(int x) {
-		x = x * x;
-	}
-	
-	
-	
+
 }

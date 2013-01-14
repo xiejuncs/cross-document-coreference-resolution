@@ -39,9 +39,7 @@ public class StructuredPerceptron implements IClassifier {
 	 * train the model
 	 */
 	public Parameter train(String path, Parameter para) {
-		List<String> dataset = readData(path);
-		Parameter finalPara = trainModel(dataset, para);
-		return finalPara;
+		return para;
 	}
 	
 	/**
@@ -51,13 +49,7 @@ public class StructuredPerceptron implements IClassifier {
 	 * @param para
 	 * @return
 	 */
-	private Parameter trainModel(List<String> dataset, Parameter para) {
-		ResultOutput.writeTextFile(logFile, "\n Begin classification: ");
-		ResultOutput.writeTextFile(logFile, "\nStructured Perceptron with Iteration : " + mEpoch);
-		ResultOutput.writeTextFile(logFile, "the number of instances : " + dataset.size());
-		double[] learningRates = DoubleOperation.createDescendingArray(1, 0, mEpoch);
-		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
-		
+	private Parameter trainModel(List<String> dataset, Parameter para, double learningRate) {
 		double[] weight = para.getWeight();
 		int violations = para.getNoOfViolation();
 		int length = weight.length;
@@ -65,33 +57,27 @@ public class StructuredPerceptron implements IClassifier {
 		double[] finalTotalWeight = new double[length];
 		System.arraycopy(weight, 0, finalWeight, 0, length);
 		System.arraycopy(para.getTotalWeight(), 0, finalTotalWeight, 0, length);
-		
-		for (int i = 0; i < mEpoch; i++) {
-			double learningRate = learningRates[i];
-			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
-			
-			// learn the weight using structured Perceptron
-			for (String data : dataset) {
-				String[] features = data.split(";");
-				String goodFeatures = features[0];
-				String badFeature = features[1];
-				double[] goodNumericFeatures = DoubleOperation.transformString(goodFeatures, ",");
-				double[] badNumericFeatures = DoubleOperation.transformString(badFeature, ",");
 
-				double goodCostScore = DoubleOperation.time(finalWeight, goodNumericFeatures);
-				double badCostScore = DoubleOperation.time(finalWeight, badNumericFeatures);
-				
-				// violated constraint
-				if (goodCostScore <= badCostScore) {
-					violations += 1;
-					double[] direction = DoubleOperation.minus(goodNumericFeatures, badNumericFeatures);
-					double[] term = DoubleOperation.time(direction, learningRate);
-					finalWeight = DoubleOperation.add(finalWeight, term);
-					finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
-				}
+		for (String data : dataset) {
+			String[] features = data.split(";");
+			String goodFeatures = features[0];
+			String badFeature = features[1];
+			double[] goodNumericFeatures = DoubleOperation.transformString(goodFeatures, ",");
+			double[] badNumericFeatures = DoubleOperation.transformString(badFeature, ",");
+
+			double goodCostScore = DoubleOperation.time(finalWeight, goodNumericFeatures);
+			double badCostScore = DoubleOperation.time(finalWeight, badNumericFeatures);
+
+			// violated constraint
+			if (goodCostScore <= badCostScore) {
+				violations += 1;
+				double[] direction = DoubleOperation.minus(goodNumericFeatures, badNumericFeatures);
+				double[] term = DoubleOperation.time(direction, learningRate);
+				finalWeight = DoubleOperation.add(finalWeight, term);
+				finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
 			}
 		}
-		
+
 		return new Parameter(finalWeight, finalTotalWeight, violations);
 	}
 	
@@ -99,17 +85,26 @@ public class StructuredPerceptron implements IClassifier {
 	 * train the model according to lots of files
 	 */
 	public Parameter train(List<String> paths, Parameter para) {
-		List<String> dataset = new ArrayList<String>();
+		ResultOutput.writeTextFile(logFile, "\n Begin classification: ");
+		ResultOutput.writeTextFile(logFile, "\nStructured Perceptron with Iteration : " + mEpoch);
+		double[] learningRates = DoubleOperation.createDescendingArray(1, 0, mEpoch);
+		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
 		
-		// read all data
-		for (String path : paths) {
-			List<String> data = readData(path);
-			dataset.addAll(data);
+		for (int i = 0; i < mEpoch; i++) {
+			double learningRate = learningRates[i];
+			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
+			for (String path : paths) {
+				List<String> dataset = readData(path);
+				
+				para = trainModel(dataset, para, learningRate);
+			}
+			
 		}
 		
-		Parameter finalPara = trainModel(dataset, para);
-		return finalPara;
+		return para;
 	}
+	
+	
 	
 	/**
 	 * use zero vector to train the model

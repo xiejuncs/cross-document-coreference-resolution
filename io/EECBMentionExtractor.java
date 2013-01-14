@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -141,8 +143,11 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		    	extractGoldMentions(sentence, allGoldMentions, comparator, eventComparator);
 		    }
 		    
+		    // judge whether there are mis-annotation in the data
+		    deleteSameAnnotation(allGoldMentions);
+		    
 		    // Gold Mention or predicted Mentions
-		    if (goldOnly) {	    	
+		    if (goldOnly) { 	
 		        allPredictedMentions = new ArrayList<List<Mention>>();
 		        for (int i = 0; i < allGoldMentions.size(); i++) {
 		        	List<Mention> sentence = new ArrayList<Mention>();
@@ -173,10 +178,58 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		
 		MentionExtractor dcorfMentionExtractor = new MentionExtractor(dictionaries, semantics);
 		dcorfMentionExtractor.setCurrentDocumentID(topic);
-		Document document = dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);
+		Document document = dcorfMentionExtractor.arrange(anno, allWords, allTrees, allPredictedMentions, allGoldMentions, true);		
 		document.extractGoldCorefClusters();
 		document.conllDoc = conllDocument;
 		return document;
+	}
+	
+	/** 
+	 * there is some mis-annotation included in the corpus, if two mentions of the same sentence included 
+	 * the same start index and end index, then there is mis-annotation, then remove the two mentions
+	 * 
+	 * @param allGoldMentions
+	 */
+	public void deleteSameAnnotation(List<List<Mention>> allGoldMentions) {
+		List<List<Integer>> allRepeats = new ArrayList<List<Integer>>();
+		
+		for(int sentNum = 0; sentNum < allGoldMentions.size(); sentNum++) {
+			List<Integer> repeats = new ArrayList<Integer>();
+			List<Mention> golds = allGoldMentions.get(sentNum);
+			
+			Map<String, List<Integer>> statistics = new HashMap<String, List<Integer>>();
+			for (int i = 0; i < golds.size(); i++) {
+				Mention gold = golds.get(i);
+				int start = gold.startIndex;
+				int end = gold.endIndex;
+				String key = start + "-" + end;
+				if (!statistics.containsKey(key)) {
+					statistics.put(key, new ArrayList<Integer>());
+				}
+				
+				statistics.get(key).add(i);
+			}
+			
+			for (String key : statistics.keySet()) {
+				List<Integer> ids = statistics.get(key);
+				if (ids.size() > 1) {
+					repeats.addAll(ids);
+				}
+			}
+			
+			Collections.sort(repeats, Collections.reverseOrder());
+			allRepeats.add(repeats);
+		}
+		
+		for(int sentNum = 0; sentNum < allGoldMentions.size(); sentNum++) {
+			List<Mention> golds = allGoldMentions.get(sentNum);
+			List<Integer> repeats = allRepeats.get(sentNum);
+			
+			for (Integer deleteKey : repeats) {
+				golds.remove(deleteKey.intValue());
+			}
+		}
+		
 	}
 	
 	@Override
