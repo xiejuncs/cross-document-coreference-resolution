@@ -36,27 +36,20 @@ public class LargeFileWriting {
 	}
 
 	private void writeRaw(List<String> records) throws IOException {
-		File file = new File(mPath);
-		try {
-			FileWriter writer = new FileWriter(file, true);
-			System.out.print("Writing raw... ");
-			write(records, writer);
-		} finally {
-			
-		}
-	}
-
-	private void write(List<String> records, Writer writer) throws IOException {
-		long start = System.currentTimeMillis();
-		for (String record: records) {
-			writer.write(record);
-			writer.write("\n");
-		}
-		writer.flush();
-		writer.close();
-		long end = System.currentTimeMillis();
-		System.out.println((end - start) / 1000f + " seconds");
-	}
+                File file = new File(mPath);
+                try {
+                        System.out.print("Writing raw...\n");
+                        FileWriter writer = new FileWriter(file, true);
+                        for (String record: records) {
+                                writer.write(record);
+                                writer.write("\n");
+                        }
+                        writer.flush();
+                        writer.close();
+                } finally {
+                        
+                }
+        }
 	
 	public static void main(String[] args) {
 		int RECORD_COUNT = 4000000;

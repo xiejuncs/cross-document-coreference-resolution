@@ -99,7 +99,7 @@ public class Dagger implements IMethod {
 		int violation = 0;
 		Parameter para = new Parameter(weight, totalWeight, violation);
 		
-		// in the current time, just 0 epoch
+		// in the current time, just 1 epoch
 		for (int i = 1; i <= methodEpoch; i++) {
 			// 0: the true loss function
 			// 1- numberOfFunctions : the learned function
@@ -141,7 +141,7 @@ public class Dagger implements IMethod {
 		
 		// generate training data for classification
 		for (String topic : trainingTopics) {
-			ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "; Document : " + topic + "\n\n");
+			ResultOutput.writeTextFile(logFile, "\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "; Document : " + topic + "\n");
 			Document document = ResultOutput.deserialize(topic, serializeOutput, false);
 			
 			// j == 0 true loss function else the learned model
@@ -152,19 +152,19 @@ public class Dagger implements IMethod {
 				
 				search.trainingBySearch(document, para, phaseID);
 			} else {
-				
 				// stop at cluster no at 1, because there are pronoun case, the number of candidate sets is 0
 				search.testingBySearch(document, generateWeightForTesting(para), phaseID, true);
 			}
 			
-			// print its result
+			// print its result to check with the final search result do by search
 			ResultOutput.printDocumentScore(document, lossType, logFile, "single training document " + topic);
 		}
 		
 		// train the model using the specified classifier for several iterations, using small learning rate
 		IClassifier classifier = EecbConstructor.createClassifier(classificationMethod);
-		List<String> filePaths = getPaths(i, j);
+		List<String> filePaths = getPaths();
 		ResultOutput.writeTextFile(experimentResultFolder + "/searchstep", "" + filePaths.size());
+		ResultOutput.writeTextFile(logFile, "the total number of training files : " + filePaths.size());
 		Parameter returnPara = classifier.train(filePaths);
 		return returnPara.makeCopy();
 	}
@@ -176,9 +176,9 @@ public class Dagger implements IMethod {
 	 * @param j
 	 * @return
 	 */
-	private List<String> getPaths(int i, int j) {
+	private List<String> getPaths() {
 		List<String> filePaths = new ArrayList<String>();
-		filePaths.addAll(getPaths(trainingTopics, i, j));
+		filePaths.addAll(getPaths(trainingTopics));
 		return filePaths;
 	}
 	
@@ -190,7 +190,7 @@ public class Dagger implements IMethod {
 	 * @param j
 	 * @return
 	 */
-	private List<String> getPaths(String[] topics, int i, int j) {
+	private List<String> getPaths(String[] topics) {
 		List<String> allfiles  = new ArrayList<String>();
 		for (String topic : topics) {
 			String topicPath = experimentResultFolder + "/" + topic + "/data/";
@@ -200,6 +200,7 @@ public class Dagger implements IMethod {
 				filePaths.add(topicPath + file);
 			}
 			
+			ResultOutput.writeTextFile(experimentResultFolder + "/searchstep", "" + filePaths.size());
 			allfiles.addAll(filePaths);
 		}
 		return allfiles;
@@ -320,4 +321,5 @@ public class Dagger implements IMethod {
 		}
 		return learnedWeight;
 	}
+	
 }

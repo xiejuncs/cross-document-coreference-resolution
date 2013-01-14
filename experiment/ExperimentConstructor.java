@@ -160,8 +160,8 @@ public abstract class ExperimentConstructor {
         //
         // configure WORDNET and mention similarity dictionary
         //
-        configureJWordNet();  
         configureWordSimilarity();
+        configureJWordNet();  
 	}
 	
 	protected abstract void performExperiment();

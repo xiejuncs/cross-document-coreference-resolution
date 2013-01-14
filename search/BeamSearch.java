@@ -8,15 +8,12 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
 
-import edu.oregonstate.classifier.IClassifier;
 import edu.oregonstate.classifier.Parameter;
 import edu.oregonstate.costfunction.ICostFunction;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.features.FeatureFactory;
-import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
-import edu.oregonstate.general.PriorityQueue;
 import edu.oregonstate.io.LargeFileWriting;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.lossfunction.ILossFunction;
@@ -100,6 +97,9 @@ public class BeamSearch implements ISearch {
     	type = CorefScorer.ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP));
         lossFunction = EecbConstructor.createLossFunction(mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP));
         costFunction = EecbConstructor.createCostFunction(mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
+        ResultOutput.writeTextFile(logFile, "\nBeam Search Configuration : " + "width : " + mBeamWidth + "; maximumSearch : " + 
+        							maximumSearch + "; type : " + type.toString() + "; lossFunction : " + 
+        							mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP) + "; costFunction : " + mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
         
         // set the dictionary
         dictionaries = new Dictionaries();
@@ -210,6 +210,7 @@ public class BeamSearch implements ISearch {
         for (Integer key : document.corefClusters.keySet()) {
             CorefCluster cluster = document.corefClusters.get(key);
             CorefCluster cpCluster = new CorefCluster(key, cluster.getCorefMentions());
+            cpCluster.regenerateFeature();
             initialState.add(key, cpCluster);
         }
         
@@ -239,6 +240,9 @@ public class BeamSearch implements ISearch {
 	 * @return
 	 */
 	private void calculateCostScore(State<CorefCluster> initial, String action, Document document, double[] weight) {
+		// update the document and generate new features
+		updateClusterFeature(document, initial);
+		
 		String[] ids = action.split("-");
 		Integer i_id = Integer.parseInt(ids[0]);
 		Integer j_id = Integer.parseInt(ids[1]);
@@ -309,6 +313,7 @@ public class BeamSearch implements ISearch {
 			
 			// stopping criterion
 			if ((globalScore == 1.0) || (globalScore > priority) || (state.getID().equals("HALT")) ) {
+				ResultOutput.writeTextFile(logFile, "search stop with the loss score : " + globalScore);
 				updateClusterFeature(document, bestState);
 				break;
 			}
@@ -321,9 +326,6 @@ public class BeamSearch implements ISearch {
 			
 			// add the node to the explored list
 			//closedList.add(indexState);
-			
-			// update the feature according to new state
-			updateClusterFeature(document, state);
 			
 			// generate actions and learn weights
 			try {
@@ -470,7 +472,7 @@ public class BeamSearch implements ISearch {
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type.toString() +" Cost score: " + localScore);
 			
 			//closedList.add(indexState);
-			updateClusterFeature(document, state);  // update the document
+
 			try {
 				/** get the candidate lists*/
 				Set<String> actions = generateCandidateSets(state);
@@ -508,7 +510,9 @@ public class BeamSearch implements ISearch {
 						//if (closedContains) continue;
 					}
 					
+					// deal with tie
 	            	beam.add(initial, initial.getCostScore());
+	            	
 	            	states.put(action, initial);
 				}				
 				

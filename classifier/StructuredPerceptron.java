@@ -3,8 +3,6 @@ package edu.oregonstate.classifier;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -35,7 +33,6 @@ public class StructuredPerceptron implements IClassifier {
 		mProps = ExperimentConstructor.experimentProps;
 		mEpoch = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "1"));
 		logFile = ExperimentConstructor.logFile;
-		ResultOutput.writeTextFile(logFile, "\nStructured Perceptron with Iteration : " + mEpoch);
 	}
 
 	/**
@@ -55,7 +52,12 @@ public class StructuredPerceptron implements IClassifier {
 	 * @return
 	 */
 	private Parameter trainModel(List<String> dataset, Parameter para) {
+		ResultOutput.writeTextFile(logFile, "\n Begin classification: ");
+		ResultOutput.writeTextFile(logFile, "\nStructured Perceptron with Iteration : " + mEpoch);
 		ResultOutput.writeTextFile(logFile, "the number of instances : " + dataset.size());
+		double[] learningRates = DoubleOperation.createDescendingArray(1, 0, mEpoch);
+		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
+		
 		double[] weight = para.getWeight();
 		int violations = para.getNoOfViolation();
 		int length = weight.length;
@@ -63,14 +65,14 @@ public class StructuredPerceptron implements IClassifier {
 		double[] finalTotalWeight = new double[length];
 		System.arraycopy(weight, 0, finalWeight, 0, length);
 		System.arraycopy(para.getTotalWeight(), 0, finalTotalWeight, 0, length);
-		double[] learningRates = DoubleOperation.createDescendingArray(1, 0, mEpoch);
 		
 		for (int i = 0; i < mEpoch; i++) {
 			double learningRate = learningRates[i];
+			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
 			
-			// learn the weight using structured perceptron
+			// learn the weight using structured Perceptron
 			for (String data : dataset) {
-				String[] features = data.split("=");
+				String[] features = data.split(";");
 				String goodFeatures = features[0];
 				String badFeature = features[1];
 				double[] goodNumericFeatures = DoubleOperation.transformString(goodFeatures, ",");

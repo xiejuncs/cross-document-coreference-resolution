@@ -42,7 +42,7 @@ public class ConstraintGeneration {
 		enablePreviousCurrentConstraint = Boolean.parseBoolean(props.getProperty( EecbConstants.ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP, "false"));
 		enableBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMCONSTRAINT_PROP, "true"));
 		enableBeamUnBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMUNBEAMCONSTRAINT_PROP, "true"));
-		constraintGenerationStyle = Boolean.parseBoolean(props.getProperty(EecbConstants.CONSTRAINT_GENERATION_PROP, "true"));
+		constraintGenerationStyle = Boolean.parseBoolean(props.getProperty(EecbConstants.CONSTRAINT_GENERATION_PROP, "false"));
 	}
 	
 	/**
@@ -81,16 +81,15 @@ public class ConstraintGeneration {
 		}
 		
 		// write constraint
-		writeConstraints(allConstraints, false);
+		writeConstraints(allConstraints);
 	}
 	
 	/**
 	 * write constraint to file
 	 * 
 	 * @param constraints
-	 * @param delete
 	 */
-	public void writeConstraints(List<String> constraints, boolean delete) {
+	public void writeConstraints(List<String> constraints) {
 		LargeFileWriting writer = new LargeFileWriting(mPath);
 		writer.writeArrays(constraints);
 	}
@@ -199,12 +198,12 @@ public class ConstraintGeneration {
 		Counter<String> badFeatures = badState.getFeatures();
 		
 		String[] featureTemplate = FeatureFactory.getFeatures();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (String feature : featureTemplate) {
 			double count = goodFeatures.getCount(feature);
 			sb.append(count + ",");
 		}
-		sb.append("=");
+		sb.append(";");
 		for (String feature : featureTemplate) {
 			double count = badFeatures.getCount(feature);
 			sb.append(count + ",");

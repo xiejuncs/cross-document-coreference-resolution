@@ -6,6 +6,7 @@ import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 import edu.stanford.nlp.dcoref.Document;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.general.DoubleOperation;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.State;
 import edu.oregonstate.util.Command;
 import edu.oregonstate.util.EecbConstants;
@@ -30,6 +31,7 @@ public class MetricLossFunction implements ILossFunction {
 	
 	public MetricLossFunction() {
 		mtype = CorefScorer.ScoreType.valueOf(ExperimentConstructor.experimentProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP));
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nLoss Function type : " + mtype.toString());
 	}
 	
 	/* calculate loss function according to different state, but with the same document */

@@ -12,7 +12,6 @@ import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.oregonstate.classifier.Parameter;
 import edu.oregonstate.dataset.DatasetFactory;
-import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.util.StringUtils;
 
