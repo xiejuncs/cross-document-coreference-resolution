@@ -235,6 +235,31 @@ public class ResultOutput {
 	}
 	
 	/**
+	 * print the document feature for each cluster
+	 * 
+	 * @param document
+	 * @param logFile
+	 */
+	public static void printClusterFeatures(Document document, String logFile, int searchStep) {
+		ResultOutput.writeTextFile(logFile, "features for search step : " + searchStep + " on document " + document.getID() + " with cluster size " + document.corefClusters.size());
+		
+		for (Integer key : document.corefClusters.keySet()) {
+			CorefCluster cluster = document.corefClusters.get(key);
+			StringBuilder sb = new StringBuilder();
+			sb.append(Integer.toString(key) + "[ ");
+			for (Mention mention : cluster.getCorefMentions()) {
+				sb.append(mention.mentionID + " : " + mention.spanToString() + "; ");
+			}
+			sb.append(" ]");
+			
+			sb.append(" ; features :  " + cluster.predictedCentroid);
+			ResultOutput.writeTextFile(logFile, sb.toString());
+		}
+		
+		
+	}
+	
+	/**
 	 * print document score information
 	 * 
 	 * @param document

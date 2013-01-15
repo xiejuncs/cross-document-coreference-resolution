@@ -15,12 +15,13 @@ public class DoubleOperation {
 	 * @return
 	 */
 	public static double[] add(double[] matrix1, double[] matrix2) {
+		double[] matrix = new double[matrix1.length];
 		assert matrix1.length == matrix2.length;
 		for (int i = 0; i < matrix1.length; i++) {
-			matrix1[i] = matrix1[i] + matrix2[i];
+			matrix[i] = matrix1[i] + matrix2[i];
 		}
 		
-		return matrix1;
+		return matrix;
 	}
 	
 	/**
@@ -85,12 +86,14 @@ public class DoubleOperation {
 	 * @return
 	 */
 	public static double[] minus(double[] matrix1, double[] matrix2) {
+		
 		assert matrix1.length == matrix2.length;
+		double[] matrix = new double[matrix1.length];
 		for (int i = 0; i < matrix1.length; i++) {
-			matrix1[i] = matrix1[i] - matrix2[i];
+			matrix[i] = matrix1[i] - matrix2[i];
 		}
 		
-		return matrix1;
+		return matrix;
 	}
 	
 	/**

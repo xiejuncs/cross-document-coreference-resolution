@@ -82,7 +82,7 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		}
 	
 		// remove document object
-		//ResultOutput.deleteResult(experimentResultFolder + "/documentobject");
+		ResultOutput.deleteResult(experimentResultFolder + "/documentobject");
 	}
 	
 	

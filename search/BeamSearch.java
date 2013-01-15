@@ -210,26 +210,38 @@ public class BeamSearch implements ISearch {
         for (Integer key : document.corefClusters.keySet()) {
             CorefCluster cluster = document.corefClusters.get(key);
             CorefCluster cpCluster = new CorefCluster(key, cluster.getCorefMentions());
-            cpCluster.regenerateFeature();
             initialState.add(key, cpCluster);
         }
         
         return initialState;
     }
-	
-	/** 
-	 * generate a new document state and update cluster features at the same time
-	 * 
-	 * @param state
-	 */
-	private void updateClusterFeature(Document document, State<CorefCluster> state) {
-		Command.generateStateDocument(document, state);
-		
-		for (Integer id : document.corefClusters.keySet()) {
-        	CorefCluster cluster = document.corefClusters.get(id);
-        	cluster.regenerateFeature();
-        }
-	}
+    
+    private void generateStateDocument(Document documentState, State<CorefCluster> state) {
+    	documentState.corefClusters = state.getState();
+    	for (Integer id : documentState.corefClusters.keySet()) {
+    		CorefCluster cluster = documentState.corefClusters.get(id);
+    		for (Mention m : cluster.corefMentions) {
+    			int mentionID = m.mentionID;
+    			Mention correspondingMention = documentState.allPredictedMentions.get(mentionID);
+    			int clusterid = id;
+    			correspondingMention.corefClusterID = clusterid;
+    		}
+    	}
+    }
+    
+    /** 
+     * after choose the best state, update the document the chosen state,
+     * and then regenerate features for each cluster
+     * 
+     * @param indexState
+     */
+    private void regenerateFeatures(Document document, State<CorefCluster> indexState) {
+    	generateStateDocument(document, indexState);
+    	for (Integer id : document.corefClusters.keySet()) {
+    		CorefCluster cluster = document.corefClusters.get(id);
+    		cluster.regenerateFeature();
+    	}
+    }
 	
 	/** 
 	 * calculate cost score according to the weight and feature.
@@ -241,7 +253,6 @@ public class BeamSearch implements ISearch {
 	 */
 	private void calculateCostScore(State<CorefCluster> initial, String action, Document document, double[] weight) {
 		// update the document and generate new features
-		updateClusterFeature(document, initial);
 		
 		String[] ids = action.split("-");
 		Integer i_id = Integer.parseInt(ids[0]);
@@ -251,7 +262,12 @@ public class BeamSearch implements ISearch {
 		CorefCluster jCluster = initial.getState().get(j_id);
 		
 		// generate features
+		
+//		ResultOutput.writeTextFile(logFile, "action : " + action );
+//		ResultOutput.writeTextFile(logFile, i_id + " : " + iCluster.predictedCentroid);
+//		ResultOutput.writeTextFile(logFile, j_id + " : " + jCluster.predictedCentroid);
 		Counter<String> features = Feature.getFeatures(document, iCluster, jCluster, false, dictionaries);
+//		ResultOutput.writeTextFile(logFile, "feature : " + features);
 		
 		// merge cluster
 		mergeClusters(cpCluster, jCluster);
@@ -296,6 +312,9 @@ public class BeamSearch implements ISearch {
 		State<CorefCluster> bestState = new State<CorefCluster>();
 		State<CorefCluster> previousBestState = new State<CorefCluster>();
 		
+		ResultOutput.printParameters(document, document.getID(), logFile);
+		ResultOutput.printClusterFeatures(document, logFile, 0);
+		
 		// keep search
 		int msearchStep = 1;
 		while (beam.size() != 0 && (msearchStep < maximumSearch)) {
@@ -314,7 +333,7 @@ public class BeamSearch implements ISearch {
 			// stopping criterion
 			if ((globalScore == 1.0) || (globalScore > priority) || (state.getID().equals("HALT")) ) {
 				ResultOutput.writeTextFile(logFile, "search stop with the loss score : " + globalScore);
-				updateClusterFeature(document, bestState);
+				generateStateDocument(document, bestState);
 				break;
 			}
 		
@@ -326,6 +345,10 @@ public class BeamSearch implements ISearch {
 			
 			// add the node to the explored list
 			//closedList.add(indexState);
+			regenerateFeatures(document, state);
+			ResultOutput.writeTextFile(logFile, "action ID : " + state.getID());
+			ResultOutput.printParameters(document, document.getID(), logFile);
+			ResultOutput.printClusterFeatures(document, logFile, 0);
 			
 			// generate actions and learn weights
 			try {
@@ -378,7 +401,8 @@ public class BeamSearch implements ISearch {
 				}
 				
 				// output constraints
-				String path = trainingDataPath + "/" + phaseID + "-" + msearchStep;
+				int id = Integer.parseInt(phaseID) + msearchStep;
+				String path = trainingDataPath + "/" + id;
 				ConstraintGeneration constraintGenerator = new ConstraintGeneration(path);
 				constraintGenerator.generateConstraints(states, beam, previousBestState, bestState);
 				
@@ -425,6 +449,9 @@ public class BeamSearch implements ISearch {
 		beam.add(initialState, 0.0);
 		State<CorefCluster> previousBestState = new State<CorefCluster>();
 		
+		ResultOutput.printParameters(document, document.getID(), logFile);
+		ResultOutput.printClusterFeatures(document, logFile, 0);
+		
 		// do search
 		int msearchStep = 1;
 		boolean stopSearch = false;
@@ -435,7 +462,7 @@ public class BeamSearch implements ISearch {
 			// halt stopping condition
 			if (stopping.equals("halt")) {
 				if (state.getID().equals("HALT")) {
-					updateClusterFeature(document, previousBestState);
+					generateStateDocument(document, previousBestState);
 					stopSearch = true;
 				} else {
 					previousBestState = state;
@@ -450,7 +477,7 @@ public class BeamSearch implements ISearch {
 				}
 				
 				if ((state.getCostScore() < stopscore)) {
-					updateClusterFeature(document, previousBestState);
+					generateStateDocument(document, previousBestState);
 					stopSearch = true;
 				} else {
 					previousBestState = state;
@@ -472,7 +499,10 @@ public class BeamSearch implements ISearch {
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type.toString() +" Cost score: " + localScore);
 			
 			//closedList.add(indexState);
-
+			regenerateFeatures(document, state);
+			ResultOutput.printParameters(document, document.getID(), logFile);
+			ResultOutput.printClusterFeatures(document, logFile, 0);
+			
 			try {
 				/** get the candidate lists*/
 				Set<String> actions = generateCandidateSets(state);
@@ -519,6 +549,8 @@ public class BeamSearch implements ISearch {
 				// output feature
 				if (outputFeature && beam.size() > 0) {
 					String id = beam.peek().getID();
+					ResultOutput.writeTextFile(logFile, "best loss id : " + bestLossStateID + "; beam state id : " + id + "\n");
+					
 					if (!bestLossStateID.equals(id)) {
 						generateOutput(states, bestLossStateID, phaseID, trainingDataPath, msearchStep);
 					}
@@ -556,7 +588,8 @@ public class BeamSearch implements ISearch {
 		State<CorefCluster> goodState = states.get(bestLossStateID);
 		states.remove(bestLossStateID);
 		
-		String path = trainingDataPath + "/" + phaseID + "-" + searchStep;
+		int id = Integer.parseInt(phaseID) + searchStep;
+		String path = trainingDataPath + "/" + id;
 		ConstraintGeneration generator = new ConstraintGeneration(path);
 		List<String> constraints = new ArrayList<String>();
 		
@@ -566,6 +599,7 @@ public class BeamSearch implements ISearch {
 			constraints.add(constraint);
 		}
 		
+		// output the files
 		LargeFileWriting writer = new LargeFileWriting(path);
 		writer.writeArrays(constraints);
 	}

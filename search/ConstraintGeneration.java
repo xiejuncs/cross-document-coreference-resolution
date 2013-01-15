@@ -36,6 +36,11 @@ public class ConstraintGeneration {
 	/* generate all constraint (true) or just violated constraint(false) */
 	private final boolean constraintGenerationStyle;
 	
+	/**
+	 * constructor function
+	 * 
+	 * @param path
+	 */
 	public ConstraintGeneration(String path) {
 		mPath = path;
 		Properties props = ExperimentConstructor.experimentProps;
@@ -203,7 +208,6 @@ public class ConstraintGeneration {
 			double count = goodFeatures.getCount(feature);
 			sb.append(count + ",");
 		}
-		sb.append(";");
 		for (String feature : featureTemplate) {
 			double count = badFeatures.getCount(feature);
 			sb.append(count + ",");

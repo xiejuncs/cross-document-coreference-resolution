@@ -24,9 +24,6 @@ public class CrossTopic implements IDataSet {
 	/** corpus path */
 	private final String dataPath;
 
-	/* srl path */
-	private final String srlPath;
-
 	/* Log File Path */
 	private final String logFile;
 
@@ -48,7 +45,6 @@ public class CrossTopic implements IDataSet {
 		experimentResultFolder = ExperimentConstructor.experimentResultFolder;
 		corpusPath = ExperimentConstructor.corpusPath;
 		dataPath = corpusPath + "corpus/EECB1.0/data/";
-		srlPath = corpusPath + "corpus/tokenoutput/";
 	}
 
 	@Override
@@ -67,7 +63,6 @@ public class CrossTopic implements IDataSet {
 
 			document.setID(topic);
 			document.fill();                                // incorporate SYNONYM
-			srlIncorporation(topic, document.predictedOrderedMentionsBySentence, srlPath);
 
 			// generate feature for each cluster
 			for (Integer id : document.corefClusters.keySet()) {
@@ -80,18 +75,6 @@ public class CrossTopic implements IDataSet {
 		}
 
 		return document;
-	}
-	
-	/**
-	 * incorporate the srl result with the document predicted mentions
-	 * 
-	 * @param topic
-	 * @param predictedOrderedMentionsBySentence
-	 * @param srlPath
-	 */
-	private void srlIncorporation(String topic, List<List<Mention>> predictedOrderedMentionsBySentence, String srlPath) {
-		SrlResultIncorporation srlResult = new SrlResultIncorporation(srlPath + topic + ".output");
-		srlResult.alignSRL(predictedOrderedMentionsBySentence);
 	}
 	
 	/** treat the topic as a whole */

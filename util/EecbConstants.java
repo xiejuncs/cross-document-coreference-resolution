@@ -123,5 +123,6 @@ public class EecbConstants {
 	public static final String CONLL_SCORER_PROP = "dcoref.conll.scorer";
 	public static final String CONSTRAINT_GENERATION_PROP = "dcoref.constraint.generation";
 	public static final String SEARCH_TRAINING_PROP = "dcoref.searchtraining";
+	public static final String IO_BINARY_PROP = "dcoref.io.binary";
 	
 }
