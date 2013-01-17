@@ -312,8 +312,8 @@ public class BeamSearch implements ISearch {
 		State<CorefCluster> bestState = new State<CorefCluster>();
 		State<CorefCluster> previousBestState = new State<CorefCluster>();
 		
-		ResultOutput.printParameters(document, document.getID(), logFile);
-		ResultOutput.printClusterFeatures(document, logFile, 0);
+//		ResultOutput.printParameters(document, document.getID(), logFile);
+//		ResultOutput.printClusterFeatures(document, logFile, 0);
 		
 		// keep search
 		int msearchStep = 1;
@@ -346,9 +346,9 @@ public class BeamSearch implements ISearch {
 			// add the node to the explored list
 			//closedList.add(indexState);
 			regenerateFeatures(document, state);
-			ResultOutput.writeTextFile(logFile, "action ID : " + state.getID());
-			ResultOutput.printParameters(document, document.getID(), logFile);
-			ResultOutput.printClusterFeatures(document, logFile, 0);
+//			ResultOutput.writeTextFile(logFile, "action ID : " + state.getID());
+//			ResultOutput.printParameters(document, document.getID(), logFile);
+//			ResultOutput.printClusterFeatures(document, logFile, 0);
 			
 			// generate actions and learn weights
 			try {
@@ -401,7 +401,7 @@ public class BeamSearch implements ISearch {
 				}
 				
 				// output constraints
-				int id = Integer.parseInt(phaseID) + msearchStep;
+				int id = Integer.parseInt(phaseID);
 				String path = trainingDataPath + "/" + id;
 				ConstraintGeneration constraintGenerator = new ConstraintGeneration(path);
 				constraintGenerator.generateConstraints(states, beam, previousBestState, bestState);
@@ -449,8 +449,8 @@ public class BeamSearch implements ISearch {
 		beam.add(initialState, 0.0);
 		State<CorefCluster> previousBestState = new State<CorefCluster>();
 		
-		ResultOutput.printParameters(document, document.getID(), logFile);
-		ResultOutput.printClusterFeatures(document, logFile, 0);
+//		ResultOutput.printParameters(document, document.getID(), logFile);
+//		ResultOutput.printClusterFeatures(document, logFile, 0);
 		
 		// do search
 		int msearchStep = 1;
@@ -500,8 +500,8 @@ public class BeamSearch implements ISearch {
 			
 			//closedList.add(indexState);
 			regenerateFeatures(document, state);
-			ResultOutput.printParameters(document, document.getID(), logFile);
-			ResultOutput.printClusterFeatures(document, logFile, 0);
+//			ResultOutput.printParameters(document, document.getID(), logFile);
+//			ResultOutput.printClusterFeatures(document, logFile, 0);
 			
 			try {
 				/** get the candidate lists*/
@@ -585,17 +585,20 @@ public class BeamSearch implements ISearch {
 	 * @param phaseID
 	 */
 	private void generateOutput(Map<String, State<CorefCluster>> states, String bestLossStateID, String phaseID, String trainingDataPath, int searchStep) {
-		State<CorefCluster> goodState = states.get(bestLossStateID);
-		states.remove(bestLossStateID);
-		
-		int id = Integer.parseInt(phaseID) + searchStep;
+		List<String> constraints = new ArrayList<String>();
+		constraints.add("NEWDATASET");
+		int id = Integer.parseInt(phaseID);
 		String path = trainingDataPath + "/" + id;
 		ConstraintGeneration generator = new ConstraintGeneration(path);
-		List<String> constraints = new ArrayList<String>();
+		
+		State<CorefCluster> goodState = states.get(bestLossStateID);
+		constraints.add(generator.buildGoodConstraint(goodState));
+		
+		states.remove(bestLossStateID);
 		
 		for (String key : states.keySet()) {
 			State<CorefCluster> state = states.get(key);
-			String constraint = generator.buildConstraint(goodState, state);
+			String constraint = generator.buildBadConstraint(state);
 			constraints.add(constraint);
 		}
 		

@@ -1,20 +1,14 @@
 package edu.oregonstate.classifier;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.general.DoubleOperation;
+import edu.oregonstate.io.LargetFileReading;
 import edu.oregonstate.io.ResultOutput;
+import edu.oregonstate.method.Dagger;
 import edu.oregonstate.util.EecbConstants;
 
 /**
@@ -31,13 +25,29 @@ public class StructuredPerceptron implements IClassifier {
 	/* the total epoch */
 	private final int mEpoch;
 	
+	/* training topics */
+	private final String[] trainingTopics;
+	
+	/* testing topics */
+	private final String[] testingTopics;
+	
+	/* experiment folder */
+	private final String experimentFolder;
+	
 	/* logFile */
 	private final String logFile;
 	
+	/* number of instance */
+	private int numberOfInstance;
+	
 	public StructuredPerceptron() {
 		mProps = ExperimentConstructor.experimentProps;
+		experimentFolder = ExperimentConstructor.experimentResultFolder;
 		mEpoch = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "1"));
 		logFile = ExperimentConstructor.logFile;
+		trainingTopics = ExperimentConstructor.trainingTopics;
+		testingTopics = ExperimentConstructor.testingTopics;
+		numberOfInstance = 0;
 	}
 
 	/**
@@ -54,7 +64,7 @@ public class StructuredPerceptron implements IClassifier {
 	 * @param para
 	 * @return
 	 */
-	private Parameter trainModel(List<double[]> dataset, Parameter para, double learningRate) {
+	private Parameter trainModel(List<List<List<double[]>>> dataset, Parameter para, double learningRate) {
 		double[] weight = para.getWeight();
 		int mViolations = para.getNoOfViolation();
 		int length = weight.length;
@@ -62,28 +72,50 @@ public class StructuredPerceptron implements IClassifier {
 		double[] finalTotalWeight = new double[length];
 		System.arraycopy(weight, 0, finalWeight, 0, length);
 		System.arraycopy(para.getTotalWeight(), 0, finalTotalWeight, 0, length);
+		List<List<double[]>> goodDatas = dataset.get(0);
+		List<List<double[]>> badDatas = dataset.get(1);
+		for (int i = 0; i < goodDatas.size(); i++) {
+			List<double[]> goodData = goodDatas.get(i);
+			List<double[]> badData = badDatas.get(i);
+			
+			// constraints
+			for (double[] goodNumericFeatures : goodData) {
+				for (double[] badNumericFeatures : badData) {
+					numberOfInstance += 1;
+					double goodCostScore = DoubleOperation.time(finalWeight, goodNumericFeatures);
+					double badCostScore = DoubleOperation.time(finalWeight, badNumericFeatures);
 
-		for (double[] data : dataset) {
-			double[] goodNumericFeatures = new double[length];
-			double[] badNumericFeatures = new double[length];
-			System.arraycopy(data, 0, goodNumericFeatures, 0, length);
-			System.arraycopy(data, length, badNumericFeatures, 0, length);
-
-			double goodCostScore = DoubleOperation.time(finalWeight, goodNumericFeatures);
-			double badCostScore = DoubleOperation.time(finalWeight, badNumericFeatures);
-
-			// violated constraint
-			if (goodCostScore <= badCostScore) {
-				mViolations += 1;
-				double[] direction = DoubleOperation.minus(goodNumericFeatures, badNumericFeatures);
-				double[] term = DoubleOperation.time(direction, learningRate);
-				finalWeight = DoubleOperation.add(finalWeight, term);
-				finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
+					// violated constraint
+					if (goodCostScore <= badCostScore) {
+						mViolations += 1;
+						double[] direction = DoubleOperation.minus(goodNumericFeatures, badNumericFeatures);
+						double[] term = DoubleOperation.time(direction, learningRate);
+						finalWeight = DoubleOperation.add(finalWeight, term);
+						finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
+					}
+				}
 			}
 		}
 
 		ResultOutput.writeTextFile(logFile, "the violated constraint : " + (mViolations - para.getNoOfViolation()));
 		return new Parameter(finalWeight, finalTotalWeight, mViolations);
+	}
+	
+	/**
+	 * 
+	 * @param totalWeight
+	 * @param violation
+	 * @return
+	 */
+	private double[] generateFixedWeight(double[] totalWeight, int violation) {
+		int length = totalWeight.length;
+		double[] otherTotalWeight = new double[length];
+		System.arraycopy(totalWeight, 0, otherTotalWeight, 0, length);
+		double[] learnedWeight = new double[length];
+		if (violation != 0) {
+			learnedWeight = DoubleOperation.divide(otherTotalWeight, violation);
+		}
+		return learnedWeight;
 	}
 	
 	/**
@@ -94,22 +126,28 @@ public class StructuredPerceptron implements IClassifier {
 		ResultOutput.writeTextFile(logFile, "\nStructured Perceptron with Iteration : " + mEpoch);
 		double[] learningRates = DoubleOperation.createDescendingArray(1, 0, mEpoch);
 		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
-		boolean binary = Boolean.parseBoolean(mProps.getProperty(EecbConstants.IO_BINARY_PROP, "false"));
+		LargetFileReading reader = new LargetFileReading();
 		
+		Dagger dagger = new Dagger();
+		ResultOutput.writeTextFile(experimentFolder + "/classification-training.csv", "ANOTHER EXPERIMENT");
+		ResultOutput.writeTextFile(experimentFolder + "/classification-testing.csv", "ANOTHER EXPERIMENT");
 		for (int i = 0; i < mEpoch; i++) {
+			int violation = para.getNoOfViolation();
 			double learningRate = learningRates[i];
 			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
 			for (String path : paths) {
-				List<double[]> dataset = null;
-				if (binary) {
-					dataset = readByteData(path);
-				} else {
-					dataset = readTextData(path);
-				}
-				
+				List<List<List<double[]>>> dataset = reader.readData(path);
 				ResultOutput.writeTextFile(logFile, path + " data size : " + dataset.size() );
 				para = trainModel(dataset, para, learningRate);
 			}
+			
+			int afterViolation = para.getNoOfViolation();
+			
+			ResultOutput.writeTextFile(experimentFolder + "/training.csv", violation + "\t" + afterViolation + "\t" + (afterViolation - violation) + "\t" + numberOfInstance);
+			numberOfInstance = 0;
+			double[] learnedWeight = dagger.generateWeightForTesting(para);
+			dagger.testDocument(trainingTopics, learnedWeight, i, 0, false, "classification-training", false);
+			dagger.testDocument(testingTopics, learnedWeight, i, 0, false, "classification-testing", false);
 			
 		}
 		
@@ -132,80 +170,5 @@ public class StructuredPerceptron implements IClassifier {
 		
 		return trainedPara;
 	}
-	
 
-	/**
-	 * read data
-	 * 	
-	 * @param path
-	 * @return
-	 */
-	private List<double[]> readTextData(String path) {
-		List<double[]> datas = new ArrayList<double[]>();
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(path));
-			String line;
-			while ((line = reader.readLine()) != null) {
-				if (line.equals("")) {
-					continue;
-				}
-				
-				double[] data = DoubleOperation.transformString(line, ",");
-				datas.add(data);
-			}
-			reader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-
-		return datas;
-	}
-	
-	/**
-	 * read data from byte file
-	 * 
-	 * @param path
-	 * @return
-	 */
-	private List<double[]> readByteData(String path) {
-		DataInputStream dis = null;
-		List<double[]> dataset = new ArrayList<double[]>();
-		int length = FeatureFactory.getFeatures().length;
-		try {
-			dis = new DataInputStream(new FileInputStream(path));
-			double[] datas = new double[2 * length];
-			int i = 0;
-			while (true) {
-				double data = dis.readDouble();
-				char ch = dis.readChar();
-				datas[i] = data;
-				if (ch == '\n') {
-					dataset.add(datas);
-					datas = new double[2 * length];
-					i = 0;
-					continue;
-				}
-				i++;
-			}
-		} catch (EOFException eof) {
-			
-		} catch (FileNotFoundException noFile) {
-			
-		} catch (IOException io) {
-			
-		} catch (Throwable anything) {
-			
-		} finally {
-			if (dis != null) {
-				try {
-					dis.close();
-				} catch (IOException ignored) {
-				}
-			}
-
-		}
-		
-		return dataset;
-	}
 }

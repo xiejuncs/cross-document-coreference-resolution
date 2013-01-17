@@ -33,9 +33,6 @@ public class ConstraintGeneration {
 	/* enable the constraint enforced between the states in the beam and not in the beam */
 	private final boolean enableBeamUnBeamConstraint;
 	
-	/* generate all constraint (true) or just violated constraint(false) */
-	private final boolean constraintGenerationStyle;
-	
 	/**
 	 * constructor function
 	 * 
@@ -47,7 +44,6 @@ public class ConstraintGeneration {
 		enablePreviousCurrentConstraint = Boolean.parseBoolean(props.getProperty( EecbConstants.ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP, "false"));
 		enableBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMCONSTRAINT_PROP, "true"));
 		enableBeamUnBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMUNBEAMCONSTRAINT_PROP, "true"));
-		constraintGenerationStyle = Boolean.parseBoolean(props.getProperty(EecbConstants.CONSTRAINT_GENERATION_PROP, "false"));
 	}
 	
 	/**
@@ -81,8 +77,8 @@ public class ConstraintGeneration {
 		
 		// previous and current constraint
 		if (enablePreviousCurrentConstraint) {
-			String constraint = generateConstraint(currentBestState, previousBestState);
-			allConstraints.add(constraint);
+			List<String> constraint = generateConstraint(currentBestState, previousBestState);
+			allConstraints.addAll(constraint);
 		}
 		
 		// write constraint
@@ -109,12 +105,12 @@ public class ConstraintGeneration {
 		List<String> constraints = new ArrayList<String>();
 
 		State<CorefCluster> bestState = beamLists.get(0);
+		constraints.add(buildGoodConstraint(bestState));
+		
 		for (int i = 1; i < beamLists.size(); i++) {
 			State<CorefCluster> state = beamLists.get(i);
-			String constraint = generateConstraint(bestState, state);
-			if (!constraint.equals("")) {
-				constraints.add(constraint);
-			}
+			String constraint = buildBadConstraint(state);
+			constraints.add(constraint);
 		}
 		
 		return constraints;
@@ -129,18 +125,56 @@ public class ConstraintGeneration {
 	 */
 	private List<String> generateBeamUnBeamConstraint(List<State<CorefCluster>> beamLists, Map<String, State<CorefCluster>> states) {
 		List<String> constraints = new ArrayList<String>();
+		constraints.add("NEWDATASET");
 		
-		for (State<CorefCluster> goodState : beamLists) {
-			for (String stateID : states.keySet()) {
-				State<CorefCluster> badState = states.get(stateID);
-				String constraint = generateConstraint(goodState, badState);
-				if (!constraint.equals("")) {
-					constraints.add(constraint);
-				}
-			}
+		// good constraint
+		for (State<CorefCluster> state : beamLists) {
+			String constraint = buildGoodConstraint(state);
+			constraints.add(constraint);
+		}
+		
+		// bad constraint
+		for (String stateID : states.keySet()) {
+			State<CorefCluster> state = states.get(stateID);
+			String constraint = buildBadConstraint(state);
+			// This kind of data does not matter
+			if (constraint.length() == 1) continue;
+			constraints.add(constraint);
 		}
 
 		return constraints;
+	}
+	
+	// build good constraint
+	public String buildGoodConstraint(State<CorefCluster> state) {
+		return ("G\t" + buildSparseConstraint(state).toString()).trim();
+	}
+	
+	// build bad constraint
+	public String buildBadConstraint(State<CorefCluster> state) {
+		return ("B\t" + buildSparseConstraint(state).toString()).trim();
+	}
+	
+	/**
+	 * build sparse representation of the features, which means just record the nonzero value into the file
+	 * 
+	 * @param state
+	 * @return
+	 */
+	private String buildSparseConstraint(State<CorefCluster> state) {
+		String[] featureTemplate = FeatureFactory.getFeatures();
+		StringBuilder sb = new StringBuilder();
+		Counter<String> features = state.getFeatures();
+		
+		for (int i = 0; i < featureTemplate.length; i++) {
+			String feature = featureTemplate[i];
+			double value = features.getCount(feature);
+			if (value != 0.0) {
+				sb.append(i + ":" + value + "\t");
+			}
+		}
+		
+		return sb.toString().trim();
 	}
 	
 	/**
@@ -150,70 +184,13 @@ public class ConstraintGeneration {
 	 * @param badState
 	 * @return
 	 */
-	private String generateConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
-		String constraint = "";
+	private List<String> generateConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
+		List<String> constraints = new ArrayList<String>();
 		
-		if (constraintGenerationStyle) {
-			// generate all constraint
-			constraint = generateAllConstraint(goodState, badState);
-			
-		} else {
-			// generate the violated constraint
-			constraint = generateViolatedConstraint(goodState, badState);
-		}
+		constraints.add(buildGoodConstraint(goodState));
+		constraints.add(buildBadConstraint(badState));
 		
-		return constraint;
-	}
-	
-	// generate all constraint
-	private String generateAllConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
-		return buildConstraint(goodState, badState);
-	}
-	
-	// generate just violated constraint
-	private String generateViolatedConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
-		String constraint = "";
-		
-		double goodStateLossScore = goodState.getScore()[0];
-		double goodStateCostScore = goodState.getCostScore();
-		
-		double badStateLossScore = badState.getScore()[0];
-		double badStateCostScore = badState.getCostScore();
-		
-		// if their scores are equal, do not update
-		if (goodStateLossScore != badStateLossScore) {
-			// violated constraint
-			if (goodStateCostScore <= badStateCostScore) {
-				constraint = buildConstraint(goodState, badState);
-			}
-		}
-		
-		return constraint;
-	}
-	
-	/**
-	 * generate violated constraint
-	 * 
-	 * @param goodState
-	 * @param badState
-	 * @return
-	 */
-	public String buildConstraint(State<CorefCluster> goodState, State<CorefCluster> badState) {
-		Counter<String> goodFeatures = goodState.getFeatures();
-		Counter<String> badFeatures = badState.getFeatures();
-		
-		String[] featureTemplate = FeatureFactory.getFeatures();
-		StringBuilder sb = new StringBuilder();
-		for (String feature : featureTemplate) {
-			double count = goodFeatures.getCount(feature);
-			sb.append(count + ",");
-		}
-		for (String feature : featureTemplate) {
-			double count = badFeatures.getCount(feature);
-			sb.append(count + ",");
-		}
-		
-		return sb.toString().trim();
+		return constraints;
 	}
 
 }
