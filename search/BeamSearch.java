@@ -319,24 +319,11 @@ public class BeamSearch implements ISearch {
 		int msearchStep = 1;
 		while (beam.size() != 0 && (msearchStep < maximumSearch)) {
 			// the state with the highest score
-			double priority = beam.getPriority();
 			State<CorefCluster> state = beam.next();
 			
 			// whether continue the search: stopping criterion : greedy style, if local score 
 			// is smaller than the global score, stop the search
-			if (priority >= globalScore) {
-				globalScore = priority;
-				previousBestState = bestState;
-				bestState = state;
-			}
 			
-			// stopping criterion
-			if ((globalScore == 1.0) || (globalScore > priority) || (state.getID().equals("HALT")) ) {
-				ResultOutput.writeTextFile(logFile, "search stop with the loss score : " + globalScore);
-				generateStateDocument(document, bestState);
-				break;
-			}
-		
 			// debug information
 			ResultOutput.writeTextFile(logFile, "action " + msearchStep);
 			ResultOutput.printScoreInformation(state.getScore(), type, logFile);
@@ -382,22 +369,38 @@ public class BeamSearch implements ISearch {
 					}
 					
 					// add the state into the beam
-					if (beam.isEmpty()) {
-						beam.add(initial, stateScore[0]);
-					} else {
-						double highestPriority = beam.getPriority();
-						if (highestPriority == stateScore[0]) {
-							double beamcostscore = beam.peek().getCostScore();
-							if (initial.getCostScore() > beamcostscore) {
-								State<CorefCluster> beamState = beam.next();
-								beam.add(initial, highestPriority);
-							}
-						} else {
-							beam.add(initial, stateScore[0]);
-						}
-					}
+//					if (beam.isEmpty()) {
+//						beam.add(initial, stateScore[0]);
+//					} else {
+//						double highestPriority = beam.getPriority();
+//						if (highestPriority == stateScore[0]) {
+//							double beamcostscore = beam.peek().getCostScore();
+//							if (initial.getCostScore() > beamcostscore) {
+//								State<CorefCluster> beamState = beam.next();
+//								beam.add(initial, highestPriority);
+//							}
+//						} else {
+//							beam.add(initial, stateScore[0]);
+//						}
+//					}
+					beam.add(initial, initial.getScore()[0]);
 					
 					states.put(action, initial);
+				}
+				
+				State<CorefCluster> stateinBeam = beam.peek();
+				double priority = beam.getPriority();
+				if (priority >= globalScore) {
+					globalScore = priority;
+					previousBestState = bestState;
+					bestState = state;
+				}
+				
+				// stopping criterion
+				if ((globalScore == 1.0) || (globalScore > priority) || (stateinBeam.getID().equals("HALT")) ) {
+					ResultOutput.writeTextFile(logFile, "search stop with the loss score : " + globalScore);
+					generateStateDocument(document, bestState);
+					break;
 				}
 				
 				// output constraints
@@ -459,36 +462,6 @@ public class BeamSearch implements ISearch {
 			// the state with the highest cost score and print its related information
 			State<CorefCluster> state = beam.next();
 			
-			// halt stopping condition
-			if (stopping.equals("halt")) {
-				if (state.getID().equals("HALT")) {
-					generateStateDocument(document, previousBestState);
-					stopSearch = true;
-				} else {
-					previousBestState = state;
-				}
-			}
-			
-			// tuning stopping condition
-			if (stopping.equals("tuning")) {
-				if (globalCostScore < state.getCostScore()) {
-					globalCostScore = state.getCostScore();
-					stopscore = globalCostScore / stoppingRate;
-				}
-				
-				if ((state.getCostScore() < stopscore)) {
-					generateStateDocument(document, previousBestState);
-					stopSearch = true;
-				} else {
-					previousBestState = state;
-				}
-			}
-			
-			// if satisfied, stop the search
-			if (stopSearch) {
-				break;
-			}
-			
 			// debug information
 			ResultOutput.writeTextFile(logFile, "action " + msearchStep);
 			double[] scores = state.getScore();
@@ -545,6 +518,42 @@ public class BeamSearch implements ISearch {
 	            	
 	            	states.put(action, initial);
 				}				
+				
+				if (beam.size() == 0) {
+					break;
+				}
+				
+				State<CorefCluster> stateinBeam = beam.peek();
+				
+				// halt stopping condition
+				if (stopping.equals("halt")) {
+					if (stateinBeam.getID().equals("HALT")) {
+						generateStateDocument(document, previousBestState);
+						stopSearch = true;
+					} else {
+						previousBestState = stateinBeam;
+					}
+				}
+				
+				// tuning stopping condition
+				if (stopping.equals("tuning")) {
+					if (globalCostScore < stateinBeam.getCostScore()) {
+						globalCostScore = stateinBeam.getCostScore();
+						stopscore = globalCostScore / stoppingRate;
+					}
+					
+					if ((stateinBeam.getCostScore() < stopscore)) {
+						generateStateDocument(document, previousBestState);
+						stopSearch = true;
+					} else {
+						previousBestState = stateinBeam;
+					}
+				}
+				
+				// if satisfied, stop the search
+				if (stopSearch) {
+					break;
+				}
 				
 				// output feature
 				if (outputFeature && beam.size() > 0) {

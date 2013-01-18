@@ -110,9 +110,9 @@ public class Dagger implements IMethod {
 				para = trainModel(para, i, j);
 				
 				//testing
-				ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Testing Iteration Epoch : " + i + "; Testing Model : " + j + "\n\n");
-				ResultOutput.printParameter(para, logFile);
-				testModel(generateWeightForTesting(para), i, j);
+//				ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Testing Iteration Epoch : " + i + "; Testing Model : " + j + "\n\n");
+//				ResultOutput.printParameter(para, logFile);
+//				testModel(generateWeightForTesting(para), i, j);
 				
 				// add returned parameter to the final parameters
 				paras.add(para.makeCopy());
@@ -226,7 +226,14 @@ public class Dagger implements IMethod {
 	 */
 	private List<String> getPaths(int i, int j) {
 		List<String> filePaths = new ArrayList<String>();
-		filePaths.addAll(getPaths(trainingTopics, i, j));
+		// TODO
+		boolean random = false;
+		if (random) {
+			filePaths.addAll(getPaths(trainingTopics));
+		} else {
+			filePaths.addAll(getPaths(trainingTopics, i, j));
+		}
+		
 		return filePaths;
 	}
 	

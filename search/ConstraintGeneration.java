@@ -147,12 +147,12 @@ public class ConstraintGeneration {
 	
 	// build good constraint
 	public String buildGoodConstraint(State<CorefCluster> state) {
-		return ("G\t" + buildSparseConstraint(state).toString()).trim();
+		return ("G:" + state.getScore()[0] +"\t" + buildSparseConstraint(state).toString()).trim();
 	}
 	
 	// build bad constraint
 	public String buildBadConstraint(State<CorefCluster> state) {
-		return ("B\t" + buildSparseConstraint(state).toString()).trim();
+		return ("B:" + state.getScore()[0] +"\t" + buildSparseConstraint(state).toString()).trim();
 	}
 	
 	/**

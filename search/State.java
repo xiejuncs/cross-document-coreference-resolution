@@ -29,6 +29,8 @@ public class State<T> implements Serializable {
 	/** features */
 	private Counter<String> mfeatures;
 	
+	private double[] numericalFeatures;
+	
 	/** metric score, respectively F1, Precision and Recall */
 	private double[] mMetricScore;
 	
@@ -39,6 +41,8 @@ public class State<T> implements Serializable {
 	private String scoreDetailInformation;
 	
 	private String featureString;
+	
+	private double F1score;
 
 	public State() {
 		state = new HashMap<Integer, T>();
@@ -47,6 +51,26 @@ public class State<T> implements Serializable {
 		mMetricScore = new double[3];
 		mCostScore = 0.0;
 		scoreDetailInformation = "";
+		F1score = 0.0;
+		
+		numericalFeatures = new double[FeatureFactory.getFeatures().length];
+	}
+	
+	public void setNumericalFeatures(double[] features) {
+		assert features.length == numericalFeatures.length;
+		System.arraycopy(features, 0, numericalFeatures, 0, features.length);
+	}
+	
+	public double[] getNumericalFeatures() {
+		return numericalFeatures;
+	}
+	
+	public void setF1Score(double score) {
+		F1score = score;
+	}
+	
+	public double getF1Score() {
+		return F1score;
 	}
 	
 	public void setScoreDetailInformation(String scoreInformation) {
