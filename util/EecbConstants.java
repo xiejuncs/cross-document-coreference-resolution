@@ -28,19 +28,19 @@ public class EecbConstants {
 	/** the topics used in the Stanford experiments 
 	 * "12", "22", "38",                                                        // development topics 
 	 * */
-	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "12", "16", "22", "25",  "37", "38", "40", "44",     // training topics
-														"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
-														"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
-														"36", "39", "41", "42", "45"};
+//	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "12", "16", "22", "25",  "37", "38", "40", "44",     // training topics
+//														"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
+//														"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
+//														"36", "39", "41", "42", "45"};
 	
-//	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
-//		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
-//		"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
-//		"36", "39", "41", "42", "45"};
+	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
+		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
+		"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
+		"36", "39", "41", "42", "45"};
 	
 	/** development topics */
-	public static final String[] stanfordDevelopmentTopics = {"30", "31", "43"};
-//	public static final String[] stanfordDevelopmentTopics = {"12", "22", "38"};
+	//public static final String[] stanfordDevelopmentTopics = {"30", "31", "43"};
+	public static final String[] stanfordDevelopmentTopics = {"12", "22", "38"};
 	
 	/** the total topics */
 	public static final String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
@@ -50,7 +50,7 @@ public class EecbConstants {
 											 "43", "44", "45"};
 	
 	/** debug topics */
-	public static final String[] debugTopics = {"16", "10", "38", "20"};
+	public static final String[] debugTopics = {"10", "16", "20", "38"};
 	
 	/** debug development topics */
 	public static final String[] debugDevelopmentTopics = {"6"};
@@ -58,6 +58,7 @@ public class EecbConstants {
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
 	
+	// traditional features
 	public static String[] featuresName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
 		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
 		"SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", "SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", 
@@ -121,7 +122,6 @@ public class EecbConstants {
 	public static final String METHOD_EPOCH_PROP = "dcoref.method.epoch";
 	public static final String METHOD_FUNCTION_NUMBER_PROP = "dcoref.method.function.number.prop";
 	public static final String CONLL_SCORER_PROP = "dcoref.conll.scorer";
-	public static final String CONSTRAINT_GENERATION_PROP = "dcoref.constraint.generation";
 	public static final String SEARCH_TRAINING_PROP = "dcoref.searchtraining";
 	public static final String IO_BINARY_PROP = "dcoref.io.binary";
 	

@@ -27,25 +27,47 @@ public class CoNLLScorerHelper {
 	private String mConllScorerPath;
 	
 	/* final result */
-	private double finalCoNllF1Result;
+	private double coNllF1Result;
 	
-	/* MUC loss score result */
+	/* MUC score result */
 	private double mucScoreF1Result;
 	
-	/* Bcubed loss score result */
+	/* Bcubed score result */
 	private double bcubedScoreF1Result;
 	
-	/* ceaf loss score result */
+	/* ceaf score result */
 	private double ceafScoreF1Result;
+	
+	/* BLANC result */
+	private double blancScoreF1Result;
 	
 	/* experiment configuration */
 	private final Properties experimentProps;
+	
+	/**
+	 * constructor
+	 * 
+	 * @param epoch
+	 * @param logFile
+	 */
+	public CoNLLScorerHelper(int epoch, String logFile) {
+		mEpoch = epoch;
+		mLogFile = logFile;
+		String clusterScorePath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
+		mConllScorerPath = ExperimentConstructor.experimentProps.getProperty(EecbConstants.CONLL_SCORER_PROP, clusterScorePath);
+		coNllF1Result = 0.0;
+		mucScoreF1Result = 0.0;
+		bcubedScoreF1Result = 0.0;
+		ceafScoreF1Result = 0.0;
+		blancScoreF1Result = 0.0;
+		experimentProps = ExperimentConstructor.experimentProps;
+	}
 	
 	/*
 	 * return final conll F1 result
 	 */
 	public double getFinalCoNllF1Result() {
-		return finalCoNllF1Result;
+		return coNllF1Result;
 	}
 	
 	/*
@@ -81,40 +103,31 @@ public class CoNLLScorerHelper {
 	}
 	
 	/**
-	 * constructor
-	 * 
-	 * @param epoch
-	 * @param logFile
-	 */
-	public CoNLLScorerHelper(int epoch, String logFile) {
-		mEpoch = epoch;
-		mLogFile = logFile;
-		String clusterScorePath = "/nfs/guille/xfern/users/xie/Experiment/corpus/scorer/v4/scorer.pl";
-		mConllScorerPath = ExperimentConstructor.experimentProps.getProperty(EecbConstants.CONLL_SCORER_PROP, clusterScorePath);
-		finalCoNllF1Result = 0.0;
-		mucScoreF1Result = 0.0;
-		bcubedScoreF1Result = 0.0;
-		ceafScoreF1Result = 0.0;
-		experimentProps = ExperimentConstructor.experimentProps;
-	}
-	
-	/**
 	 * print the final Conll score 
 	 * 
 	 * @param mGoldCorefCluster
 	 * @param mPredictedCorefCluster
 	 * @param phase
 	 */
-	public void printFinalCoNLLScore(String mGoldCorefCluster, String mPredictedCorefCluster, String phase) {
+	public double[] printFinalCoNLLScore(String mGoldCorefCluster, String mPredictedCorefCluster, String phase) {
+		double[] finalScores = new double[5];
 		try {
 			ResultOutput.writeTextFile(mLogFile, "\n\n");
 			ResultOutput.writeTextFile(mLogFile, "the score summary of resolution for " + phase + " on the " + mEpoch + "th iteration");
 			String summary = SieveCoreferenceSystem.getConllEvalSummary(mConllScorerPath, mGoldCorefCluster, mPredictedCorefCluster);
 			printScoreSummary(summary, true);
 			printFinalScore(summary);
+			
+			finalScores[0] = mucScoreF1Result;
+			finalScores[1] = bcubedScoreF1Result;
+			finalScores[2] = ceafScoreF1Result;
+			finalScores[3] = blancScoreF1Result;
+			finalScores[4] = coNllF1Result;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+		
+		return finalScores;
 	}
 	
 	/**
@@ -155,18 +168,30 @@ public class CoNLLScorerHelper {
 		while (f1Matcher.find()) {
 			F1s[i++] = Double.parseDouble(f1Matcher.group(1));
 		}
-
+		
 		// MUC
 		mucScoreF1Result = F1s[0];
 
-		//BCubed
+		// BCubed
 		bcubedScoreF1Result = F1s[1];
 
-		//CEAF
+		// CEAF
 		ceafScoreF1Result = F1s[3];
+		
+		// BLAC score
+		Pattern fBLANC = Pattern.compile("BLANC:.*F1: (.*)%");
+		Matcher fBLANCMatcher = fBLANC.matcher(summary);
+		double[] fBLANCs = new double[5];
+		i = 0;
+		while (fBLANCMatcher.find()) {
+			fBLANCs[i++] = Double.parseDouble(fBLANCMatcher.group(1));
+		}
+		
+		blancScoreF1Result = fBLANCs[0];
 
-		finalCoNllF1Result = (F1s[0]+F1s[1]+F1s[3])/3;
-		ResultOutput.writeTextFile(mLogFile, "Final score ((muc+bcub+ceafe)/3) = "+ finalCoNllF1Result);
+		coNllF1Result = (F1s[0]+F1s[1]+F1s[3])/3;
+		
+		ResultOutput.writeTextFile(mLogFile, "Final score ((muc+bcub+ceafe)/3) = "+ coNllF1Result);
 	}
 	
 }

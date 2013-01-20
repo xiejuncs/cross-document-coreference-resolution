@@ -11,6 +11,7 @@ import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
+import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.pipeline.DefaultPaths;
 
@@ -32,10 +33,14 @@ public class CorefSystem {
 	private LexicalizedParser parser;
 	
 	// coref system propery
-	private Properties props;
+	private Properties corefProps;
+	
+	public CorefSystem() {
+		this(true);
+	}
 	
 	// use the default sieve configuration
-	public CorefSystem() {
+	public CorefSystem(boolean enableParser) {
 		mExperimentProps = ExperimentConstructor.experimentProps;
 		String sieve = "";
 		if (mExperimentProps.getProperty(EecbConstants.SIEVES_PROP).equals("partial")) {
@@ -44,16 +49,18 @@ public class CorefSystem {
 			sieve = EecbConstants.FULL_SIEVE_STRING;
 		}
 		
-		generateCorefSystem(sieve);
+		generateCorefSystem(sieve, enableParser);
 	}
 	
-	private void generateCorefSystem(String sieve) {
-		props = setProperties(sieve);
+	private void generateCorefSystem(String sieve, boolean enableParser) {
+		corefProps = setProperties(sieve);
 		
-		setCorefSystem(props);
+		setCorefSystem(corefProps);
 		
 		// set parser for coref system
-		parser = makeParser(props);
+		if (enableParser) {
+			parser = makeParser(corefProps);
+		}
 	}
 	
 	private Properties setProperties(String sieve) {
@@ -69,7 +76,7 @@ public class CorefSystem {
 		}
 		String dataPath = corpusPath + "corpus/EECB1.0/data/";
 		props.setProperty("dcoref.eecb", dataPath);
-		props.setProperty("dcoref.score", mExperimentProps.getProperty(EecbConstants.SCORE_PROP));
+		props.setProperty("dcoref.score", mExperimentProps.getProperty(EecbConstants.SCORE_PROP, "false"));
 		props.setProperty("dcoref.sievePasses", sieve);
 		
 		return props;
@@ -101,13 +108,13 @@ public class CorefSystem {
 	 */
 	public Document getDocument(String topic, boolean goldOnly) throws Exception {
 		EmentionExtractor mentionExtractor = null;
-	    mentionExtractor = new EECBMentionExtractor(topic, parser, corefSystem.dictionaries(), props, corefSystem.semantics(), goldOnly);
+	    mentionExtractor = new EECBMentionExtractor(topic, parser, corefSystem.dictionaries(), corefProps, corefSystem.semantics(), goldOnly);
 	    
 	    assert mentionExtractor != null;
 	    // Set mention finder
-	    String mentionFinderClass = props.getProperty(Constants.MENTION_FINDER_PROP);
+	    String mentionFinderClass = corefProps.getProperty(Constants.MENTION_FINDER_PROP);
 	    if (mentionFinderClass != null) {
-	        String mentionFinderPropFilename = props.getProperty(Constants.MENTION_FINDER_PROPFILE_PROP);
+	        String mentionFinderPropFilename = corefProps.getProperty(Constants.MENTION_FINDER_PROPFILE_PROP);
 	        CorefMentionFinder mentionFinder;
 	        if (mentionFinderPropFilename != null) {
 	            Properties mentionFinderProps = new Properties();
@@ -128,8 +135,19 @@ public class CorefSystem {
 	    return document;
 	}
 	
+	// return the coreference system
 	public SieveCoreferenceSystem getCorefSystem() {
 		return corefSystem;
+	}
+	
+	// apply the pronoun sieve to the document
+	public void applyPronounSieve(Document document) {
+		try {
+			DeterministicCorefSieve pronounSieve = (DeterministicCorefSieve) Class.forName("edu.stanford.nlp.dcoref.sievepasses.PronounMatch").getConstructor().newInstance();
+			corefSystem.coreference(document, pronounSieve);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
 }

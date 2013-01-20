@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
+import edu.oregonstate.score.CoNLLScorerHelper;
 import edu.oregonstate.search.State;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
@@ -29,6 +31,7 @@ import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
+import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 import edu.stanford.nlp.stats.Counter;
 
@@ -187,7 +190,7 @@ public class ResultOutput {
 			CorefCluster cluster = clusters.get(key);
 			sb.append(Integer.toString(key) + "[ ");
 			for (Mention mention : cluster.getCorefMentions()) {
-				sb.append(mention.mentionID + " ");
+				sb.append(mention.mentionID + " : " + mention.spanToString() + "; ");
 			}
 			sb.append(" ]");
 			sb.append("\n");
@@ -352,5 +355,45 @@ public class ResultOutput {
 		
 		return scores;
 	}
+
+	/**
+	 * print document results to file which is used for CoNLL scoring
+	 * 
+	 * @param document
+	 * @param predictedCorefCluster
+	 * @param goldCorefCluster
+	 */
+	public static void printDocumentResultToFile(Document document, String goldCorefCluster, String predictedCorefCluster,  boolean postProcess) {
+		PrintWriter writerPredicted = null;
+		PrintWriter writerGold = null;
+		try {
+			writerPredicted = new PrintWriter(new FileOutputStream(predictedCorefCluster, true));
+			writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster, true));
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		
+		SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
+	    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
+	    
+	    writerPredicted.close();
+	    writerPredicted.close();
+	}
 	
+	/**
+	 * print the final conll result
+	 * 
+	 * @param index
+	 * @param logFile
+	 * @param goldCorefCluster
+	 * @param predictedCorefCluster
+	 * @param phase
+	 * @param outputFile
+	 */
+	public static double[] printCorpusResult(int index, String logFile, String goldCorefCluster, String predictedCorefCluster, String phase) {
+		CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(index, logFile);
+		double[] finalScores = conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefCluster, phase);
+		
+		return finalScores;
+	}
 }

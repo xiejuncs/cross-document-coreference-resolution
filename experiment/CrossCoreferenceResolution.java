@@ -51,8 +51,11 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 				String path = experimentResultFolder + "/" + topic;
 				Command.createDirectory(path);
 			}
+			
+			boolean trainGoldOnly = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.TRAIN_GOLD_PROP, "true"));
+			String gold = trainGoldOnly ? "gold" : "predicted";
 
-			File source = new File(corpusPath + "corpus/documentobject");
+			File source = new File(corpusPath + "corpus/" + gold +"documentobject");
 			String serializedOutput = experimentResultFolder + "/documentobject";
 			Command.createDirectory(serializedOutput);
 			File des = new File(serializedOutput);
@@ -68,7 +71,6 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		
 		// 2. do search and training
 		boolean searchTraining = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.SEARCH_TRAINING_PROP, "true"));
-		
 		if (searchTraining) {
 			String methodName = experimentProps.getProperty(EecbConstants.METHOD_PROP, "Dagger");
 			IMethod method = EecbConstructor.createMethodModel(methodName);
@@ -82,10 +84,19 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		}
 	
 		// remove document object
-		ResultOutput.deleteResult(experimentResultFolder + "/documentobject");
+		// 3. remove the document object
+		// if data-set copy, then remove,
+		// if data-set generated, then not remove
+		if (dataSetCopy) {
+			ResultOutput.deleteResult(experimentResultFolder + "/documentobject");
+		}
 	}
 	
-	
+	/**
+	 * The main entry point of the experiment
+	 * 
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		if (args.length > 1) {
 			 System.out.println("there are more parameters, you just can specify one path parameter.....");

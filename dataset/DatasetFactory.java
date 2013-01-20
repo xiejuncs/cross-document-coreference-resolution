@@ -1,20 +1,18 @@
 package edu.oregonstate.dataset;
 
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.score.CoNLLScorerHelper;
 import edu.oregonstate.util.Command;
 import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
+import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 
 /**
  * Create a series of Document objects which are serialized
@@ -90,21 +88,17 @@ public class DatasetFactory {
 		String[] testingTopics = topics.get(1);
 		String[] developmentTopics = topics.get(2);
 		
-		// training
-		generateSingleSet(trainingTopics, "training");
+		// training set
+		generateSingleSet(trainingTopics, "training-generation");
 		
-		// validation
+		// validation set 
 		String stopping = mProps.getProperty(EecbConstants.STOPPING_PROP, "none");
-		boolean tuningParameter = false;
 		if (stopping.equals("tuning")) {
-			tuningParameter = true;
-		}
-		if (tuningParameter) {
-			generateSingleSet(developmentTopics, "validation");
+			generateSingleSet(developmentTopics, "validation-generation");
 		}
 		
-		// testing
-		generateSingleSet(testingTopics, "testing");
+		// testing set
+		generateSingleSet(testingTopics, "testing-generation");
 	}
 	
 	/**
@@ -115,6 +109,8 @@ public class DatasetFactory {
 	 */
 	private void generateSingleSet(String[] topics, String phase) {
 		String conllResultPath = mExperimentResultFolder + "/conllResult";
+		
+		// gold only and whether post process
 		boolean goldOnly;
 		boolean postProcess;
 		if (phase.equals("testing")) {
@@ -125,41 +121,41 @@ public class DatasetFactory {
 			postProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
 		}
 		
+		// generate file
 		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase;
 		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phase;
-		PrintWriter writerPredicted = null;
-		PrintWriter writerGold = null;
-		try {
-			writerPredicted = new PrintWriter(new FileOutputStream(predictedCorefCluster));
-			writerGold = new PrintWriter(new FileOutputStream(goldCorefCluster));
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
 		
 		//
-		// generate dataset
+		// generate data set
 		//
 		for(String topic : topics) {
 			ResultOutput.writeTextFile(logFile, "create " + phase + " data set for " + topic);
 			Document document = generateDocument(topic, goldOnly);
 			totalGoalMentions += document.allGoldMentions.size();
 			totalPredictedMentions += document.allPredictedMentions.size();
+			ResultOutput.printDocumentScore(document, ScoreType.Pairwise, logFile, "single training" + " document " + topic);
 			
 			// align the three fields: allPredictedMentions, predictedMentionsOrderedBySentence, corefClusters of document
-			DocumentAlignment.updateOrderedPredictedMentions(document);
-			SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
-		    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
+			DocumentAlignment.alignDocument(document);
+			
+			// do pronoun coreference resolution
+			// all predicted mention id can change according to the merge process 
+			CorefSystem cs = new CorefSystem();
+			cs.applyPronounSieve(document);
+			
+			// do post process
+			if (postProcess) {
+				SieveCoreferenceSystem.postProcessing(document);
+			}
+			
+			ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
 		}
 		
 		//
 		// print the final result for the single set
 		//
-		CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(0, logFile);
-		conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefCluster, phase);
-		double predictedCoNLL = conllScorerHelper.getFinalCoNllF1Result();
-		double predictedScore = conllScorerHelper.getLossScoreF1Result();
-		
-		ResultOutput.writeTextFile(initialResult, phase + "," + predictedCoNLL + "," + predictedScore);
+		double[] finalScores = ResultOutput.printCorpusResult(0, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
+		ResultOutput.writeTextFile(initialResult, finalScores[0] + "\t" + finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 	}
 	
 	/**

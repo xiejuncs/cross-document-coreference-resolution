@@ -176,7 +176,7 @@ public class DoubleOperation {
 		
 		for (int i = 0; i < dimension; i++) {
 			double learningRate = startNumerical - i * gap;
-			DecimalFormat dtime = new DecimalFormat("#.##"); 
+			DecimalFormat dtime = new DecimalFormat("#.####"); 
 			learningRate= Double.valueOf(dtime.format(learningRate));
 			learningRates[i] = learningRate;
 		}
@@ -189,7 +189,7 @@ public class DoubleOperation {
 	 * 
 	 * @param weights
 	 */
-	public static void calcualateWeightDifference(List<double[]> weights, String weightFile) {
+	public static void calcualateWeightDifference(List<double[]> weights, String weightFile) {		
 		for (int i = 0; i < weights.size() - 1; i++) {
 			double[] differences = DoubleOperation.minus(weights.get(i), weights.get(i+1));
 			double sum = 0.0;

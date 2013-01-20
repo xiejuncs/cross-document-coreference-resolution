@@ -12,6 +12,6 @@ import edu.oregonstate.classifier.Parameter;
  */
 public interface IMethod {
 
-	/* according different method, execute different method */
+	/* according to different method, execute different method */
 	public List<Parameter> executeMethod();
 }

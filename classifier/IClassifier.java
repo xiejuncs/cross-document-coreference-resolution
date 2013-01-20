@@ -17,6 +17,6 @@ public interface IClassifier {
 	public Parameter train(List<String> path, Parameter para);
 	
 	/* use zero vector to train the model */
-	public Parameter train(List<String> path);
+	public Parameter train(List<String> path, int modelIndex);
 	
 }

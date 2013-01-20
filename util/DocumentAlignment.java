@@ -14,7 +14,11 @@ public class DocumentAlignment {
 	 * 
 	 * @param document
 	 */
-	public static void updateOrderedPredictedMentions(Document document) {
+	public static void alignDocument(Document document) {
+		updateOrderedPredictedMentions(document);
+	}
+	
+	private static void updateOrderedPredictedMentions(Document document) {
 		List<List<Mention>> predictedOrderedMentionsBySentence = document.getOrderedMentions();
 		Map<Integer, CorefCluster> corefClusters = document.corefClusters;
 		for (Integer clusterID : corefClusters.keySet()) {
@@ -28,14 +32,15 @@ public class DocumentAlignment {
 					int mentionStartIndex = mention.startIndex;
 					int mentionEndIndex = mention.endIndex;
 					if (mentionStartIndex == mStartIndex && mentionEndIndex == mEndIndex) {
-						mention.corefClusterID = m.corefClusterID;
+						mention.mentionID = m.mentionID;
 						break;
 					}
 				}
 				
+				
 				int mentionID = m.mentionID;
-				Mention correspondingMention = document.allPredictedMentions.get(mentionID);
-				correspondingMention.corefClusterID = clusterID;
+                Mention correspondingMention = document.allPredictedMentions.get(mentionID);
+                correspondingMention.corefClusterID = clusterID;
 			}
 		}
 	}
@@ -45,7 +50,7 @@ public class DocumentAlignment {
 	 * 
 	 * @param document
 	 */
-	public static void updateOrderedGoldMentions(Document document) {
+	private static void updateOrderedGoldMentions(Document document) {
 		List<List<Mention>> goldOrderedMentionsBySentence = document.goldOrderedMentionsBySentence;
 		Map<Integer, CorefCluster> goldClusters = document.goldCorefClusters;
 		for (Integer clusterID : goldClusters.keySet()) {
@@ -59,14 +64,14 @@ public class DocumentAlignment {
 					int mentionStartIndex = mention.startIndex;
 					int mentionEndIndex = mention.endIndex;
 					if (mentionStartIndex == mStartIndex && mentionEndIndex == mEndIndex) {
-						mention.corefClusterID = m.corefClusterID;
+						mention.mentionID = m.mentionID;
 						break;
 					}
 				}
 				
 				int mentionID = m.mentionID;
-				Mention correspondingMention = document.allGoldMentions.get(mentionID);
-				correspondingMention.corefClusterID = clusterID;
+                Mention correspondingMention = document.allPredictedMentions.get(mentionID);
+                correspondingMention.corefClusterID = clusterID;
 			}
 		}
 	}
