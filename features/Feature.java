@@ -65,17 +65,21 @@ public class Feature {
 				latterCentroid = c1.predictedCentroid;
 			}
 		}
+		
+		// Cluster Type: verb or noun
 		Mention formerRep = former.getRepresentativeMention();
 		Mention latterRep = latter.getRepresentativeMention();
 		boolean isVerb = latterRep.isVerb || formerRep.isVerb;
-
 		String mentionType = "";
 		if(!isVerb) {
 			if(formerRep.mentionType==MentionType.PROPER && latterRep.mentionType==MentionType.PROPER) mentionType = "-PROPER";
 			else if(formerRep.mentionType==MentionType.PRONOMINAL || latterRep.mentionType==MentionType.PRONOMINAL) mentionType = "-PRONOMINAL";
 			else mentionType = "-NOMINAL";
 		}
+		
 		Counter<String> features = new ClassicCounter<String>();
+		
+		// SYNONYM feature
 		double synonymNom = 0.0;
 		double synonymDenom = 0.0;
 		for(Mention m1 : c1.getCorefMentions()) {
@@ -96,7 +100,6 @@ public class Feature {
 				}
 			}
 		}
-
 		if(isVerb) {
 			features.incrementCount("SYNONYM", synonymNom/synonymDenom);
 		} else {
@@ -105,6 +108,7 @@ public class Feature {
 			}
 		}
 
+		// OTHER FEATURE except SRLAGREECOUNT
 		for(String feature : formerCentroid.keySet()) {
 			Counter<String> centFeature1 = latterCentroid.get(feature);
 			Counter<String> centFeature2 = formerCentroid.get(feature);
@@ -116,24 +120,32 @@ public class Feature {
 				Set<String> featureSet1 = new HashSet<String>();
 				featureSet1.addAll(centFeature1.keySet());
 				featureSet1.retainAll(centFeature2.keySet());
-				features.incrementCount(feature+mentionType, featureSet1.size());	
+				
+				if (featureSet1.size() > 0) {
+					features.incrementCount(feature+mentionType);
+				}
 			} else {
 				features.incrementCount(feature+mentionType, SimilarityVector.getCosineSimilarity(new SimilarityVector(centFeature1), new SimilarityVector(centFeature2)));
 			}
 		}
 		
+		// SRLAGREECOUNT feature
 		int srlAgreeCount = 0;
 		for(String feature : features.keySet()) {
+			// SRL feature
 			if(feature.startsWith("SRL")) {
 				if(features.getCount(feature) > 0) srlAgreeCount++;
 			}
 			
-			
-			if (isVerb) {
-				if (feature.equals("LEFT") || feature.equals("RIGHT")) {
-					if(features.getCount(feature) > 0) srlAgreeCount++;
+			// VERB : LEFT and RIGHT
+			if(isVerb) {
+				if (feature.startsWith("LEFT") || feature.startsWith("RIGHT")) {
+					if (features.getCount(feature) > 0) {
+						srlAgreeCount++;
+					}
 				}
 			}
+			
 		}
 		
 		features.incrementCount("SRLAGREECOUNT" + mentionType, srlAgreeCount);

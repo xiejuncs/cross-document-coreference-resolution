@@ -172,6 +172,8 @@ public class DatasetFactory {
 		
 		IDataSet mDatasetMode = createDataSetMode();
 		Document document = mDatasetMode.getData(topic, goldOnly);
+		ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
+		ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
 		
 		ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
 		ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());

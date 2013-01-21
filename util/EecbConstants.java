@@ -50,7 +50,7 @@ public class EecbConstants {
 											 "43", "44", "45"};
 	
 	/** debug topics */
-	public static final String[] debugTopics = {"10", "16", "20", "38"};
+	public static final String[] debugTopics = {"16", "10", "20", "38"};
 	
 	/** debug development topics */
 	public static final String[] debugDevelopmentTopics = {"6"};
@@ -124,5 +124,6 @@ public class EecbConstants {
 	public static final String CONLL_SCORER_PROP = "dcoref.conll.scorer";
 	public static final String SEARCH_TRAINING_PROP = "dcoref.searchtraining";
 	public static final String IO_BINARY_PROP = "dcoref.io.binary";
+	public static final String INCORPORATE_ZERO_CASE_PROP = "dcoref.incorporate.zero.case";
 	
 }

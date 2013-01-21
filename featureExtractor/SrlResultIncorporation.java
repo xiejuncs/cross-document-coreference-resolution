@@ -203,16 +203,14 @@ public class SrlResultIncorporation {
 								// if ((argumentStart <= mentionMatchStart) && (mentionMatchEnd <= argumentEnd))
 								if (!argKey.equals("AM-LOC")) {
 									if ((argumentStart <= mentionMatchStart) && (argumentEnd >= mentionMatchEnd)) {
-										mention.setArgument(argKey, mentionMatch);
-										mentionMatch.setPredicte(mention);
-										mentionMatch.SRLrole = argKey;
+										mention.addArgument(argKey, mentionMatch);
+										mentionMatch.addPredicate(mention, argKey);
 										break;
 									}
 								} else {
 									if ((argumentStart <= mentionMatchStart) && (argumentEnd >= mentionMatchEnd)) {
-										mention.setArgument(argKey, mentionMatch);
-										mentionMatch.setPredicte(mention);
-										mentionMatch.SRLrole = argKey;
+										mention.addArgument(argKey, mentionMatch);
+										mentionMatch.addPredicate(mention, argKey);
 										break;
 									}
 								}

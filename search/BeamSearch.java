@@ -18,7 +18,6 @@ import edu.oregonstate.io.LargeFileWriting;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.lossfunction.ILossFunction;
 import edu.oregonstate.score.ScorerCEAF;
-import edu.oregonstate.util.Command;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.Constants;
@@ -83,6 +82,9 @@ public class BeamSearch implements ISearch {
     /* dictionary */
     private final Dictionaries dictionaries;
     
+    /* debug mode */
+    private final boolean mDebug;
+    
     /** constructor */
     public BeamSearch() {
     	mProps = ExperimentConstructor.experimentProps;
@@ -103,6 +105,10 @@ public class BeamSearch implements ISearch {
         
         // set the dictionary
         dictionaries = new Dictionaries();
+        
+        // debug mode
+        //mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
+        mDebug = false;
     }
     
     /**
@@ -276,12 +282,12 @@ public class BeamSearch implements ISearch {
 		initial.add(i_id, cpCluster);
 		
 		// calculate the cost function for the state
-		//double costScore = costFunction.calculateCostFunction(features, weight);
+		double costScore = costFunction.calculateCostFunction(features, weight);
 		
 		// set the fields of the state
 		initial.setID(action);
 		initial.setFeatures(features);
-		//initial.setCostScore(costScore);
+		initial.setCostScore(costScore);
 	}
 	
 	/**
@@ -327,10 +333,13 @@ public class BeamSearch implements ISearch {
 			ResultOutput.writeTextFile(mscorePath, globalScore.toString() + " " + state.getCostScore());
 			
 			regenerateFeatures(document, state);
-			ResultOutput.printParameters(document, document.getID(), logFile);
-			ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
-			ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
-			ResultOutput.printClusterFeatures(document, logFile, msearchStep);
+			// print the debug information
+			if (mDebug) {
+				ResultOutput.printParameters(document, document.getID(), logFile);
+				ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
+				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
+				ResultOutput.printClusterFeatures(document, logFile, msearchStep);
+			}
 			
 			// generate actions and learn weights
 			try {
@@ -360,22 +369,6 @@ public class BeamSearch implements ISearch {
 						initial.setScore(stateScore);
 					
 					}
-					
-					// add the state into the beam
-//					if (beam.isEmpty()) {
-//						beam.add(initial, stateScore[0]);
-//					} else {
-//						double highestPriority = beam.getPriority();
-//						if (highestPriority == stateScore[0]) {
-//							double beamcostscore = beam.peek().getCostScore();
-//							if (initial.getCostScore() > beamcostscore) {
-//								State<CorefCluster> beamState = beam.next();
-//								beam.add(initial, highestPriority);
-//							}
-//						} else {
-//							beam.add(initial, stateScore[0]);
-//						}
-//					}
 					
 					beam.add(initial, initial.getScore()[0]);
 					states.put(action, initial);
@@ -446,7 +439,6 @@ public class BeamSearch implements ISearch {
 		beam.add(initialState, 0.0);
 		State<CorefCluster> previousBestState = new State<CorefCluster>();
 		
-		
 		// do search
 		int msearchStep = 1;
 		boolean stopSearch = false;
@@ -464,10 +456,13 @@ public class BeamSearch implements ISearch {
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type.toString() +" Cost score: " + localScore);
 			
 			regenerateFeatures(document, state);
-			ResultOutput.printParameters(document, document.getID(), logFile);
-			ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
-			ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
-			ResultOutput.printClusterFeatures(document, logFile, msearchStep);
+			// print the debug information
+			if (mDebug) {
+				ResultOutput.printParameters(document, document.getID(), logFile);
+				ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
+				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
+				ResultOutput.printClusterFeatures(document, logFile, msearchStep);
+			}
 			
 			try {
 				/** get the candidate lists*/

@@ -86,7 +86,7 @@ public class StructuredPerceptron implements IClassifier {
 	 * train the model according to lots of files
 	 */
 	public Parameter train(List<String> paths, Parameter para) {
-		double[] learningRates = DoubleOperation.createDescendingArray(0.1, 0, mEpoch);
+		double[] learningRates = DoubleOperation.createDescendingArray(0.001, 0, mEpoch);
 		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
 		LargetFileReading reader = new LargetFileReading();
 		Dagger dagger = new Dagger();

@@ -148,19 +148,20 @@ public class EECBMentionExtractor extends EmentionExtractor {
 
 			// Gold Mention or predicted Mentions
 			if (goldOnly) { 	
-				allPredictedMentions = new ArrayList<List<Mention>>();
-				for (int i = 0; i < allGoldMentions.size(); i++) {
-					List<Mention> sentence = new ArrayList<Mention>();
-					for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
-						Mention mention = allGoldMentions.get(i).get(j);
-						ResultOutput.serialize(mention, mention.mentionID, mentionRepositoryPath);
-						Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), mentionRepositoryPath, true);
-						copyMention.goldCorefClusterID = -1;
-						sentence.add(copyMention);
-
-					}
-					allPredictedMentions.add(sentence);
-				}
+//				allPredictedMentions = new ArrayList<List<Mention>>();
+//				for (int i = 0; i < allGoldMentions.size(); i++) {
+//					List<Mention> sentence = new ArrayList<Mention>();
+//					for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
+//						Mention mention = allGoldMentions.get(i).get(j);
+//						ResultOutput.serialize(mention, mention.mentionID, mentionRepositoryPath);
+//						Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), mentionRepositoryPath, true);
+//						copyMention.goldCorefClusterID = -1;
+//						sentence.add(copyMention);
+//
+//					}
+//					allPredictedMentions.add(sentence);
+//				}
+				allPredictedMentions = makeCopy(allGoldMentions);
 
 			} else {
 				// set the mention id here
@@ -183,6 +184,27 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		document.conllDoc = conllDocument;
 		return document;
 	}
+	
+	// make a copy of gold mentions
+	public List<List<Mention>> makeCopy(List<List<Mention>> mentions) {
+	    List<List<Mention>> copy = new ArrayList<List<Mention>>(mentions.size());
+	    for (List<Mention> sm:mentions) {
+	      List<Mention> sm2 = new ArrayList<Mention>(sm.size());
+	      for (Mention m:sm) {
+	        Mention m2 = new Mention();
+	        m2.goldCorefClusterID = m.goldCorefClusterID;
+	        m2.mentionID = m.mentionID;
+	        m2.startIndex = m.startIndex;
+	        m2.endIndex = m.endIndex;
+	        m2.originalSpan = m.originalSpan;
+	        m2.dependency = m.dependency;
+	        m2.sentNum = m.sentNum;
+	        sm2.add(m2);
+	      }
+	      copy.add(sm2);
+	    }
+	    return copy;
+	  }
 
 	/** 
 	 * there is some mis-annotation included in the corpus, if two mentions of the same sentence included 

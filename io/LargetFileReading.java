@@ -77,12 +77,16 @@ public class LargetFileReading {
  		List<List<State<CorefCluster>>> goodFeatures = new ArrayList<List<State<CorefCluster>>>();
  		List<List<State<CorefCluster>>> badFeatures = new ArrayList<List<State<CorefCluster>>>();
  		
+ 		// boolean incorporatezerocase = Boolean.parseBoolean(prop.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP, "true"));
  		// add data
  		for (int i = 0; i < goodRecord.size(); i++) {
  			List<String> goodrec = goodRecord.get(i);
  			List<String> badrec = badRecord.get(i);
  			List<State<CorefCluster>> goodFeature = processString(goodrec);
- 			if (isAllZero(goodFeature)) continue;
+// 			if (!incorporatezerocase) {
+			// if (isAllZero(goodFeature)) continue; 
+// 			}
+ 			
  			goodFeatures.add(goodFeature);
  			badFeatures.add(processString(badrec));
  		}
