@@ -17,7 +17,8 @@ public class FeatureFactory {
 	 * @return
 	 */
 	public static String[] getFeatures() {
-		String stopping = ExperimentConstructor.experimentProps.getProperty(EecbConstants.STOPPING_PROP, "none");
+		String stopping = "none";
+		//String stopping = ExperimentConstructor.experimentProps.getProperty(EecbConstants.STOPPING_PROP, "none");
 		boolean extendFeature = false;
 		if (stopping.equals("halt")) {
 			extendFeature = true;

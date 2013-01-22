@@ -13,13 +13,15 @@ import edu.stanford.nlp.stats.Counter;
 /**
  * represent the state  
  * 
+ * every state consists of a set of CorefClusters, in order to make it generic
+ * 
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
 public class State<T> implements Serializable {
 	
 	private static final long serialVersionUID = 8666265337578515592L;
-	// every state consists of a set of CorefClusters, in order to make it generic
+	
 	/** state */
 	private Map<Integer, T> state;
 	
@@ -29,6 +31,7 @@ public class State<T> implements Serializable {
 	/** features */
 	private Counter<String> mfeatures;
 	
+	/* numerical feature used to calculate the heuristic score */
 	private double[] numericalFeatures;
 	
 	/** metric score, respectively F1, Precision and Recall */
@@ -40,8 +43,10 @@ public class State<T> implements Serializable {
 	/** score detail information, PrecisionNum, PrecisionDen, RecallNum, RecallDen, which can be used to calculate the overall performance of the algorithm */
 	private String scoreDetailInformation;
 	
+	/* feature string of the state which is used to debug */
 	private String featureString;
-	
+
+	/* the metric F1 score, for example, if we use Pairwise as metric score, then the F1score is Pairwise F1 score */
 	private double F1score;
 
 	public State() {
@@ -56,31 +61,38 @@ public class State<T> implements Serializable {
 		numericalFeatures = new double[FeatureFactory.getFeatures().length];
 	}
 	
+	/* set numerical feature which is used for Perceptron update */
 	public void setNumericalFeatures(double[] features) {
 		assert features.length == numericalFeatures.length;
 		System.arraycopy(features, 0, numericalFeatures, 0, features.length);
 	}
 	
+	/* get numerical feature */
 	public double[] getNumericalFeatures() {
 		return numericalFeatures;
 	}
 	
+	/* set metric F1 score */
 	public void setF1Score(double score) {
 		F1score = score;
 	}
 	
+	/* get metric F1 score */
 	public double getF1Score() {
 		return F1score;
 	}
 	
+	/* set score detail information */
 	public void setScoreDetailInformation(String scoreInformation) {
 		scoreDetailInformation = scoreInformation;
 	}
 	
+	/* get score detail information */
 	public String getScoreDetailInformation() {
 		return scoreDetailInformation;
 	}
 	
+	/* set features */
 	public void setFeatures(Counter<String> featrues) {
 		mfeatures = featrues;
 		
@@ -102,51 +114,62 @@ public class State<T> implements Serializable {
 		featureString = sb.toString().trim();
 	}
 	
+	/* get features */
 	public Counter<String> getFeatures() {
 		return mfeatures;
 	}
 	
+	/* return feature string */
 	public String featureString() {
-		
 		return featureString;
 	}
 	
+	/* add element to state */
 	public void add(Integer i, T element) {
 		state.put(i, element);
 	}
 
+	/* get the ith index element */
 	public T get(int i) {
 		return state.get(i);
 	}
 
+	/* remove the ith index element */
 	public void remove(int i) {
 		state.remove(i);
-	} 
-
+	}
+	
+	/* get state */
 	public Map<Integer, T> getState() {
 		return state;
 	}
 	
+	/* set the id for the state */
 	public void setID(String val) {
 		this.id = val;
 	}
 	
+	/* get the id of the state */
 	public String getID() {
 		return this.id;
 	}
 	
+	/* set metric score */
 	public void setScore(double[] score) {
 		mMetricScore = score;
 	}
 	
+	/* get metric score */
 	public double[] getScore() {
 		return mMetricScore;
 	}
 	
+	/* set cost score of the state */
 	public void setCostScore(double score) {
 		mCostScore = score;
 	}
 	
+	/* get cost score of the state */
 	public double getCostScore() {
 		return mCostScore;
 	}

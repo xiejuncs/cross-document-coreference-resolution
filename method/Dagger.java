@@ -85,7 +85,7 @@ public class Dagger implements IMethod {
 	}
 
 	/**
-	 * Learn the final weight
+	 * Learn the final weight, which can be used for 
 	 */
 	public List<Parameter> executeMethod() {
 		int length = FeatureFactory.getFeatures().length;
@@ -136,7 +136,6 @@ public class Dagger implements IMethod {
 		if (j == 1) {
 			Document corpus = new Document();
 			corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
-
 
 			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-training" + "-" + i + "-" + j;
 			String goldCorefCluster = conllResultPath + "/goldCorefCluster-training" + "-" + i + "-" + j;
@@ -387,7 +386,6 @@ public class Dagger implements IMethod {
 		String[] scoreInformation = ResultOutput.printDocumentScore(corpus, lossType, logFile, phase);
 
 		// CoNLL scoring
-
 		double[] finalScores = ResultOutput.printCorpusResult(j, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
 		ResultOutput.writeTextFile(experimentResultFolder + "/" + phase + ".csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
 										finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);

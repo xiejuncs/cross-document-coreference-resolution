@@ -1,6 +1,7 @@
 package edu.oregonstate.classifier;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -46,6 +47,9 @@ public class StructuredPerceptron implements IClassifier {
 	/* number of instance */
 	private int numberOfInstance;
 	
+	/**
+	 * constructor
+	 */
 	public StructuredPerceptron() {
 		mProps = ExperimentConstructor.experimentProps;
 		experimentFolder = ExperimentConstructor.experimentResultFolder;
@@ -101,12 +105,21 @@ public class StructuredPerceptron implements IClassifier {
 			int violation = para.getNoOfViolation();
 			double learningRate = learningRates[i];
 			weight.add(para.getWeight());
+			// shuffle the path
+			Collections.shuffle(paths);
 			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
 			
 			// read the data and do stochastic gradient update
 			for (String path : paths) {
-				List<List<List<State<CorefCluster>>>> dataset = reader.readData(path);
-				para = trainModel(dataset, para, learningRate);
+				ResultOutput.writeTextFile(logFile, path);
+				List<List<List<String>>> dataset = reader.readData(path);
+				List<List<String>> goodDataset = dataset.get(0);
+				List<List<String>> badDataset = dataset.get(1);
+				for (int index = 0; index < goodDataset.size(); index++){
+					List<String> goodRecords = goodDataset.get(index);
+					List<String> badRecords = badDataset.get(index);
+					para = trainModel(goodRecords, badRecords, para, 0.001);
+				}
 			}
 			
 			// print number of violated constraint
@@ -141,7 +154,7 @@ public class StructuredPerceptron implements IClassifier {
 	 * @param para
 	 * @return
 	 */
-	private Parameter trainModel(List<List<List<State<CorefCluster>>>> dataset, Parameter para, double learningRate) {
+	private Parameter trainModel(List<String> goodRecords, List<String> badRecords, Parameter para, double learningRate) {
 		// do not update the parameter, copy a new parameter
 		Parameter finalParameter = para.makeCopy();
 		double[] finalWeight = finalParameter.getWeight();
@@ -150,57 +163,46 @@ public class StructuredPerceptron implements IClassifier {
 		int length = finalWeight.length;
 		
 		// get the data
-		List<List<State<CorefCluster>>> goodDataset = dataset.get(0);
-		List<List<State<CorefCluster>>> badDataset = dataset.get(1);
+		LargetFileReading reader = new LargetFileReading();
+		List<State<CorefCluster>> goodStates = reader.processString(goodRecords);
+		List<State<CorefCluster>> badStates = reader.processString(badRecords);
 		
-		// update the weight
-		// constraints generated from one state should put together to update
-		for (int i = 0; i < goodDataset.size(); i++) {
-			
-			// constraints generated from one state
-			List<State<CorefCluster>> goodStates = goodDataset.get(i);
-			List<State<CorefCluster>> badStates = badDataset.get(i);
-			
-			// set the fixed weight: do not focus on getting on high score, just focus
-			// on minimize the number of violated constraints   
-			double[] fixedWeight = new double[length];
-			System.arraycopy(finalWeight, 0, fixedWeight, 0, length);
-			
-			// form constraint and do update
-			for (State<CorefCluster> goodState : goodStates) {
-				for (State<CorefCluster> badState : badStates) {
-					numberOfInstance += 1;
-					// get the loss score of bad state and good state
-					// if their loss score are equal, skip this kind of constraint
-					double gLossScore = goodState.getF1Score();
-					double bLossScore = badState.getF1Score();
-					if (gLossScore == bLossScore) {
-						continue;
-					}
+		double[] fixedWeight = new double[length];
+		System.arraycopy(finalWeight, 0, fixedWeight, 0, length);
+		
+		// form constraint and do update
+		for (State<CorefCluster> goodState : goodStates) {
+			for (State<CorefCluster> badState : badStates) {
+				numberOfInstance += 1;
+				// get the loss score of bad state and good state
+				// if their loss score are equal, skip this kind of constraint
+				double gLossScore = goodState.getF1Score();
+				double bLossScore = badState.getF1Score();
+				if (gLossScore == bLossScore) {
+					continue;
+				}
+				
+				// get the features of good state and bad state 
+				double[] gNumericalFeatures = goodState.getNumericalFeatures();
+				double[] bNumericalFeatures = badState.getNumericalFeatures();
 					
-					// get the features of good state and bad state 
-					double[] gNumericalFeatures = goodState.getNumericalFeatures();
-					double[] bNumericalFeatures = badState.getNumericalFeatures();
-						
-					// calculate the action score of good state and bad state	
-					double goodCostScore = DoubleOperation.time(fixedWeight, gNumericalFeatures);
-					double badCostScore = DoubleOperation.time(fixedWeight, bNumericalFeatures);
+				// calculate the action score of good state and bad state	
+				double goodCostScore = DoubleOperation.time(fixedWeight, gNumericalFeatures);
+				double badCostScore = DoubleOperation.time(fixedWeight, bNumericalFeatures);
 
-					// violated constraint
-					if (goodCostScore <= badCostScore) {
-						mViolations += 1;
-						double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
-						double[] term = DoubleOperation.time(direction, learningRate);
-						finalWeight = DoubleOperation.add(finalWeight, term);
-						finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
-					}
+				// violated constraint
+				if (goodCostScore <= badCostScore) {
+					mViolations += 1;
+					double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
+					double[] term = DoubleOperation.time(direction, learningRate);
+					finalWeight = DoubleOperation.add(finalWeight, term);
+					finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
 				}
 			}
 		}
 
 		return new Parameter(finalWeight, finalTotalWeight, mViolations);
 	}
-
 }
 
 //if (i == mEpoch - 1) {

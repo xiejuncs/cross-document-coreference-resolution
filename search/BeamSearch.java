@@ -107,6 +107,7 @@ public class BeamSearch implements ISearch {
         dictionaries = new Dictionaries();
         
         // debug mode
+        //TODO
         //mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
         mDebug = false;
     }
@@ -222,6 +223,12 @@ public class BeamSearch implements ISearch {
         return initialState;
     }
     
+    /**
+     * align the document with the state
+     * 
+     * @param documentState
+     * @param state
+     */
     private void generateStateDocument(Document documentState, State<CorefCluster> state) {
     	documentState.corefClusters = state.getState();
     	for (Integer id : documentState.corefClusters.keySet()) {
@@ -327,7 +334,7 @@ public class BeamSearch implements ISearch {
 			// is smaller than the global score, stop the search
 			
 			// debug information
-			ResultOutput.writeTextFile(logFile, "action " + msearchStep);
+			ResultOutput.writeTextFile(logFile, "action " + msearchStep + " : " + state.getID() );
 			ResultOutput.printScoreInformation(state.getScore(), type, logFile);
 			ResultOutput.writeTextFile(logFile, "global " + type.toString() +" F1 score: " + globalScore);
 			ResultOutput.writeTextFile(mscorePath, globalScore.toString() + " " + state.getCostScore());
@@ -367,7 +374,6 @@ public class BeamSearch implements ISearch {
 						calculateCostScore(initial, action, document, weight);
 						stateScore = lossFunction.calculateLossFunction(document, initial);
 						initial.setScore(stateScore);
-					
 					}
 					
 					beam.add(initial, initial.getScore()[0]);
@@ -468,8 +474,8 @@ public class BeamSearch implements ISearch {
 				/** get the candidate lists*/
 				Set<String> actions = generateCandidateSets(state);
 				Map<String, State<CorefCluster>> states = new HashMap<String, State<CorefCluster>>();
-				String bestLossStateID = "";
-				double bestLossStateScore = 0.0;
+				String localBestLossStateID = "";
+				double localBestLossStateScore = 0.0;
 				for (String action : actions) {
 					State<CorefCluster> initial = new State<CorefCluster>();
 					if (action.equals("HALT")) {
@@ -492,9 +498,9 @@ public class BeamSearch implements ISearch {
 							bestLossScore = stateScore[0];
 						}
 						
-						if (stateScore[0] > bestLossStateScore) {
-							bestLossStateScore = stateScore[0];
-							bestLossStateID = action;
+						if (stateScore[0] > localBestLossStateScore) {
+							localBestLossStateScore = stateScore[0];
+							localBestLossStateID = action;
 						}
 					}
 					
@@ -542,10 +548,10 @@ public class BeamSearch implements ISearch {
 				// output feature
 				if (outputFeature && beam.size() > 0) {
 					String id = beam.peek().getID();
-					ResultOutput.writeTextFile(logFile, "best loss id : " + bestLossStateID + "; beam state id : " + id + "\n");
+					ResultOutput.writeTextFile(logFile, "best loss id : " + localBestLossStateID + "; beam state id : " + id + "\n");
 					
-					if (!bestLossStateID.equals(id)) {
-						generateOutput(states, bestLossStateID, phaseID, trainingDataPath, msearchStep);
+					if (!localBestLossStateID.equals(id)) {
+						generateOutput(states, localBestLossStateID, phaseID, trainingDataPath, msearchStep);
 					}
 				}
 				
@@ -600,6 +606,11 @@ public class BeamSearch implements ISearch {
 		writer.writeArrays(constraints);
 	}
 	
+	/**
+	 * build halt feature, halt feature is 1, other features are all zero
+	 * 
+	 * @return
+	 */
 	private Counter<String> buildHaltFeature() {
 		String[] featureTemplate = FeatureFactory.getFeatures();
 		Counter<String> features = new ClassicCounter<String>();

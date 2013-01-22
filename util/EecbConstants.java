@@ -17,7 +17,7 @@ public class EecbConstants {
 	public static final String LOCAL_CORPUS_PATH = "../";
 	
 	/** cluster corpus path, which is used to run the whole experiment */
-	public static final String CLUSTER_CPRPUS_PATH = "/nfs/guille/xfern/users/xie/Experiment/";
+	public static final String CLUSTER_CPRPUS_PATH = "/nfs/eecs-fserv/share/xie/Experiment/";
 	
 	/** partial sieves, does not including pronoun sieve, which is the right configuration for Stanford experiment and our own experiment */
 	public static final String PARTIAL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch";
@@ -25,7 +25,7 @@ public class EecbConstants {
 	/** full sieve, including Pronoun Sieve */
 	public static final String FULL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch, PronounMatch";
 	
-	/** the topics used in the Stanford experiments 
+	/** the topics used in the Stanford experiments
 	 * "12", "22", "38",                                                        // development topics 
 	 * */
 //	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "12", "16", "22", "25",  "37", "38", "40", "44",     // training topics

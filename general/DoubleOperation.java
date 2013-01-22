@@ -176,7 +176,7 @@ public class DoubleOperation {
 		
 		for (int i = 0; i < dimension; i++) {
 			double learningRate = startNumerical - i * gap;
-			DecimalFormat dtime = new DecimalFormat("#.####"); 
+			DecimalFormat dtime = new DecimalFormat("#.############"); 
 			learningRate= Double.valueOf(dtime.format(learningRate));
 			learningRates[i] = learningRate;
 		}

@@ -1,7 +1,6 @@
 package edu.oregonstate.lossfunction;
 
 import edu.oregonstate.search.State;
-import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
 
@@ -18,9 +17,6 @@ public interface ILossFunction {
 	
 	/* calculate loss function */
 	public double[] calculateLossFunction(Document document, State<CorefCluster> state);
-	
-	/* the detail information of a score */
-	public String getDetailScoreInformation();
 	
 	/* scoring the document */
 	public double[] getMetricScore(Document document);

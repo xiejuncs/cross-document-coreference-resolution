@@ -38,6 +38,8 @@ public class LargetFileReading {
 		prop = ExperimentConstructor.experimentProps;
 		binary = Boolean.parseBoolean(prop.getProperty(EecbConstants.IO_BINARY_PROP, "false"));
 		featureSize = FeatureFactory.getFeatures().length;
+//		binary = false;
+//		featureSize = 39;
 	}
 	
 	/**
@@ -46,8 +48,8 @@ public class LargetFileReading {
 	 * @param path
 	 * @return
 	 */
-	public List<List<List<State<CorefCluster>>>> readData(String path) {
-		List<List<List<State<CorefCluster>>>> dataset = new ArrayList<List<List<State<CorefCluster>>>>();
+	public List<List<List<String>>> readData(String path) {
+		List<List<List<String>>> dataset = new ArrayList<List<List<String>>>();
 		
 		if (binary) {
 			// binary input
@@ -66,36 +68,10 @@ public class LargetFileReading {
 	 * @param path
 	 * @return
 	 */
-	private List<List<List<State<CorefCluster>>>> processTextData(String path) {
-		List<List<List<State<CorefCluster>>>> dataset = new ArrayList<List<List<State<CorefCluster>>>>();
+	private List<List<List<String>>> processTextData(String path) {
 		List<String> record = readTextData(path);
 		List<List<List<String>>> records = processTextData(record);
-		List<List<String>> goodRecord = records.get(0);
-		List<List<String>> badRecord = records.get(1);
- 		assert goodRecord.size() == badRecord.size();
- 		
- 		List<List<State<CorefCluster>>> goodFeatures = new ArrayList<List<State<CorefCluster>>>();
- 		List<List<State<CorefCluster>>> badFeatures = new ArrayList<List<State<CorefCluster>>>();
- 		
- 		// boolean incorporatezerocase = Boolean.parseBoolean(prop.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP, "true"));
- 		// add data
- 		for (int i = 0; i < goodRecord.size(); i++) {
- 			List<String> goodrec = goodRecord.get(i);
- 			List<String> badrec = badRecord.get(i);
- 			List<State<CorefCluster>> goodFeature = processString(goodrec);
-// 			if (!incorporatezerocase) {
-			// if (isAllZero(goodFeature)) continue; 
-// 			}
- 			
- 			goodFeatures.add(goodFeature);
- 			badFeatures.add(processString(badrec));
- 		}
- 		
- 		assert goodFeatures.size() == badFeatures.size();
- 		dataset.add(goodFeatures);
- 		dataset.add(badFeatures);
-		
-		return dataset;
+		return records;
 	}
 	
 	/**
@@ -122,7 +98,7 @@ public class LargetFileReading {
 	 * @param records
 	 * @return
 	 */
-	private List<State<CorefCluster>> processString(List<String> records) {
+	public List<State<CorefCluster>> processString(List<String> records) {
 		List<State<CorefCluster>> dataset = new ArrayList<State<CorefCluster>>();
 		
 		for (String record : records) {
@@ -130,8 +106,6 @@ public class LargetFileReading {
 			double lossscore = 0.0;
 			double[] feature = new double[featureSize];
 			if (elements.length != 1) {
-				
-				
 				String lossScoreString = elements[0];
 				lossscore = Double.parseDouble(lossScoreString.split(":")[1]);
 				
@@ -142,8 +116,6 @@ public class LargetFileReading {
 					double value = Double.parseDouble(featureStringDetail[1]);
 					feature[index] = value;
 				}
-				
-				
 				
 			}
 			State<CorefCluster> state = new State<CorefCluster>();
