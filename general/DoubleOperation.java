@@ -202,6 +202,35 @@ public class DoubleOperation {
 	}
 	
 	/**
+	 * calculate the norm of the weight
+	 * 
+	 * @param weights
+	 * @param weightFile
+	 */
+	public static void printWeightNorm(List<double[]> weights, String weightFile) {
+		for (int i = 0; i < weights.size(); i++) {
+			double[] weight = weights.get(i);
+			double length = calculateTwoNorm(weight);
+			ResultOutput.writeTextFile(weightFile, length + "");
+		}
+	}
+	
+	/**
+	 * calculate two norm of a vector
+	 * 
+	 * @param vector
+	 * @return
+	 */
+	public static double calculateTwoNorm(double[] vector) {
+		double sum = 0.0; 
+		for (double element : vector) {
+			sum += element * element;
+		}
+		double length = Math.sqrt(sum);
+		return length;
+	}
+	
+	/**
 	 * transform string arrays to double arrays
 	 * 
 	 * @param stringArrays

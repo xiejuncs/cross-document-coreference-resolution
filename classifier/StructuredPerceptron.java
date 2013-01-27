@@ -8,12 +8,11 @@ import java.util.Properties;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.general.DoubleOperation;
-import edu.oregonstate.io.LargetFileReading;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.method.Dagger;
-import edu.oregonstate.search.State;
+import edu.oregonstate.training.ITraining;
 import edu.oregonstate.util.EecbConstants;
-import edu.stanford.nlp.dcoref.CorefCluster;
+import edu.oregonstate.util.EecbConstructor;
 
 /**
  * Learn the weight
@@ -44,8 +43,20 @@ public class StructuredPerceptron implements IClassifier {
 	/* model index */
 	private int modelIndex;
 	
-	/* number of instance */
-	private int numberOfInstance;
+	/* training style */
+	private final String trainingStyle;
+	
+	/* the weight used for keeping track of the progress */
+	private List<double[]> weights;
+	
+	/* the length of the features */
+	private final int length;
+	
+	/* training model */
+	private final ITraining trainingModel;
+	
+	/* learning rate constant or not */
+	private final boolean learningRateConstant;
 	
 	/**
 	 * constructor
@@ -57,8 +68,14 @@ public class StructuredPerceptron implements IClassifier {
 		logFile = ExperimentConstructor.logFile;
 		trainingTopics = ExperimentConstructor.trainingTopics;
 		testingTopics = ExperimentConstructor.testingTopics;
-		numberOfInstance = 0;
 		modelIndex = 0;
+		trainingStyle = mProps.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
+		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
+		String[] featureTemplate = FeatureFactory.getFeatures();
+		length = featureTemplate.length;
+		weights = new ArrayList<double[]>();
+		
+		learningRateConstant = Boolean.parseBoolean(mProps.getProperty(EecbConstants.LEARING_RATE_CONSTANT_PROP, "false"));
 	}
 	
 	/**
@@ -70,17 +87,13 @@ public class StructuredPerceptron implements IClassifier {
 		
 		// model index
 		modelIndex = index;
-		String[] featureTemplate = FeatureFactory.getFeatures();
-		int length = featureTemplate.length;
 		double[] weight = new double[length];
 		double[] totalWeight = new double[length];
-		int violation = 0;
-		Parameter para = new Parameter(weight, totalWeight, violation);
+		Parameter para = new Parameter(weight, totalWeight);
 
 		// store the structured perceptron intermediate result
 		ResultOutput.writeTextFile(experimentFolder + "/classification-training.csv", "ANOTHER EXPERIMENT");
 		ResultOutput.writeTextFile(experimentFolder + "/classification-testing.csv", "ANOTHER EXPERIMENT");
-		
 		Parameter trainedPara = train(paths, para);
 		
 		return trainedPara;
@@ -90,56 +103,48 @@ public class StructuredPerceptron implements IClassifier {
 	 * train the model according to lots of files
 	 */
 	public Parameter train(List<String> paths, Parameter para) {
-		double[] learningRates = DoubleOperation.createDescendingArray(0.001, 0, mEpoch);
+		double startingRate = Double.parseDouble(mProps.getProperty(EecbConstants.STRUCTUREDPERCEPTRON_STARTRATE_PROP, "0.1"));
+		double endRate = 0.0;
+		if (learningRateConstant) {
+			endRate = startingRate;
+		}
+		double[] learningRates = DoubleOperation.createDescendingArray(startingRate, endRate, mEpoch);
+		
 		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
-		LargetFileReading reader = new LargetFileReading();
 		Dagger dagger = new Dagger();
 		
 		// whether do post process on the document
 		boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
 		boolean testPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
 		
-		// do stochastic gradient update
-		List<double[]> weight = new ArrayList<double[]>();
+		// do gradient update
 		for (int i = 0; i < mEpoch; i++) {
-			int violation = para.getNoOfViolation();
 			double learningRate = learningRates[i];
-			weight.add(para.getWeight());
+			weights.add(para.getWeight());
 			// shuffle the path
 			Collections.shuffle(paths);
 			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
 			
-			// read the data and do stochastic gradient update
-			for (String path : paths) {
-				ResultOutput.writeTextFile(logFile, path);
-				List<List<List<String>>> dataset = reader.readData(path);
-				List<List<String>> goodDataset = dataset.get(0);
-				List<List<String>> badDataset = dataset.get(1);
-				for (int index = 0; index < goodDataset.size(); index++){
-					List<String> goodRecords = goodDataset.get(index);
-					List<String> badRecords = badDataset.get(index);
-					para = trainModel(goodRecords, badRecords, para, 0.001);
-				}
-			}
+			// do weight update
+			para = trainingModel.train(paths, para, learningRate);
 			
 			// print number of violated constraint
-			int afterViolation = para.getNoOfViolation();
-			ResultOutput.writeTextFile(experimentFolder + "/violation" + modelIndex +".csv", violation + "\t" + afterViolation + "\t" + (afterViolation - violation) + "\t" + numberOfInstance);
+			int violation = para.getNoOfViolation();
+			ResultOutput.writeTextFile(experimentFolder + "/violation-" + modelIndex +".csv", violation + "\t" + para.getNumberOfInstance());
 			
 			// train the other models of Dagger
 //			double[] learnedWeight = dagger.generateWeightForTesting(para);
 //			dagger.testDocument(trainingTopics, learnedWeight, modelIndex, i, trainPostProcess, "classification-training", false);
 //			dagger.testDocument(testingTopics, learnedWeight, modelIndex, i, testPostProcess, "classification-testing", false);
-			
-			// set the number of instance to 0
-			numberOfInstance = 0;
 		}
 		
 		// calculate the weight difference between the previous iteration and the current iteration
-		DoubleOperation.calcualateWeightDifference(weight, experimentFolder + "/weight"+ modelIndex + ".csv");
+		DoubleOperation.calcualateWeightDifference(weights, experimentFolder + "/weight-difference-"+ modelIndex + ".csv");
+		DoubleOperation.printWeightNorm(weights, experimentFolder + "/weight-norm-"+ modelIndex + ".csv");
+		
 		return para;
 	}
-
+	
 	/**
 	 * train the model
 	 */
@@ -147,62 +152,6 @@ public class StructuredPerceptron implements IClassifier {
 		return para;
 	}
 	
-	/**
-	 * train the model based on dataset and parameter
-	 * 
-	 * @param dataset
-	 * @param para
-	 * @return
-	 */
-	private Parameter trainModel(List<String> goodRecords, List<String> badRecords, Parameter para, double learningRate) {
-		// do not update the parameter, copy a new parameter
-		Parameter finalParameter = para.makeCopy();
-		double[] finalWeight = finalParameter.getWeight();
-		double[] finalTotalWeight = finalParameter.getTotalWeight();
-		int mViolations = finalParameter.getNoOfViolation();
-		int length = finalWeight.length;
-		
-		// get the data
-		LargetFileReading reader = new LargetFileReading();
-		List<State<CorefCluster>> goodStates = reader.processString(goodRecords);
-		List<State<CorefCluster>> badStates = reader.processString(badRecords);
-		
-		double[] fixedWeight = new double[length];
-		System.arraycopy(finalWeight, 0, fixedWeight, 0, length);
-		
-		// form constraint and do update
-		for (State<CorefCluster> goodState : goodStates) {
-			for (State<CorefCluster> badState : badStates) {
-				numberOfInstance += 1;
-				// get the loss score of bad state and good state
-				// if their loss score are equal, skip this kind of constraint
-				double gLossScore = goodState.getF1Score();
-				double bLossScore = badState.getF1Score();
-				if (gLossScore == bLossScore) {
-					continue;
-				}
-				
-				// get the features of good state and bad state 
-				double[] gNumericalFeatures = goodState.getNumericalFeatures();
-				double[] bNumericalFeatures = badState.getNumericalFeatures();
-					
-				// calculate the action score of good state and bad state	
-				double goodCostScore = DoubleOperation.time(fixedWeight, gNumericalFeatures);
-				double badCostScore = DoubleOperation.time(fixedWeight, bNumericalFeatures);
-
-				// violated constraint
-				if (goodCostScore <= badCostScore) {
-					mViolations += 1;
-					double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
-					double[] term = DoubleOperation.time(direction, learningRate);
-					finalWeight = DoubleOperation.add(finalWeight, term);
-					finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
-				}
-			}
-		}
-
-		return new Parameter(finalWeight, finalTotalWeight, mViolations);
-	}
 }
 
 //if (i == mEpoch - 1) {

@@ -334,6 +334,7 @@ public class BeamSearch implements ISearch {
 			// is smaller than the global score, stop the search
 			
 			// debug information
+			ResultOutput.writeTextFile(logFile, state.featureString());
 			ResultOutput.writeTextFile(logFile, "action " + msearchStep + " : " + state.getID() );
 			ResultOutput.printScoreInformation(state.getScore(), type, logFile);
 			ResultOutput.writeTextFile(logFile, "global " + type.toString() +" F1 score: " + globalScore);
@@ -412,7 +413,6 @@ public class BeamSearch implements ISearch {
 		}
 	
 	}
-	
 	
 	// apply the weight to guide the search
 	// In this case, we should choose which one to expand, the minimum cost score or the maximum cost score 

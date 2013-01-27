@@ -93,7 +93,8 @@ public class Dagger implements IMethod {
 		double[] weight = new double[length];
 		double[] totalWeight = new double[length];
 		int violation = 0;
-		Parameter para = new Parameter(weight, totalWeight, violation);
+		int numberofinstance = 0;
+		Parameter para = new Parameter(weight, totalWeight, violation, numberofinstance);
 
 		// in the current time, just 1 epoch
 		for (int i = 1; i <= methodEpoch; i++) {
@@ -173,7 +174,7 @@ public class Dagger implements IMethod {
 			String[] scoreInformation = ResultOutput.printDocumentScore(corpus, lossType, logFile, "training-with-true-loss-function");
 
 			// CoNLL scoring
-			double[] finalScores = ResultOutput.printCorpusResult(j, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
+			double[] finalScores = ResultOutput.printCorpusResult(j, logFile, goldCorefCluster, predictedCorefCluster, "model generation");
 			ResultOutput.writeTextFile(experimentResultFolder + "/trainingset.csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 
 		} else {
@@ -378,7 +379,7 @@ public class Dagger implements IMethod {
 
 			// add single document to the corpus
 			DocumentAlignment.mergeDocument(document, corpus);
-
+			
 			ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
 		}
 
@@ -386,7 +387,7 @@ public class Dagger implements IMethod {
 		String[] scoreInformation = ResultOutput.printDocumentScore(corpus, lossType, logFile, phase);
 
 		// CoNLL scoring
-		double[] finalScores = ResultOutput.printCorpusResult(j, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
+		double[] finalScores = ResultOutput.printCorpusResult(j, logFile, goldCorefCluster, predictedCorefCluster, "model generation");
 		ResultOutput.writeTextFile(experimentResultFolder + "/" + phase + ".csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
 										finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 	}

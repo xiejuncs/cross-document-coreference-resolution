@@ -396,4 +396,24 @@ public class ResultOutput {
 		
 		return finalScores;
 	}
+	
+	/**
+	 * print mention information for the orderedMention
+	 * 
+	 * @param orderedMentions
+	 * @param logFile
+	 */
+	public static void printMentionsInformation(List<List<Mention>> orderedMentions, String logFile) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < orderedMentions.size(); i++ ) {
+			List<Mention> mentions = orderedMentions.get(i);
+			for (int j = 0; j < mentions.size(); j++) {
+				Mention mention = mentions.get(j);
+				sb.append(mention.mentionID + " : " + mention.spanToString() + "\n");
+			}
+		}
+		
+		writeTextFile(logFile, sb.toString().trim());
+	}
+	
 }

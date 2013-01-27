@@ -50,16 +50,19 @@ public abstract class ExperimentConstructor {
 		String[] experimentTopics;
 		int index = 0;
 		boolean debug = Boolean.parseBoolean(props.getProperty(EecbConstants.DEBUG_PROP, "false"));
+		String outputPath = "";
 		if (debug) {
 			corpusPath = EecbConstants.LOCAL_CORPUS_PATH;
 			experimentTopics = EecbConstants.debugTopics;
 			developmentTopics = EecbConstants.debugDevelopmentTopics;
 			index = 2;
+			outputPath = corpusPath;
 		} else {
 			corpusPath = EecbConstants.CLUSTER_CPRPUS_PATH;
 			experimentTopics = EecbConstants.stanfordTotalTopics;
 			developmentTopics = EecbConstants.stanfordDevelopmentTopics;
 			index = 12;
+			outputPath = EecbConstants.CLUSTER_OUTPUT_PATH;
 		}
 		
 		// create a directory to store the output of the specific experiment
@@ -98,20 +101,45 @@ public abstract class ExperimentConstructor {
         // Stanford experiment or Oregon State statement
         //
         if (props.containsKey(EecbConstants.SEARCH_PROP)) {
-                String searchModel = props.getProperty(EecbConstants.SEARCH_PROP);
-                String searchWidth = props.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP);
-                String searchStep = props.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP);
-                sb.append("-os-" + searchModel);
+        	String searchModel = props.getProperty(EecbConstants.SEARCH_PROP);
+        	String searchWidth = props.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP);
+        	String searchStep = props.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP);
+        	sb.append("-os-" + searchModel);
         } else {
-                sb.append("-st");
+        	sb.append("-st");
         }
+        
+        //
+        // whether enable Stanford pre-process steps
+        //
+        boolean enableStanfordPreprocess = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION, "true"));
+        if (enableStanfordPreprocess) {
+        	sb.append("-eS");
+        } else {
+        	sb.append("-dS");
+        }
+        
 		
         //
         // classifier method
         //
         String classifierLearningModel = props.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
         String classifierNoOfIteration = props.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP);   // epoch of classification model
-        sb.append("-" + classifierLearningModel);
+        String trainingStyle = props.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
+        sb.append("-" + classifierLearningModel + "-" + classifierNoOfIteration + "-" + trainingStyle);
+        
+        boolean enablePAAlgorithm = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE, "false"));
+        if (enablePAAlgorithm) {
+        	boolean enablePALossScore = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE_LOSSSCORE, "true"));
+        	if (enablePALossScore) {
+        		sb.append("-PALoss");
+        	} else {
+        		sb.append("-PACons");
+        	}
+        } else {
+        	String startingRate = props.getProperty(EecbConstants.STRUCTUREDPERCEPTRON_STARTRATE_PROP, "0.1");
+        	sb.append("-" + startingRate);
+        }
         
         //
         // stopping criterion

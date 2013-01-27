@@ -1,15 +1,13 @@
 package edu.oregonstate.example;
 
-import Jama.Matrix;;
+import edu.oregonstate.general.DoubleOperation;
 
 public class MatrixOperation {
 
 	public static void main(String[] args) {
-		double[][] vals = {{1.},{4.},{7.}};
-		Matrix A = new Matrix(vals);
-		A = A.times(2);
-		Matrix B = A.transpose();
-		A= A.times(B);
-		System.out.println("1");
+		double[] rates = DoubleOperation.createDescendingArray(0.1, 0, 20);
+		for (double rate : rates) {
+			System.out.println(rate);
+		}
 	}
 }

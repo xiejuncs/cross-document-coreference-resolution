@@ -130,21 +130,20 @@ public class EECBMentionExtractor extends EmentionExtractor {
 
 			// Gold Mention or predicted Mentions
 			if (goldOnly) { 	
-//				allPredictedMentions = new ArrayList<List<Mention>>();
-//				for (int i = 0; i < allGoldMentions.size(); i++) {
-//					List<Mention> sentence = new ArrayList<Mention>();
-//					for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
-//						Mention mention = allGoldMentions.get(i).get(j);
-//						ResultOutput.serialize(mention, mention.mentionID, mentionRepositoryPath);
-//						Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), mentionRepositoryPath, true);
-//						copyMention.goldCorefClusterID = -1;
-//						sentence.add(copyMention);
-//
-//					}
-//					allPredictedMentions.add(sentence);
-//				}
-				allPredictedMentions = makeCopy(allGoldMentions);
+				allPredictedMentions = new ArrayList<List<Mention>>();
+				for (int i = 0; i < allGoldMentions.size(); i++) {
+					List<Mention> sentence = new ArrayList<Mention>();
+					for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
+						Mention mention = allGoldMentions.get(i).get(j);
+						ResultOutput.serialize(mention, mention.mentionID, mentionRepositoryPath);
+						Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), mentionRepositoryPath, true);
+						copyMention.goldCorefClusterID = -1;
+						sentence.add(copyMention);
 
+					}
+					allPredictedMentions.add(sentence);
+				}
+				//allPredictedMentions = makeCopy(allGoldMentions);
 			} else {
 				// set the mention id here
 				allPredictedMentions = mentionFinder.extractPredictedMentions(anno, baseID, dictionaries);
@@ -181,6 +180,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	        m2.originalSpan = m.originalSpan;
 	        m2.dependency = m.dependency;
 	        m2.sentNum = m.sentNum;
+	        m2.isVerb = m.isVerb;
 	        sm2.add(m2);
 	      }
 	      copy.add(sm2);

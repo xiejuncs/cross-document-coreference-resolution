@@ -57,7 +57,7 @@ public class State<T> implements Serializable {
 		mCostScore = 0.0;
 		scoreDetailInformation = "";
 		F1score = 0.0;
-		
+		featureString = "";
 		numericalFeatures = new double[FeatureFactory.getFeatures().length];
 	}
 	

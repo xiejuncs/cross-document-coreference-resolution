@@ -46,6 +46,9 @@ public class DatasetFactory {
 	/* document serialized output */
 	private final String serializedOutput;
 	
+	/* enable stanfor pre-process step during data generation */
+	private final boolean enableStanfordPreprocessStep;
+	
 	public DatasetFactory() {
 		mExperimentResultFolder = ExperimentConstructor.experimentResultFolder;
 		mProps = ExperimentConstructor.experimentProps;
@@ -56,6 +59,7 @@ public class DatasetFactory {
 		logFile = ExperimentConstructor.logFile;
 		serializedOutput = mExperimentResultFolder + "/documentobject";
 		Command.createDirectory(serializedOutput);
+		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION, "true"));
 	}
 	
 	/**
@@ -133,29 +137,34 @@ public class DatasetFactory {
 			Document document = generateDocument(topic, goldOnly);
 			totalGoalMentions += document.allGoldMentions.size();
 			totalPredictedMentions += document.allPredictedMentions.size();
-			ResultOutput.printDocumentScore(document, ScoreType.Pairwise, logFile, "single training" + " document " + topic);
 			
-			// align the three fields: allPredictedMentions, predictedMentionsOrderedBySentence, corefClusters of document
-			DocumentAlignment.alignDocument(document);
-			
-			// do pronoun coreference resolution
-			// all predicted mention id can change according to the merge process 
-			CorefSystem cs = new CorefSystem();
-			cs.applyPronounSieve(document);
-			
-			// do post process
-			if (postProcess) {
-				SieveCoreferenceSystem.postProcessing(document);
+			if (enableStanfordPreprocessStep) {
+				ResultOutput.printDocumentScore(document, ScoreType.Pairwise, logFile, "single training" + " document " + topic);
+
+				// align the three fields: allPredictedMentions, predictedMentionsOrderedBySentence, corefClusters of document
+				DocumentAlignment.alignDocument(document);
+
+				// do pronoun coreference resolution
+				// all predicted mention id can change according to the merge process 
+				CorefSystem cs = new CorefSystem();
+				cs.applyPronounSieve(document);
+
+				// do post process
+				if (postProcess) {
+					SieveCoreferenceSystem.postProcessing(document);
+				}
+
+				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
 			}
-			
-			ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
 		}
 		
 		//
 		// print the final result for the single set
 		//
-		double[] finalScores = ResultOutput.printCorpusResult(0, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
-		ResultOutput.writeTextFile(initialResult, finalScores[0] + "\t" + finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
+		if (enableStanfordPreprocessStep) {
+			double[] finalScores = ResultOutput.printCorpusResult(0, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
+			ResultOutput.writeTextFile(initialResult, finalScores[0] + "\t" + finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
+		}
 	}
 	
 	/**
@@ -172,8 +181,8 @@ public class DatasetFactory {
 		
 		IDataSet mDatasetMode = createDataSetMode();
 		Document document = mDatasetMode.getData(topic, goldOnly);
-		ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
-		ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
+		//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
+		//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
 		
 		ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
 		ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());

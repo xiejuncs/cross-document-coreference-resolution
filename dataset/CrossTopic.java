@@ -1,15 +1,13 @@
 package edu.oregonstate.dataset;
 
-import java.util.List;
 import java.util.Properties;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.dataset.IDataSet;
 import edu.oregonstate.io.ResultOutput;
+import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.Mention;
 
 /**
  * Based on the topic Document object, incorporate the SRL predicate and their arguments 
@@ -35,6 +33,9 @@ public class CrossTopic implements IDataSet {
 
 	/* corpus path */
 	private final String corpusPath;
+	
+	/* enable Stanford pre-process step during data generation */
+	private final boolean enableStanfordPreprocessStep;
 
 	/** used for scoring */
 	//private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
@@ -45,6 +46,7 @@ public class CrossTopic implements IDataSet {
 		experimentResultFolder = ExperimentConstructor.experimentResultFolder;
 		corpusPath = ExperimentConstructor.corpusPath;
 		dataPath = corpusPath + "corpus/EECB1.0/data/";
+		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION, "true"));
 	}
 
 	@Override
@@ -83,7 +85,11 @@ public class CrossTopic implements IDataSet {
 		Document document = new Document();
 		try {
 			document = cs.getDocument(path, goldOnly);
-			cs.getCorefSystem().coref(document);
+			
+			// whether enable stanford pre-process step during data generation
+			if (enableStanfordPreprocessStep) {
+				cs.getCorefSystem().coref(document);
+			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

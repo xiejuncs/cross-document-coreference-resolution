@@ -17,6 +17,9 @@ public class Parameter {
 	/* no of violations */
 	private int mNoOfViolation;
 	
+	/* number of instance */
+	private int mNumberofInstance;
+	
 	public Parameter() {
 		
 	}
@@ -26,13 +29,14 @@ public class Parameter {
 	}
 	
 	public Parameter(double[] weights, double[] totalWeights) {
-		this(weights, totalWeights, 0);
+		this(weights, totalWeights, 0, 0);
 	}
 	
-	public Parameter(double[] weights, double[] totalWeights, int noOfViolations) {
+	public Parameter(double[] weights, double[] totalWeights, int noOfViolations, int numberOfInstances) {
 		mWeight = weights;
 		mTotalWeight = totalWeights;
 		mNoOfViolation = noOfViolations;
+		mNumberofInstance = numberOfInstances;
 	}
 	
 	public double[] getWeight() {
@@ -47,6 +51,10 @@ public class Parameter {
 		return mNoOfViolation;
 	}
 	
+	public int getNumberOfInstance() {
+		return mNumberofInstance;
+	}
+	
 	/**
 	 * make a deep copy of the current object
 	 * 
@@ -58,7 +66,7 @@ public class Parameter {
 		double[] copyTotalWeight = new double[length];
 		System.arraycopy(mWeight, 0, copyWeight, 0, length);
 		System.arraycopy(mTotalWeight, 0, copyTotalWeight, 0, length);
-		Parameter copyPara = new Parameter(copyWeight, copyTotalWeight, mNoOfViolation);
+		Parameter copyPara = new Parameter(copyWeight, copyTotalWeight, mNoOfViolation, mNumberofInstance);
 		return copyPara;
 	}
 }

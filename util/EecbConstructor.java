@@ -8,6 +8,7 @@ import edu.oregonstate.dataset.IDataSet;
 import edu.oregonstate.lossfunction.ILossFunction;
 import edu.oregonstate.score.ScorerCEAF;
 import edu.oregonstate.search.ISearch;
+import edu.oregonstate.training.ITraining;
 import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.ScorerBCubed;
 import edu.stanford.nlp.dcoref.ScorerMUC;
@@ -167,6 +168,28 @@ public class EecbConstructor {
 		try {
 			Class methodClass = Class.forName(methodModel);
 			IMethod method = (IMethod) methodClass.newInstance();
+			return method;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * create training model
+	 * 
+	 * @param trainingModel
+	 * @return
+	 */
+	public static ITraining createTrainingModel(String trainingModel) {
+		if (trainingModel == null) throw new RuntimeException("method model not specified");
+
+		if (!trainingModel.contains(".")) {
+			trainingModel = "edu.oregonstate.training." + trainingModel;
+		}
+
+		try {
+			Class methodClass = Class.forName(trainingModel);
+			ITraining method = (ITraining) methodClass.newInstance();
 			return method;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
