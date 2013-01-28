@@ -126,5 +126,6 @@ public class EecbConstants {
 	public static final String ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION = "dcoref.enable.stanford.processing.during.data.generation";
 	public static final String ENABLE_PA_LEARNING_RATE = "dcoref.pa.learning.rate";
 	public static final String ENABLE_PA_LEARNING_RATE_LOSSSCORE = "dcoref.pa.learning.rate.lossscore";
+	public static final String ENABLE_GOLD_CLUSTER_POST_PROCESS = "dcoref.gold.cluster.post.process";
 	
 }

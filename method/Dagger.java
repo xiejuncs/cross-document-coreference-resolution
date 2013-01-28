@@ -160,9 +160,11 @@ public class Dagger implements IMethod {
 				CorefSystem cs = new CorefSystem();
 				cs.applyPronounSieve(document);
 
+				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
+				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				// whether post-process the document
 				if (trainPostProcess) {
-					SieveCoreferenceSystem.postProcessing(document);
+					DocumentAlignment.postProcessDocument(document);
 				}
 
 				DocumentAlignment.mergeDocument(document, corpus);
@@ -372,9 +374,11 @@ public class Dagger implements IMethod {
 			CorefSystem cs = new CorefSystem();
 			cs.applyPronounSieve(document);
 
+			ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
+			ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 			// whether post-process the document
 			if (postProcess) {
-				SieveCoreferenceSystem.postProcessing(document);
+				DocumentAlignment.postProcessDocument(document);
 			}
 
 			// add single document to the corpus

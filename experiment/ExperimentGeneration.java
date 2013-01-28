@@ -22,20 +22,22 @@ public class ExperimentGeneration {
 	//private final String[] iterations = {"200"};
 	
 	/* train method */
-	//private final String[] trainMethods = {"Online", "OnlineToBatch", "Batch"};
-	private final String[] trainMethods = {"OnlineToBatch"};
+	private final String[] trainMethods = {"Online", "OnlineToBatch", "Batch"};
+	//private final String[] trainMethods = {"OnlineToBatch"};
 	
 	//private final String[] startRates = {"0.1", "0.05", "0.02", "0.01"};
 	
 	/* mention type */
-	private final String[] mentionTypes = {"gold", "predicted"};
+	//private final String[] mentionTypes = {"gold", "predicted"};
+	private final String[] mentionTypes = {"predicted"};
 	
 	/* enable stanford pre-process */
-	private final String[] enableStanfordPreprocess = {"enable", "disable"};
+	//private final String[] enableStanfordPreprocess = {"enable", "disable"};
+	private final String[] enableStanfordPreprocess = {"enable"};
 	
 	/* learning rate type */
 	//private final String[] learningRateTypes = {"lossscore", "constant"};
-	private final String[] learningRateTypes = {"lossscore"};
+	private final String[] learningRateTypes = {"fixed"};
 	
 	public ExperimentGeneration (String path, String folderName) {
 		mFolderPath = path + folderName;
@@ -127,13 +129,15 @@ public class ExperimentGeneration {
 		}
 		sb.append("dcoref.enable.stanford.processing.during.data.generation = " + stanfordPreprocess + "\n\n");
 		
-		sb.append("dcoref.pa.learning.rate = true\n");
-		
-		String lossScore = "true";
-		if (learnRateType.equals("constant")) {
-			lossScore = "false";
+		if (!learnRateType.equals("fixed")) {
+			sb.append("dcoref.pa.learning.rate = true\n");
+			
+			String lossScore = "true";
+			if (learnRateType.equals("constant")) {
+				lossScore = "false";
+			}
+			sb.append("dcoref.pa.learning.rate.lossscore = " + lossScore);
 		}
-		sb.append("dcoref.pa.learning.rate.lossscore = " + lossScore);
 		
 		ResultOutput.writeTextFile(configPath, sb.toString().trim());
 	}
@@ -141,7 +145,7 @@ public class ExperimentGeneration {
 	private void generateRunFile(String subFolderPath, String prefix) {
 		String runPath = subFolderPath + "/run.sh";
 		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
-		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/coreference-resolution.jar " + clusterPath + "/config.properties";
+		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/predicted-coreference-resolution.jar " + clusterPath + "/config.properties";
 		ResultOutput.writeTextFile(runPath, command);
 	}
 	
@@ -175,10 +179,11 @@ public class ExperimentGeneration {
 	public static void main(String[] args) {
 		String path = "/nfs/guille/xfern/users/xie/Experiment/experiment/";
 		
-		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		//get current date time with Date()
-		Date date = new Date();
-		String folderName = dateFormat.format(date);
+//		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//		//get current date time with Date()
+//		Date date = new Date();
+//		String folderName = dateFormat.format(date);
+		String folderName = "2013-01-26";
 		
 		ExperimentGeneration generator = new ExperimentGeneration(path, folderName);
 		generator.generateExperimentFiles();

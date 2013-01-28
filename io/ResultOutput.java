@@ -25,6 +25,7 @@ import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
 import edu.oregonstate.score.CoNLLScorerHelper;
 import edu.oregonstate.search.State;
+import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.CorefCluster;
@@ -374,7 +375,13 @@ public class ResultOutput {
 		}
 		
 		SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
-	    SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
+		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.ENABLE_GOLD_CLUSTER_POST_PROCESS, "true"));
+		if (postProcessGold) {
+			 SieveCoreferenceSystem.printConllOutput(document, writerGold, true, postProcess);
+		} else {
+			 SieveCoreferenceSystem.printConllOutput(document, writerGold, true);
+		}
+	   
 	    
 	    writerPredicted.close();
 	    writerPredicted.close();

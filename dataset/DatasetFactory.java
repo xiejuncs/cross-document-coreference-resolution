@@ -150,8 +150,11 @@ public class DatasetFactory {
 				cs.applyPronounSieve(document);
 
 				// do post process
+				
+				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
+				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				if (postProcess) {
-					SieveCoreferenceSystem.postProcessing(document);
+					DocumentAlignment.postProcessDocument(document);
 				}
 
 				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);

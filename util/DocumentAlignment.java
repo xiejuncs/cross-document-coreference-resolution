@@ -3,9 +3,11 @@ package edu.oregonstate.util;
 import java.util.List;
 import java.util.Map;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
+import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 
 public class DocumentAlignment {
 	
@@ -16,6 +18,7 @@ public class DocumentAlignment {
 	 */
 	public static void alignDocument(Document document) {
 		updateOrderedPredictedMentions(document);
+		//updateOrderedGoldMentions(document);
 	}
 	
 	private static void updateOrderedPredictedMentions(Document document) {
@@ -70,9 +73,22 @@ public class DocumentAlignment {
 				}
 				
 				int mentionID = m.mentionID;
-                Mention correspondingMention = document.allPredictedMentions.get(mentionID);
-                correspondingMention.corefClusterID = clusterID;
+                Mention correspondingMention = document.allGoldMentions.get(mentionID);
+                correspondingMention.goldCorefClusterID = clusterID;
 			}
+		}
+	}
+	
+	/**
+	 * whether post-process the document
+	 * 
+	 * @param document
+	 */
+	public static void postProcessDocument(Document document) {
+		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.ENABLE_GOLD_CLUSTER_POST_PROCESS, "true"));
+		SieveCoreferenceSystem.postProcessing(document);
+		if (postProcessGold) {
+			SieveCoreferenceSystem.postProcessingGoldClusters(document);
 		}
 	}
 	
