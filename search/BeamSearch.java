@@ -334,7 +334,7 @@ public class BeamSearch implements ISearch {
 			// is smaller than the global score, stop the search
 			
 			// debug information
-			ResultOutput.writeTextFile(logFile, state.featureString());
+			//ResultOutput.writeTextFile(logFile, state.featureString());
 			ResultOutput.writeTextFile(logFile, "action " + msearchStep + " : " + state.getID() );
 			ResultOutput.printScoreInformation(state.getScore(), type, logFile);
 			ResultOutput.writeTextFile(logFile, "global " + type.toString() +" F1 score: " + globalScore);
@@ -345,7 +345,7 @@ public class BeamSearch implements ISearch {
 			if (mDebug) {
 				ResultOutput.printParameters(document, document.getID(), logFile);
 				ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
-				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
+//				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
 				ResultOutput.printClusterFeatures(document, logFile, msearchStep);
 			}
 			
@@ -466,7 +466,7 @@ public class BeamSearch implements ISearch {
 			if (mDebug) {
 				ResultOutput.printParameters(document, document.getID(), logFile);
 				ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
-				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
+//				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
 				ResultOutput.printClusterFeatures(document, logFile, msearchStep);
 			}
 			

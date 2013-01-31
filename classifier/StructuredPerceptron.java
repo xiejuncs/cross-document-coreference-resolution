@@ -25,8 +25,8 @@ public class StructuredPerceptron implements IClassifier {
 	/* experiment property file */
 	private final Properties mProps;
 
-	/* the total epoch */
-	private final int mEpoch;
+	/* the total number of iterations */
+	private final int mIterations;
 	
 	/* training topics */
 	private final String[] trainingTopics;
@@ -42,9 +42,6 @@ public class StructuredPerceptron implements IClassifier {
 	
 	/* model index */
 	private int modelIndex;
-	
-	/* training style */
-	private final String trainingStyle;
 	
 	/* the weight used for keeping track of the progress */
 	private List<double[]> weights;
@@ -64,12 +61,12 @@ public class StructuredPerceptron implements IClassifier {
 	public StructuredPerceptron() {
 		mProps = ExperimentConstructor.experimentProps;
 		experimentFolder = ExperimentConstructor.experimentResultFolder;
-		mEpoch = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "1"));
+		mIterations = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "1"));
 		logFile = ExperimentConstructor.logFile;
 		trainingTopics = ExperimentConstructor.trainingTopics;
 		testingTopics = ExperimentConstructor.testingTopics;
 		modelIndex = 0;
-		trainingStyle = mProps.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
+		String trainingStyle = mProps.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
 		String[] featureTemplate = FeatureFactory.getFeatures();
 		length = featureTemplate.length;
@@ -83,7 +80,7 @@ public class StructuredPerceptron implements IClassifier {
 	 */
 	public Parameter train(List<String> paths, int index) {
 		ResultOutput.writeTextFile(logFile, "\n Begin classification: ");
-		ResultOutput.writeTextFile(logFile, "\n Structured Perceptron with Iteration : " + mEpoch);
+		ResultOutput.writeTextFile(logFile, "\n Structured Perceptron with Iteration : " + mIterations);
 		
 		// model index
 		modelIndex = index;
@@ -108,7 +105,7 @@ public class StructuredPerceptron implements IClassifier {
 		if (learningRateConstant) {
 			endRate = startingRate;
 		}
-		double[] learningRates = DoubleOperation.createDescendingArray(startingRate, endRate, mEpoch);
+		double[] learningRates = DoubleOperation.createDescendingArray(startingRate, endRate, mIterations);
 		
 		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
 		Dagger dagger = new Dagger();
@@ -118,19 +115,20 @@ public class StructuredPerceptron implements IClassifier {
 		boolean testPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
 		
 		// do gradient update
-		for (int i = 0; i < mEpoch; i++) {
+		for (int i = 0; i < mIterations; i++) {
 			double learningRate = learningRates[i];
 			weights.add(para.getWeight());
 			// shuffle the path
 			Collections.shuffle(paths);
+			int violations = para.getNoOfViolation();
 			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
 			
 			// do weight update
 			para = trainingModel.train(paths, para, learningRate);
 			
 			// print number of violated constraint
-			int violation = para.getNoOfViolation();
-			ResultOutput.writeTextFile(experimentFolder + "/violation-" + modelIndex +".csv", violation + "\t" + para.getNumberOfInstance());
+			int afterviolation = para.getNoOfViolation();
+			ResultOutput.writeTextFile(experimentFolder + "/violation-" + modelIndex +".csv", (afterviolation - violations) + "\t" + para.getNumberOfInstance());
 			
 			// train the other models of Dagger
 //			double[] learnedWeight = dagger.generateWeightForTesting(para);
@@ -153,26 +151,3 @@ public class StructuredPerceptron implements IClassifier {
 	}
 	
 }
-
-//if (i == mEpoch - 1) {
-//dagger.testDocument(trainingTopics, learnedWeight, i, 0, false, "classification-training", true);
-//} else {
-//dagger.testDocument(trainingTopics, learnedWeight, i, 0, false, "classification-training", false);
-//}
-
-/**
- * 
- * @param totalWeight
- * @param violation
- * @return
- */
-//private double[] generateFixedWeight(double[] totalWeight, int violation) {
-//	int length = totalWeight.length;
-//	double[] otherTotalWeight = new double[length];
-//	System.arraycopy(totalWeight, 0, otherTotalWeight, 0, length);
-//	double[] learnedWeight = new double[length];
-//	if (violation != 0) {
-//		learnedWeight = DoubleOperation.divide(otherTotalWeight, violation);
-//	}
-//	return learnedWeight;
-//}

@@ -150,6 +150,13 @@ public abstract class ExperimentConstructor {
         //
         // whether process or not process
         //
+        boolean incorporatezerocase = Boolean.parseBoolean(props.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP));
+        if (incorporatezerocase) {
+        	sb.append("-Incorporate");
+        } else {
+        	sb.append("-UIncorporate");
+        }
+        
         boolean trainPostProcess = Boolean.parseBoolean(props.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
         if (trainPostProcess) {
                 sb.append("-trP");
@@ -168,6 +175,7 @@ public abstract class ExperimentConstructor {
         //
         String lossScoreType = props.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP);
         sb.append("-" + lossScoreType);
+        
         
         //
         // create experiment folder for storing the results

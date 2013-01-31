@@ -222,7 +222,7 @@ public class DoubleOperation {
 	 * @return
 	 */
 	public static double calculateTwoNorm(double[] vector) {
-		double sum = 0.0; 
+		double sum = 0.0;
 		for (double element : vector) {
 			sum += element * element;
 		}

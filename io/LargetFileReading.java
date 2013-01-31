@@ -38,8 +38,6 @@ public class LargetFileReading {
 		prop = ExperimentConstructor.experimentProps;
 		binary = Boolean.parseBoolean(prop.getProperty(EecbConstants.IO_BINARY_PROP, "false"));
 		featureSize = FeatureFactory.getFeatures().length;
-//		binary = false;
-//		featureSize = 39;
 	}
 	
 	/**
@@ -86,6 +84,7 @@ public class LargetFileReading {
 		for (double feat : feature) {
 			if (feat > 0) {
 				isallzero = false;
+				break;
 			}
 		}
 		
@@ -103,11 +102,10 @@ public class LargetFileReading {
 		
 		for (String record : records) {
 			String[] elements = record.split("\t");
-			double lossscore = 0.0;
+			String lossScoreString = elements[0];
+			double lossscore = Double.parseDouble(lossScoreString.split(":")[1]);
 			double[] feature = new double[featureSize];
 			if (elements.length != 1) {
-				String lossScoreString = elements[0];
-				lossscore = Double.parseDouble(lossScoreString.split(":")[1]);
 				
 				for (int i = 1; i < elements.length; i++) {
 					String featureString = elements[i];

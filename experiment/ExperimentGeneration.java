@@ -22,22 +22,24 @@ public class ExperimentGeneration {
 	//private final String[] iterations = {"200"};
 	
 	/* train method */
-	private final String[] trainMethods = {"Online", "OnlineToBatch", "Batch"};
-	//private final String[] trainMethods = {"OnlineToBatch"};
+	//private final String[] trainMethods = {"Online", "OnlineToBatch", "Batch"};
+	private final String[] trainMethods = {"OnlineToBatch"};
 	
 	//private final String[] startRates = {"0.1", "0.05", "0.02", "0.01"};
 	
 	/* mention type */
 	//private final String[] mentionTypes = {"gold", "predicted"};
-	private final String[] mentionTypes = {"predicted"};
+	private final String[] mentionTypes = {"gold", "predicted"};
 	
 	/* enable stanford pre-process */
-	//private final String[] enableStanfordPreprocess = {"enable", "disable"};
-	private final String[] enableStanfordPreprocess = {"enable"};
+	private final String[] enableStanfordPreprocess = {"enable", "disable"};
+	//private final String[] enableStanfordPreprocess = {"disable"};
 	
 	/* learning rate type */
-	//private final String[] learningRateTypes = {"lossscore", "constant"};
-	private final String[] learningRateTypes = {"fixed"};
+	private final String[] learningRateTypes = {"lossscore"};
+	//private final String[] learningRateTypes = {"fixed"};
+	
+	private final String[] incorporateZerocase = {"incorporate", "unincorporate"};
 	
 	public ExperimentGeneration (String path, String folderName) {
 		mFolderPath = path + folderName;
@@ -60,15 +62,17 @@ public class ExperimentGeneration {
 			for (String enableStanford : enableStanfordPreprocess) {
 				for (String trainMethod : trainMethods) {
 					for (String learnRateType : learningRateTypes) {
-						String subFolderPath = mFolderPath + "/" + mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType;
-						Command.createDirectory(subFolderPath);
-						
-						String prefix = mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType;
-						generateConfigurationFile(subFolderPath, mentionType, enableStanford, trainMethod, learnRateType);
+						for (String zerocase : incorporateZerocase) {
+							String subFolderPath = mFolderPath + "/" + mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + zerocase;
+							Command.createDirectory(subFolderPath);
 
-						generateRunFile(subFolderPath, prefix);
+							String prefix = mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + zerocase;
+							generateConfigurationFile(subFolderPath, mentionType, enableStanford, trainMethod, learnRateType, zerocase);
 
-						generateSimpleFile(subFolderPath, prefix);
+							generateRunFile(subFolderPath, prefix);
+
+							generateSimpleFile(subFolderPath, prefix);
+						}
 					}
 				}
 			}
@@ -82,7 +86,7 @@ public class ExperimentGeneration {
 	 * @param method
 	 * @param startRate
 	 */
-	private void generateConfigurationFile(String subFolderPath, String mentionType, String enableStanford, String trainMethod, String learnRateType) {
+	private void generateConfigurationFile(String subFolderPath, String mentionType, String enableStanford, String trainMethod, String learnRateType, String zerocase) {
 		String configPath = subFolderPath + "/config.properties";
 		StringBuilder sb = new StringBuilder();
 		sb.append("dcoref.dataset.generation = false\n\n");
@@ -136,8 +140,14 @@ public class ExperimentGeneration {
 			if (learnRateType.equals("constant")) {
 				lossScore = "false";
 			}
-			sb.append("dcoref.pa.learning.rate.lossscore = " + lossScore);
+			sb.append("dcoref.pa.learning.rate.lossscore = " + lossScore + "\n\n");
 		}
+		
+		String incorporatezerocase = "true";
+		if (zerocase.equals("unincorporate")){
+			incorporatezerocase = "false";
+		}
+		sb.append("dcoref.incorporate.zero.case = " + incorporatezerocase);
 		
 		ResultOutput.writeTextFile(configPath, sb.toString().trim());
 	}
@@ -145,7 +155,7 @@ public class ExperimentGeneration {
 	private void generateRunFile(String subFolderPath, String prefix) {
 		String runPath = subFolderPath + "/run.sh";
 		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
-		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/predicted-coreference-resolution.jar " + clusterPath + "/config.properties";
+		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/coreference-resolution.jar " + clusterPath + "/config.properties";
 		ResultOutput.writeTextFile(runPath, command);
 	}
 	
@@ -179,11 +189,11 @@ public class ExperimentGeneration {
 	public static void main(String[] args) {
 		String path = "/nfs/guille/xfern/users/xie/Experiment/experiment/";
 		
+		//get current date time with Date()
 //		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//		//get current date time with Date()
 //		Date date = new Date();
 //		String folderName = dateFormat.format(date);
-		String folderName = "2013-01-26";
+		String folderName = "2013-01-29";
 		
 		ExperimentGeneration generator = new ExperimentGeneration(path, folderName);
 		generator.generateExperimentFiles();

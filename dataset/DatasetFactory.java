@@ -151,11 +151,14 @@ public class DatasetFactory {
 
 				// do post process
 				
-				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
+//				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
+//				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				if (postProcess) {
 					DocumentAlignment.postProcessDocument(document);
 				}
+				
+//				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
+//				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 
 				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
 			}

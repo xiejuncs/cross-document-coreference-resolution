@@ -8,7 +8,6 @@ public class LinearCostFunction implements ICostFunction {
 	public LinearCostFunction() {
 	}
 	
-	
 	/** 
 	 * according to feature vector and model vector, calculate the cost
 	 */

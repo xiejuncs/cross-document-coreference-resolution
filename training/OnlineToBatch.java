@@ -14,7 +14,7 @@ public class OnlineToBatch extends ITraining {
 	 */
 	public Parameter train(List<String> paths, Parameter para, double learningRate) {
 		double[] previousWeight = para.getWeight();
-		int violation = 0;
+		int violation = para.getNoOfViolation();
 		int numberOfInstance = 0;
 		
 		// use to update weight

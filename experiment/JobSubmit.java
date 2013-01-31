@@ -20,6 +20,7 @@ public class JobSubmit {
 		//get current date time with Date()
 		Date date = new Date();
 		String folderName = dateFormat.format(date);
+		folderName = "2013-01-29";
 		System.out.println(folderName);
 		
 		String folderPath = originalPath + folderName;

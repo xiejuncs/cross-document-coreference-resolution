@@ -41,7 +41,6 @@ public class CosineSimilarity {
 			String featurename = fit.next();
 			boolean containKey = secondFeatures.containsKey(featurename);
 			if (containKey) {
-				
 				sum = sum + firstFeatures.get(featurename) * secondFeatures.get(featurename);
 			}
 		}
@@ -61,8 +60,9 @@ public class CosineSimilarity {
 		Double norm = 0.0;
 		Set<String> keys = feature.keySet();
 		Iterator<String> it = keys.iterator();
-		while (it.hasNext()) {		
-			norm = norm + Math.pow(feature.get(it.next()),2);
+		while (it.hasNext()) {
+			String featurename = it.next();
+			norm = norm + Math.pow(feature.get(featurename), 2);
 		}
 		return Math.sqrt(norm);
 	}

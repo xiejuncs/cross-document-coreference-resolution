@@ -91,10 +91,7 @@ public class Dagger implements IMethod {
 		int length = FeatureFactory.getFeatures().length;
 		List<Parameter> paras = new ArrayList<Parameter>();
 		double[] weight = new double[length];
-		double[] totalWeight = new double[length];
-		int violation = 0;
-		int numberofinstance = 0;
-		Parameter para = new Parameter(weight, totalWeight, violation, numberofinstance);
+		Parameter para = new Parameter(weight);
 
 		// in the current time, just 1 epoch
 		for (int i = 1; i <= methodEpoch; i++) {
@@ -160,8 +157,8 @@ public class Dagger implements IMethod {
 				CorefSystem cs = new CorefSystem();
 				cs.applyPronounSieve(document);
 
-				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
+//				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
+//				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				// whether post-process the document
 				if (trainPostProcess) {
 					DocumentAlignment.postProcessDocument(document);
@@ -374,8 +371,8 @@ public class Dagger implements IMethod {
 			CorefSystem cs = new CorefSystem();
 			cs.applyPronounSieve(document);
 
-			ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-			ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
+//			ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
+//			ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 			// whether post-process the document
 			if (postProcess) {
 				DocumentAlignment.postProcessDocument(document);

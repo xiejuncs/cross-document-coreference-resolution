@@ -36,7 +36,7 @@ public abstract class ITraining {
 		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE_LOSSSCORE, "true"));
 	}
 	
-	/* different weight update style */
+	/* different weight update styles, including Batch, Online and OnlineToBatch */
 	public abstract Parameter train(List<String> paths, Parameter para, double learningRate);
 	
 	/**
@@ -60,6 +60,5 @@ public abstract class ITraining {
 		
 		return learningRate;
 	}
-
 	
 }

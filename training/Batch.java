@@ -10,12 +10,12 @@ import edu.stanford.nlp.dcoref.CorefCluster;
 public class Batch extends ITraining {
 	
 	/**
-	 * implement the batch 
+	 * implement the batch
 	 */
 	public Parameter train(List<String> paths, Parameter para, double learningRate) {
 		double[] previousWeight = para.getWeight();
 		double[] previousTotalWeight = para.getTotalWeight();
-		int violations = 0;
+		int violations = para.getNoOfViolation();
 		int numberOfInstance = 0;
 		
 		double[] delta = new double[length];
@@ -60,14 +60,7 @@ public class Batch extends ITraining {
 						if (goodCostScoreForUpdating <= badCostScoreForUpdating) {
 							violations += 1;
 							double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
-							
-							// enable PA learning rate
-							if (enablePALearningRate) {
-								learningRate = calculatePALossLearningRate(gLossScore, bLossScore, direction, enablePALearningRateLossScore);
-							}
-							
-							double[] term = DoubleOperation.time(direction, learningRate);
-							delta = DoubleOperation.add(delta, term);
+							delta = DoubleOperation.add(delta, direction);
 							totalDelta = DoubleOperation.add(totalDelta, delta);
 						}
 					}
@@ -75,8 +68,11 @@ public class Batch extends ITraining {
 			}
 		}
 		
-		double[] currentWeight = DoubleOperation.add(previousWeight, delta);
-		double[] currentTotalWeight = DoubleOperation.add(previousTotalWeight, totalDelta);
+		double[] weightedDelta = DoubleOperation.time(delta, learningRate);
+		double[] weightedTotalDelta = DoubleOperation.time(totalDelta, learningRate);
+		
+		double[] currentWeight = DoubleOperation.add(previousWeight, weightedDelta);
+		double[] currentTotalWeight = DoubleOperation.add(previousTotalWeight, weightedTotalDelta);
 		
 		return new Parameter(currentWeight, currentTotalWeight, violations, numberOfInstance);
 	}

@@ -103,6 +103,11 @@ public class LargeFileWriting {
 		
 	}
 
+	/**
+	 * Example to run this class
+	 * 
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		int RECORD_COUNT = 4000000;
 		String RECORD = "Help I am trapped in a fortune cookie factory";
