@@ -1,6 +1,5 @@
 package edu.oregonstate.features;
 
-import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.util.EecbConstants;
 
 /**

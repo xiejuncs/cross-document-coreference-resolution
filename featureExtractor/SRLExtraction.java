@@ -12,8 +12,6 @@ import java.util.Queue;
 import java.util.Set;
 
 import edu.oregonstate.data.EecbSrlAnnotation;
-import edu.oregonstate.featureExtractor.SemanticOutputInterface.Node;
-import edu.stanford.nlp.dcoref.Mention;
 
 
 /**

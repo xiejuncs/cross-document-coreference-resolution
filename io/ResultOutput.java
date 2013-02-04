@@ -375,7 +375,7 @@ public class ResultOutput {
 		}
 		
 		SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
-		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.ENABLE_GOLD_CLUSTER_POST_PROCESS, "true"));
+		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.ENABLE_GOLD_CLUSTER_POST_PROCESS, "false"));
 		if (postProcessGold) {
 			 SieveCoreferenceSystem.printConllOutput(document, writerGold, true, postProcess);
 		} else {

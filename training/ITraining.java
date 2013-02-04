@@ -1,5 +1,7 @@
 package edu.oregonstate.training;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -21,44 +23,90 @@ public abstract class ITraining {
 	/* whether incorporate the zero good state */
 	protected final boolean incorporateZeroVector;
 	
-	/* whether enable PA learning rate */
-	protected final boolean enablePALearningRate;
+	/* eanble PA learning */
+	protected final boolean enablePALearning;
 	
 	/* whether enable PA learning rate loss score */
-	protected final boolean enablePALearningRateLossScore;
+	private final boolean enablePALearningRateLossScore;
+	
+	/* enable discrepancy */
+	private final boolean enablePADiscrepancy;
+	
+	/* enable margin */
+	private final boolean enablePAMargin;
+	
+	/* enable normalize the weight */
+	private final boolean enableNormalizeWeight;
 	
 	public ITraining() {
 		Properties mProps = ExperimentConstructor.experimentProps;
 		length = FeatureFactory.getFeatures().length;
 		reader = new LargetFileReading();
 		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP, "true"));
-		enablePALearningRate = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE, "false"));
+		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING, "false"));
 		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE_LOSSSCORE, "true"));
+		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_DISCREPANCY, "true"));
+		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_MARGIN, "true"));
+		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_NORMALIZE_WEIGHT, "true"));
 	}
 	
 	/* different weight update styles, including Batch, Online and OnlineToBatch */
 	public abstract Parameter train(List<String> paths, Parameter para, double learningRate);
 	
 	/**
-	 * According to Online Passive-Aggressive Paper, margin is the difference between gLossScore and bLossScore
+	 * create random integer list
+	 * 
+	 * @param size
+	 * @return
+	 */
+	protected List<Integer> createRandomIndex(int size) {
+		List<Integer> arrays = new ArrayList<Integer>();
+		for (int i = 0; i < size; i++) {
+			arrays.add(i);
+		}
+		
+		Collections.shuffle(arrays);
+		return arrays;
+	}
+	
+	/**
+	 * calculate the loss
 	 * 
 	 * @param gLossScore
 	 * @param bLossScore
-	 * @param direction
+	 * @param gNumericalFeatures
+	 * @param bNumericalFeatures
+	 * @param weight
 	 * @return
 	 */
-	protected double calculatePALossLearningRate(double gLossScore, double bLossScore, double[] direction, boolean lossScore) {
-		double margin = 1.0;
-		if (lossScore) {
-			margin = gLossScore - bLossScore;
+	protected double calculatePALoss(double gLossScore, double bLossScore, double[] gNumericalFeatures, double[] bNumericalFeatures
+			, double[] weight) {
+		double loss = 0.0;
+		
+		// calculate margin
+		if (enablePAMargin) {
+			double margin = 1.0;
+			if (enablePALearningRateLossScore) {
+				margin = gLossScore - bLossScore;
+			}
+			loss += margin;
 		}
 		
-		double length = DoubleOperation.calculateTwoNorm(direction);
-		// length maybe 0, hence if length is 0, then the vectorLength just 1.
-		double vectorLength = (length == 0.0) ? 1.0 : length;
-		double learningRate = margin / vectorLength;
+		// calculate the discrepancy
+		if (enablePADiscrepancy) {
+			double[] weightForCalculatingCost = null;
+			if (enableNormalizeWeight) {
+				weightForCalculatingCost = DoubleOperation.normalize(weight);
+			} else {
+				weightForCalculatingCost = weight;
+			}
 		
-		return learningRate;
+			double bCostScore = DoubleOperation.time(bNumericalFeatures, weightForCalculatingCost);
+			double gCostScore = DoubleOperation.time(gNumericalFeatures, weightForCalculatingCost);
+			loss += bCostScore - gCostScore;
+		}
+		
+		return loss;
 	}
 	
 }

@@ -19,9 +19,6 @@ public class EecbConstants {
 	/** cluster corpus path, which is used to run the whole experiment */
 	public static final String CLUSTER_CPRPUS_PATH = "/nfs/guille/xfern/users/xie/Experiment/";
 	
-	/* cluster output path */
-	public static final String CLUSTER_OUTPUT_PATH = "/nfs/eecs-fserv/share/xie/Experiment/";
-	
 	/** partial sieves, does not including pronoun sieve, which is the right configuration for Stanford experiment and our own experiment */
 	public static final String PARTIAL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch";
 
@@ -124,8 +121,12 @@ public class EecbConstants {
 	public static final String TRAINING_STYLE_PROP = "dcoref.training.style";
 	public static final String LEARING_RATE_CONSTANT_PROP = "dcoref.learningrate.constant";
 	public static final String ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION = "dcoref.enable.stanford.processing.during.data.generation";
-	public static final String ENABLE_PA_LEARNING_RATE = "dcoref.pa.learning.rate";
+	public static final String ENABLE_PA_LEARNING = "dcoref.pa.learning";
 	public static final String ENABLE_PA_LEARNING_RATE_LOSSSCORE = "dcoref.pa.learning.rate.lossscore";
 	public static final String ENABLE_GOLD_CLUSTER_POST_PROCESS = "dcoref.gold.cluster.post.process";
+	public static final String ENABLE_PA_DISCREPANCY = "dcoref.pa.discrepancy";
+	public static final String ENABLE_PA_MARGIN = "dcoref.pa.margin";
+	public static final String ENABLE_PA_NORMALIZE_WEIGHT = "dcoref.pa.normalize.weight";
+	
 	
 }

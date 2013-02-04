@@ -10,55 +10,60 @@ public class DoubleOperation {
 	/**
 	 * add two double array
 	 * 
-	 * @param matrix1
-	 * @param matrix2
+	 * @param vector1
+	 * @param vector2
 	 * @return
 	 */
-	public static double[] add(double[] matrix1, double[] matrix2) {
-		double[] matrix = new double[matrix1.length];
-		assert matrix1.length == matrix2.length;
-		for (int i = 0; i < matrix1.length; i++) {
-			matrix[i] = matrix1[i] + matrix2[i];
+	public static double[] add(double[] vector1, double[] vector2) {
+		double[] result = new double[vector1.length];
+		assert vector1.length == vector2.length;
+		for (int i = 0; i < vector1.length; i++) {
+			result[i] = vector1[i] + vector2[i];
 		}
 		
-		return matrix;
+		return result;
 	}
 	
 	/**
 	 * normalize a double array
 	 * 
-	 * @param matrix
+	 * @param vector
 	 * @return
 	 */
-	public static double[] normalize(double[] matrix) {
+	public static double[] normalize(double[] vector) {
+		int length = vector.length;
+		double[] normalizedVector = new double[length];
+		
+		// get the sum
 		double sum = 0.0;
-		for (double value : matrix) {
+		for (double value : vector) {
 			sum += value * value;
 		}
-		
-		if (sum == 0.0) return matrix;
-		
-		sum = Math.sqrt(sum);
-		
-		for(int i = 0; i < matrix.length; i++) {
-			matrix[i] = matrix[i] / sum;
+		if (sum == 0.0) {
+			return normalizedVector;
 		}
 		
-		return matrix;
+		// divide by the length of the vector
+		double vectorLength = Math.sqrt(sum);
+		for(int i = 0; i < length; i++) {
+			normalizedVector[i] = vector[i] / vectorLength;
+		}
+		
+		return normalizedVector;
 	}
 	
 	/**
 	 * one double array times the other array
 	 * 
-	 * @param matrix1
-	 * @param matrix2
+	 * @param vector1
+	 * @param vector2
 	 * @return
 	 */
-	public static double time(double[] matrix1, double[] matrix2) {
-		assert matrix1.length == matrix2.length;
+	public static double time(double[] vector1, double[] vector2) {
+		assert vector1.length == vector2.length;
 		double sum = 0;
-		for (int i = 0; i < matrix1.length; i++) {
-			sum += matrix1[i] * matrix2[i];
+		for (int i = 0; i < vector1.length; i++) {
+			sum += vector1[i] * vector2[i];
 		}
 		
 		return sum;
@@ -67,15 +72,17 @@ public class DoubleOperation {
 	/**
 	 * one double array times a contant value
 	 * 
-	 * @param matrix
+	 * @param vector
 	 * @param constant
 	 * @return
 	 */
-	public static double[] time(double[] matrix, double constant) {
-		for (int i = 0; i < matrix.length; i++) {
-			matrix[i] = matrix[i] * constant;
+	public static double[] time(double[] vector, double constant) {
+		int length = vector.length;
+		double[] result = new double[length];
+		for (int i = 0; i < length; i++) {
+			result[i] = vector[i] * constant;
 		}
-		return matrix;
+		return result;
 	}
 	
 	/**
@@ -86,7 +93,6 @@ public class DoubleOperation {
 	 * @return
 	 */
 	public static double[] minus(double[] matrix1, double[] matrix2) {
-		
 		assert matrix1.length == matrix2.length;
 		double[] matrix = new double[matrix1.length];
 		for (int i = 0; i < matrix1.length; i++) {
@@ -97,37 +103,22 @@ public class DoubleOperation {
 	}
 	
 	/**
-	 * one string minus the other string 
-	 * 
-	 * @param matrix1
-	 * @param matrix2
-	 * @return
-	 */
-	public static double[] minus(String matrix1, String matrix2) {
-		String[] features1 = matrix1.split(",");
-		String[] features2 = matrix2.split(",");
-		assert features1.length == features2.length;
-		double[] result = new double[features1.length];
-		for (int i = 0; i < features1.length; i++) {
-			result[i] = Double.parseDouble(features1[i]) - Double.parseDouble(features2[i]);
-		}
-		
-		return result;
-	}
-	
-	/**
 	 * one double array divide a constant
 	 * 
-	 * @param matrix
+	 * @param vector
 	 * @param divider
 	 * @return
 	 */
-	public static double[] divide(double[] matrix, Object divider) {
+	public static double[] divide(double[] vector, Object divider) {
+		int length = vector.length;
+		double[] result = new double[length];
+		
 		double denominator = Double.valueOf(divider.toString());
-		for (int i = 0; i < matrix.length; i++) {
-			matrix[i] = matrix[i] / denominator;
+		for (int i = 0; i < length; i++) {
+			result[i] = vector[i] / denominator;
 		}
-		return matrix;
+		
+		return result;
 	}
 	
 	
@@ -135,14 +126,15 @@ public class DoubleOperation {
 	/**
 	 * print double array
 	 * 
-	 * @param matrix
+	 * @param vector
 	 */
-	public static String printArray(double[] matrix) {
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < matrix.length; i++){
-			double value = matrix[i];
+	public static String printArray(double[] vector) {
+		StringBuilder sb = new StringBuilder();
+		
+		for (int i = 0; i < vector.length; i++){
+			double value = vector[i];
 			
-			if (i != matrix.length - 1) {
+			if (i != vector.length - 1) {
 				sb.append(value + ", ");
 			} else {
 				sb.append(value);
@@ -151,6 +143,7 @@ public class DoubleOperation {
 		
 		return sb.toString().trim();
 	}
+	
 	
 	public static double transformNaN(double value) {
 		double result = value;
@@ -176,7 +169,7 @@ public class DoubleOperation {
 		
 		for (int i = 0; i < dimension; i++) {
 			double learningRate = startNumerical - i * gap;
-			DecimalFormat dtime = new DecimalFormat("#.############"); 
+			DecimalFormat dtime = new DecimalFormat("#.############");
 			learningRate= Double.valueOf(dtime.format(learningRate));
 			learningRates[i] = learningRate;
 		}
@@ -257,4 +250,21 @@ public class DoubleOperation {
 		double[] doubleArrays = transformStringArray(stringArrays);
 		return doubleArrays;
 	}
+	
+	/**
+	 * is vector a zero vector
+	 * @param vector
+	 * @return
+	 */
+	public static boolean isAllZero(double[] vector) {
+		boolean allzero = true;
+		for (double element : vector) {
+			if (element != 0.0) {
+				allzero = false;
+				break;
+			}
+		}
+		return allzero;
+	}
+	
 }

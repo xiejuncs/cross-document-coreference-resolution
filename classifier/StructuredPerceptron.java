@@ -85,8 +85,7 @@ public class StructuredPerceptron implements IClassifier {
 		// model index
 		modelIndex = index;
 		double[] weight = new double[length];
-		double[] totalWeight = new double[length];
-		Parameter para = new Parameter(weight, totalWeight);
+		Parameter para = new Parameter(weight);
 
 		// store the structured perceptron intermediate result
 		ResultOutput.writeTextFile(experimentFolder + "/classification-training.csv", "ANOTHER EXPERIMENT");
@@ -107,7 +106,6 @@ public class StructuredPerceptron implements IClassifier {
 		}
 		double[] learningRates = DoubleOperation.createDescendingArray(startingRate, endRate, mIterations);
 		
-		ResultOutput.writeTextFile(logFile, "\n Learning Rates : " + DoubleOperation.printArray(learningRates));
 		Dagger dagger = new Dagger();
 		
 		// whether do post process on the document
@@ -118,10 +116,12 @@ public class StructuredPerceptron implements IClassifier {
 		for (int i = 0; i < mIterations; i++) {
 			double learningRate = learningRates[i];
 			weights.add(para.getWeight());
+			ResultOutput.writeTextFile(logFile, "the " + modelIndex + "'s model 's " + i + "iteration");
+			ResultOutput.printParameter(para, logFile);
+			
 			// shuffle the path
 			Collections.shuffle(paths);
 			int violations = para.getNoOfViolation();
-			ResultOutput.writeTextFile(logFile, "\n the " + i + "th iteration with learning rate : " + learningRate);
 			
 			// do weight update
 			para = trainingModel.train(paths, para, learningRate);

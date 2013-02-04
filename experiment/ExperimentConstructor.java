@@ -50,19 +50,16 @@ public abstract class ExperimentConstructor {
 		String[] experimentTopics;
 		int index = 0;
 		boolean debug = Boolean.parseBoolean(props.getProperty(EecbConstants.DEBUG_PROP, "false"));
-		String outputPath = "";
 		if (debug) {
 			corpusPath = EecbConstants.LOCAL_CORPUS_PATH;
 			experimentTopics = EecbConstants.debugTopics;
 			developmentTopics = EecbConstants.debugDevelopmentTopics;
 			index = 2;
-			outputPath = corpusPath;
 		} else {
 			corpusPath = EecbConstants.CLUSTER_CPRPUS_PATH;
 			experimentTopics = EecbConstants.stanfordTotalTopics;
 			developmentTopics = EecbConstants.stanfordDevelopmentTopics;
 			index = 12;
-			outputPath = EecbConstants.CLUSTER_OUTPUT_PATH;
 		}
 		
 		// create a directory to store the output of the specific experiment
@@ -119,26 +116,26 @@ public abstract class ExperimentConstructor {
         	sb.append("-dS");
         }
         
-		
         //
         // classifier method
         //
         String classifierLearningModel = props.getProperty(EecbConstants.CLASSIFIER_PROP);   // classification model
         String classifierNoOfIteration = props.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP);   // epoch of classification model
-        String trainingStyle = props.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
+        String trainingStyle = props.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineToBatch");
         sb.append("-" + classifierLearningModel + "-" + classifierNoOfIteration + "-" + trainingStyle);
         
-        boolean enablePAAlgorithm = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE, "false"));
-        if (enablePAAlgorithm) {
-        	boolean enablePALossScore = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE_LOSSSCORE, "true"));
-        	if (enablePALossScore) {
-        		sb.append("-PALoss");
-        	} else {
-        		sb.append("-PACons");
-        	}
+        boolean normalizeWeight = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLE_PA_NORMALIZE_WEIGHT, "true"));
+        if (normalizeWeight) {
+        	sb.append("-normalize");
         } else {
-        	String startingRate = props.getProperty(EecbConstants.STRUCTUREDPERCEPTRON_STARTRATE_PROP, "0.1");
-        	sb.append("-" + startingRate);
+        	sb.append("-unnormalize");
+        }
+        
+        boolean enablePALossScore = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE_LOSSSCORE, "true"));
+        if (enablePALossScore) {
+        	sb.append("-PALoss");
+        } else {
+        	sb.append("-PACons");
         }
         
         //
@@ -146,16 +143,6 @@ public abstract class ExperimentConstructor {
         //
         String stopping = props.getProperty(EecbConstants.STOPPING_PROP, "none");
         sb.append("-" + stopping);
-        
-        //
-        // whether process or not process
-        //
-        boolean incorporatezerocase = Boolean.parseBoolean(props.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP));
-        if (incorporatezerocase) {
-        	sb.append("-Incorporate");
-        } else {
-        	sb.append("-UIncorporate");
-        }
         
         boolean trainPostProcess = Boolean.parseBoolean(props.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
         if (trainPostProcess) {
@@ -175,7 +162,6 @@ public abstract class ExperimentConstructor {
         //
         String lossScoreType = props.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP);
         sb.append("-" + lossScoreType);
-        
         
         //
         // create experiment folder for storing the results
@@ -243,4 +229,5 @@ public abstract class ExperimentConstructor {
 			}
 		}
 	}
+	
 }

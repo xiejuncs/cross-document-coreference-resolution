@@ -21,7 +21,6 @@ public class Parameter {
 	private int mNumberofInstance;
 	
 	public Parameter() {
-		
 	}
 	
 	public Parameter(double[] weights) {
@@ -69,4 +68,5 @@ public class Parameter {
 		Parameter copyPara = new Parameter(copyWeight, copyTotalWeight, mNoOfViolation, mNumberofInstance);
 		return copyPara;
 	}
+	
 }

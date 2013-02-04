@@ -22,7 +22,6 @@ import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 
 /**

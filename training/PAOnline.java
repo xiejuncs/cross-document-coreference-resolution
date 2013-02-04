@@ -3,12 +3,20 @@ package edu.oregonstate.training;
 import java.util.List;
 
 import edu.oregonstate.classifier.Parameter;
+import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.general.DoubleOperation;
+import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.State;
 import edu.stanford.nlp.dcoref.CorefCluster;
 
-public class OnlineToBatch extends ITraining {
-	
+/**
+ * use PA algorithm to update the learned weight, use the Online mode
+ * 
+ * @author Jun Xie (xie@eecs.oregonstate.edu)
+ *
+ */
+public class PAOnline extends ITraining {
+
 	/**
 	 * implement the batch 
 	 */
@@ -27,11 +35,11 @@ public class OnlineToBatch extends ITraining {
 			List<List<String>> goodDataset = dataset.get(0);
 			List<List<String>> badDataset = dataset.get(1);
 			
-			// shuffle the data again
 			List<Integer> randomLists = createRandomIndex(goodDataset.size());
 			
 			for (int i = 0; i < randomLists.size(); i++){
 				int index = randomLists.get(i);
+				
 				List<String> goodRecords = goodDataset.get(index);
 				List<String> badRecords = badDataset.get(index);
 				// get the data
@@ -41,10 +49,6 @@ public class OnlineToBatch extends ITraining {
 				if (!incorporateZeroVector) {
 					if (reader.isAllZero(goodStates)) continue;
 				}
-				
-				// fix the weight for the current batch
-				double[] fixedWeight = new double[length];
-				System.arraycopy(finalWeight, 0, fixedWeight, 0, length);
 				
 				// form constraint
 				for (State<CorefCluster> goodState : goodStates) {
@@ -62,31 +66,23 @@ public class OnlineToBatch extends ITraining {
 						double[] gNumericalFeatures = goodState.getNumericalFeatures();
 						double[] bNumericalFeatures = badState.getNumericalFeatures();
 						
-						// calculate the action score of good state and bad state	
-						double goodCostScoreForUpdating = DoubleOperation.time(fixedWeight, gNumericalFeatures);
-						double badCostScoreForUpdating = DoubleOperation.time(fixedWeight, bNumericalFeatures);
-						
-						// calculate the number of violations
 						double goodCostScoreForCounting = DoubleOperation.time(previousWeight, gNumericalFeatures);
 						double badCostScoreForCounting = DoubleOperation.time(previousWeight, bNumericalFeatures);
 						if (goodCostScoreForCounting <= badCostScoreForCounting) {
 							violation += 1;
 						}
-
-						// violated current constraint
-						if (goodCostScoreForUpdating <= badCostScoreForUpdating) {
+						
+						// calculate the loss
+						double loss = calculatePALoss(gLossScore, bLossScore, gNumericalFeatures, bNumericalFeatures, finalWeight);
+						if (loss > 0) {
 							double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
+							
 							if (DoubleOperation.isAllZero(direction)) continue;
 							
-							// enable to calculate the learning rate according to the PA algorithm
-							if (enablePALearning) {
-								double loss = calculatePALoss(gLossScore, bLossScore, gNumericalFeatures, bNumericalFeatures, fixedWeight);
-								double directionNorm = DoubleOperation.calculateTwoNorm(direction);
-								learningRate = loss / directionNorm;
-							}
-							
-							//ResultOutput.writeTextFile(ExperimentConstructor.logFile, "learning rate : " + learningRate);
-							double[] term = DoubleOperation.time(direction, learningRate);
+							double directionNorm = DoubleOperation.calculateTwoNorm(direction);							
+							double tau = loss / directionNorm;
+							ResultOutput.writeTextFile(ExperimentConstructor.logFile, "tau : " + tau);
+							double[] term = DoubleOperation.time(direction, tau);
 							finalWeight = DoubleOperation.add(finalWeight, term);
 							finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
 						}

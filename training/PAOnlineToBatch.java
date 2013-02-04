@@ -7,8 +7,14 @@ import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.search.State;
 import edu.stanford.nlp.dcoref.CorefCluster;
 
-public class OnlineToBatch extends ITraining {
-	
+/**
+ * PA using the OnlineToBatch Mode
+ * 
+ * @author Jun Xie (xie@eecs.oregonstate.edu)
+ *
+ */
+public class PAOnlineToBatch extends ITraining {
+
 	/**
 	 * implement the batch 
 	 */
@@ -16,20 +22,19 @@ public class OnlineToBatch extends ITraining {
 		double[] previousWeight = para.getWeight();
 		int violation = para.getNoOfViolation();
 		int numberOfInstance = 0;
-		
+
 		// use to update weight
 		Parameter finalParameter = para.makeCopy();
 		double[] finalWeight = finalParameter.getWeight();
 		double[] finalTotalWeight = finalParameter.getTotalWeight();
-		
+
 		for (String path : paths) {
 			List<List<List<String>>> dataset = reader.readData(path);
 			List<List<String>> goodDataset = dataset.get(0);
 			List<List<String>> badDataset = dataset.get(1);
-			
-			// shuffle the data again
+
 			List<Integer> randomLists = createRandomIndex(goodDataset.size());
-			
+
 			for (int i = 0; i < randomLists.size(); i++){
 				int index = randomLists.get(i);
 				List<String> goodRecords = goodDataset.get(index);
@@ -37,56 +42,46 @@ public class OnlineToBatch extends ITraining {
 				// get the data
 				List<State<CorefCluster>> goodStates = reader.processString(goodRecords);
 				List<State<CorefCluster>> badStates = reader.processString(badRecords);
-				
+
 				if (!incorporateZeroVector) {
 					if (reader.isAllZero(goodStates)) continue;
 				}
-				
-				// fix the weight for the current batch
+
 				double[] fixedWeight = new double[length];
 				System.arraycopy(finalWeight, 0, fixedWeight, 0, length);
-				
+
 				// form constraint
 				for (State<CorefCluster> goodState : goodStates) {
 					for (State<CorefCluster> badState : badStates) {
 						numberOfInstance += 1;
-						
+
 						// if loss score equal, do not consider this kind of constraint
 						double gLossScore = goodState.getF1Score();
 						double bLossScore = badState.getF1Score();
 						if (gLossScore == bLossScore) {
 							continue;
 						}
-						
+
 						// get the features of good state and bad state 
 						double[] gNumericalFeatures = goodState.getNumericalFeatures();
 						double[] bNumericalFeatures = badState.getNumericalFeatures();
-						
-						// calculate the action score of good state and bad state	
-						double goodCostScoreForUpdating = DoubleOperation.time(fixedWeight, gNumericalFeatures);
-						double badCostScoreForUpdating = DoubleOperation.time(fixedWeight, bNumericalFeatures);
-						
-						// calculate the number of violations
+
 						double goodCostScoreForCounting = DoubleOperation.time(previousWeight, gNumericalFeatures);
 						double badCostScoreForCounting = DoubleOperation.time(previousWeight, bNumericalFeatures);
 						if (goodCostScoreForCounting <= badCostScoreForCounting) {
 							violation += 1;
 						}
 
-						// violated current constraint
-						if (goodCostScoreForUpdating <= badCostScoreForUpdating) {
+						// calculate the loss
+						double loss = calculatePALoss(gLossScore, bLossScore, gNumericalFeatures, bNumericalFeatures, fixedWeight);
+						if (loss > 0) {
 							double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
+
 							if (DoubleOperation.isAllZero(direction)) continue;
-							
-							// enable to calculate the learning rate according to the PA algorithm
-							if (enablePALearning) {
-								double loss = calculatePALoss(gLossScore, bLossScore, gNumericalFeatures, bNumericalFeatures, fixedWeight);
-								double directionNorm = DoubleOperation.calculateTwoNorm(direction);
-								learningRate = loss / directionNorm;
-							}
-							
-							//ResultOutput.writeTextFile(ExperimentConstructor.logFile, "learning rate : " + learningRate);
-							double[] term = DoubleOperation.time(direction, learningRate);
+
+							double directionNorm = DoubleOperation.calculateTwoNorm(direction);
+							double tau = loss / directionNorm;
+							double[] term = DoubleOperation.time(direction, tau);
 							finalWeight = DoubleOperation.add(finalWeight, term);
 							finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);
 						}
@@ -94,8 +89,7 @@ public class OnlineToBatch extends ITraining {
 				}
 			}
 		}
-		
+
 		return new Parameter(finalWeight, finalTotalWeight, violation, numberOfInstance);
 	}
-	
 }

@@ -68,9 +68,10 @@ public class Online extends ITraining {
 						if (goodCostScoreForUpdating <= badCostScoreForUpdating) {
 							double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
 							
-							// enable PA learning rate
-							if (enablePALearningRate) {
-								learningRate = calculatePALossLearningRate(gLossScore, bLossScore, direction, enablePALearningRateLossScore);
+							if (enablePALearning) {
+								double loss = calculatePALoss(gLossScore, bLossScore, gNumericalFeatures, bNumericalFeatures, finalWeight);
+								double directionNorm = DoubleOperation.calculateTwoNorm(direction);
+								learningRate = loss / directionNorm;
 							}
 							
 							double[] term = DoubleOperation.time(direction, learningRate);

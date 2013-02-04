@@ -29,17 +29,18 @@ public class ExperimentGeneration {
 	
 	/* mention type */
 	//private final String[] mentionTypes = {"gold", "predicted"};
-	private final String[] mentionTypes = {"gold", "predicted"};
+	private final String[] mentionTypes = {"gold"};
 	
 	/* enable stanford pre-process */
 	private final String[] enableStanfordPreprocess = {"enable", "disable"};
 	//private final String[] enableStanfordPreprocess = {"disable"};
 	
 	/* learning rate type */
-	private final String[] learningRateTypes = {"lossscore"};
-	//private final String[] learningRateTypes = {"fixed"};
+	private final String[] learningRateTypes = {"lossscore", "constant"};
+	//private final String[] learningRateTypes = {"fixed", "constant"};
 	
-	private final String[] incorporateZerocase = {"incorporate", "unincorporate"};
+	/* normalize weight or not */
+	private final String[] normalizedWeights = {"normalize"};
 	
 	public ExperimentGeneration (String path, String folderName) {
 		mFolderPath = path + folderName;
@@ -62,12 +63,12 @@ public class ExperimentGeneration {
 			for (String enableStanford : enableStanfordPreprocess) {
 				for (String trainMethod : trainMethods) {
 					for (String learnRateType : learningRateTypes) {
-						for (String zerocase : incorporateZerocase) {
-							String subFolderPath = mFolderPath + "/" + mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + zerocase;
+						for (String normalizeWeight : normalizedWeights) {
+							String subFolderPath = mFolderPath + "/" + mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + normalizeWeight;
 							Command.createDirectory(subFolderPath);
 
-							String prefix = mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + zerocase;
-							generateConfigurationFile(subFolderPath, mentionType, enableStanford, trainMethod, learnRateType, zerocase);
+							String prefix = mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + normalizeWeight;
+							generateConfigurationFile(subFolderPath, mentionType, enableStanford, trainMethod, learnRateType, normalizeWeight);
 
 							generateRunFile(subFolderPath, prefix);
 
@@ -86,7 +87,7 @@ public class ExperimentGeneration {
 	 * @param method
 	 * @param startRate
 	 */
-	private void generateConfigurationFile(String subFolderPath, String mentionType, String enableStanford, String trainMethod, String learnRateType, String zerocase) {
+	private void generateConfigurationFile(String subFolderPath, String mentionType, String enableStanford, String trainMethod, String learnRateType, String normalizeWeight) {
 		String configPath = subFolderPath + "/config.properties";
 		StringBuilder sb = new StringBuilder();
 		sb.append("dcoref.dataset.generation = false\n\n");
@@ -125,7 +126,12 @@ public class ExperimentGeneration {
 		sb.append("dcoref.method.function.number.prop = 1\n\n");
 		
 		sb.append("dcoref.training.style = " + trainMethod + "\n");
-		sb.append("dcoref.structuredperceptron.startrate = 0.02\n\n");
+		
+		String normaWeight = "true";
+		if (normalizeWeight.equals("unnormalize")) {
+			normaWeight = "false";
+		}
+		sb.append("dcoref.pa.normalize.weight = " + normaWeight + "\n\n");
 		
 		String stanfordPreprocess = "true";
 		if (enableStanford.equals("disable")) {
@@ -134,20 +140,15 @@ public class ExperimentGeneration {
 		sb.append("dcoref.enable.stanford.processing.during.data.generation = " + stanfordPreprocess + "\n\n");
 		
 		if (!learnRateType.equals("fixed")) {
-			sb.append("dcoref.pa.learning.rate = true\n");
-			
+		    sb.append("dcoref.pa.learning = true\n");
 			String lossScore = "true";
 			if (learnRateType.equals("constant")) {
 				lossScore = "false";
 			}
 			sb.append("dcoref.pa.learning.rate.lossscore = " + lossScore + "\n\n");
+		} else {
+			sb.append("dcoref.structuredperceptron.startrate = 0.02\n\n");
 		}
-		
-		String incorporatezerocase = "true";
-		if (zerocase.equals("unincorporate")){
-			incorporatezerocase = "false";
-		}
-		sb.append("dcoref.incorporate.zero.case = " + incorporatezerocase);
 		
 		ResultOutput.writeTextFile(configPath, sb.toString().trim());
 	}
@@ -155,7 +156,7 @@ public class ExperimentGeneration {
 	private void generateRunFile(String subFolderPath, String prefix) {
 		String runPath = subFolderPath + "/run.sh";
 		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
-		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/coreference-resolution.jar " + clusterPath + "/config.properties";
+		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/gold-coreference-resolution.jar " + clusterPath + "/config.properties";
 		ResultOutput.writeTextFile(runPath, command);
 	}
 	
@@ -190,10 +191,10 @@ public class ExperimentGeneration {
 		String path = "/nfs/guille/xfern/users/xie/Experiment/experiment/";
 		
 		//get current date time with Date()
-//		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-//		Date date = new Date();
-//		String folderName = dateFormat.format(date);
-		String folderName = "2013-01-29";
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date date = new Date();
+		String folderName = dateFormat.format(date);
+		//String folderName = "2013-01-29";
 		
 		ExperimentGeneration generator = new ExperimentGeneration(path, folderName);
 		generator.generateExperimentFiles();

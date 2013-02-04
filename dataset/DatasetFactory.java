@@ -11,7 +11,6 @@ import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
 import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 
 /**
@@ -139,18 +138,15 @@ public class DatasetFactory {
 			totalPredictedMentions += document.allPredictedMentions.size();
 			
 			if (enableStanfordPreprocessStep) {
-				ResultOutput.printDocumentScore(document, ScoreType.Pairwise, logFile, "single training" + " document " + topic);
-
 				// align the three fields: allPredictedMentions, predictedMentionsOrderedBySentence, corefClusters of document
 				DocumentAlignment.alignDocument(document);
 
 				// do pronoun coreference resolution
-				// all predicted mention id can change according to the merge process 
+				// all predicted mention id can change according to the merge process
 				CorefSystem cs = new CorefSystem();
 				cs.applyPronounSieve(document);
 
 				// do post process
-				
 //				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
 //				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				if (postProcess) {

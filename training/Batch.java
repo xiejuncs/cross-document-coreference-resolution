@@ -28,6 +28,7 @@ public class Batch extends ITraining {
 			for (int index = 0; index < goodDataset.size(); index++){
 				List<String> goodRecords = goodDataset.get(index);
 				List<String> badRecords = badDataset.get(index);
+				
 				// get the data
 				List<State<CorefCluster>> goodStates = reader.processString(goodRecords);
 				List<State<CorefCluster>> badStates = reader.processString(badRecords);
@@ -48,7 +49,7 @@ public class Batch extends ITraining {
 							continue;
 						}
 						
-						// get the features of good state and bad state 
+						// get the features of good state and bad state
 						double[] gNumericalFeatures = goodState.getNumericalFeatures();
 						double[] bNumericalFeatures = badState.getNumericalFeatures();
 						
