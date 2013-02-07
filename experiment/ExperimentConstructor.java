@@ -141,7 +141,7 @@ public abstract class ExperimentConstructor {
         //
         // stopping criterion
         //
-        String stopping = props.getProperty(EecbConstants.STOPPING_PROP, "none");
+        String stopping = props.getProperty(EecbConstants.STOPPING_CRITERION, "none");
         sb.append("-" + stopping);
         
         boolean trainPostProcess = Boolean.parseBoolean(props.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));

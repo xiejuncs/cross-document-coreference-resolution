@@ -29,15 +29,15 @@ public class ExperimentGeneration {
 	
 	/* mention type */
 	//private final String[] mentionTypes = {"gold", "predicted"};
-	private final String[] mentionTypes = {"gold"};
+	private final String[] mentionTypes = {"gold", "predicted"};
 	
 	/* enable stanford pre-process */
-	private final String[] enableStanfordPreprocess = {"enable", "disable"};
-	//private final String[] enableStanfordPreprocess = {"disable"};
+	//private final String[] enableStanfordPreprocess = {"enable", "disable"};
+	private final String[] enableStanfordPreprocess = {"enable"};
 	
 	/* learning rate type */
-	private final String[] learningRateTypes = {"lossscore", "constant"};
-	//private final String[] learningRateTypes = {"fixed", "constant"};
+	private final String[] learningRateTypes = {"constant"};
+	//private final String[] learningRateTypes = {"fixed", "constant", "lossscore"};
 	
 	/* normalize weight or not */
 	private final String[] normalizedWeights = {"normalize"};
@@ -95,7 +95,7 @@ public class ExperimentGeneration {
 		sb.append("dcoref.annotators = tokenize, ssplit, pos, lemma, ner, parse, dcoref\n\n");
 		sb.append("dcoref.dataset = true\n\n");
 		sb.append("dcoref.classifier = StructuredPerceptron\n");
-		sb.append("dcoref.classifier.epoch = 200\n");
+		sb.append("dcoref.classifier.epoch = 20\n");
 		sb.append("dcoref.enablepreviouscurrentconstraint = false\n\n");
 		sb.append("dcoref.costfunction = LinearCostFunction\n\n");
 		sb.append("dcoref.lossfunction = MetricLossFunction\n");
@@ -156,7 +156,7 @@ public class ExperimentGeneration {
 	private void generateRunFile(String subFolderPath, String prefix) {
 		String runPath = subFolderPath + "/run.sh";
 		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
-		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/gold-coreference-resolution.jar " + clusterPath + "/config.properties";
+		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/coreference-resolution.jar " + clusterPath + "/config.properties";
 		ResultOutput.writeTextFile(runPath, command);
 	}
 	

@@ -68,7 +68,7 @@ public class StructuredPerceptron implements IClassifier {
 		modelIndex = 0;
 		String trainingStyle = mProps.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
-		String[] featureTemplate = FeatureFactory.getFeatures();
+		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
 		length = featureTemplate.length;
 		weights = new ArrayList<double[]>();
 		
@@ -117,7 +117,7 @@ public class StructuredPerceptron implements IClassifier {
 			double learningRate = learningRates[i];
 			weights.add(para.getWeight());
 			ResultOutput.writeTextFile(logFile, "the " + modelIndex + "'s model 's " + i + "iteration");
-			ResultOutput.printParameter(para, logFile);
+			// ResultOutput.printParameter(para, logFile);
 			
 			// shuffle the path
 			Collections.shuffle(paths);
@@ -130,10 +130,12 @@ public class StructuredPerceptron implements IClassifier {
 			int afterviolation = para.getNoOfViolation();
 			ResultOutput.writeTextFile(experimentFolder + "/violation-" + modelIndex +".csv", (afterviolation - violations) + "\t" + para.getNumberOfInstance());
 			
-			// train the other models of Dagger
-//			double[] learnedWeight = dagger.generateWeightForTesting(para);
-//			dagger.testDocument(trainingTopics, learnedWeight, modelIndex, i, trainPostProcess, "classification-training", false);
-//			dagger.testDocument(testingTopics, learnedWeight, modelIndex, i, testPostProcess, "classification-testing", false);
+			//train the other models of Dagger
+//			if (i % 2 == 0) { 
+//				double[] learnedWeight = dagger.generateWeightForTesting(para);
+//				dagger.testDocument(trainingTopics, learnedWeight, modelIndex, i, trainPostProcess, "classification-training", false);
+//				dagger.testDocument(testingTopics, learnedWeight, modelIndex, i, testPostProcess, "classification-testing", false);
+//			}
 		}
 		
 		// calculate the weight difference between the previous iteration and the current iteration

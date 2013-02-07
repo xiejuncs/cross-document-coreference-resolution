@@ -10,7 +10,7 @@ import edu.stanford.nlp.dcoref.CorefCluster;
 public class OnlineToBatch extends ITraining {
 	
 	/**
-	 * implement the batch 
+	 * implement the batch
 	 */
 	public Parameter train(List<String> paths, Parameter para, double learningRate) {
 		double[] previousWeight = para.getWeight();
@@ -62,7 +62,7 @@ public class OnlineToBatch extends ITraining {
 						double[] gNumericalFeatures = goodState.getNumericalFeatures();
 						double[] bNumericalFeatures = badState.getNumericalFeatures();
 						
-						// calculate the action score of good state and bad state	
+						// calculate the action score of good state and bad state
 						double goodCostScoreForUpdating = DoubleOperation.time(fixedWeight, gNumericalFeatures);
 						double badCostScoreForUpdating = DoubleOperation.time(fixedWeight, bNumericalFeatures);
 						

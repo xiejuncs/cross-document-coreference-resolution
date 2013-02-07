@@ -58,7 +58,7 @@ public class State<T> implements Serializable {
 		scoreDetailInformation = "";
 		F1score = 0.0;
 		featureString = "";
-		numericalFeatures = new double[FeatureFactory.getFeatures().length];
+		numericalFeatures = new double[FeatureFactory.getFeatureTemplate().length];
 	}
 	
 	/* set numerical feature which is used for Perceptron update */
@@ -98,7 +98,7 @@ public class State<T> implements Serializable {
 		
 		StringBuffer sb = new StringBuffer();
 		sb.append("[");
-		String[] features = FeatureFactory.getFeatures();
+		String[] features = FeatureFactory.getFeatureTemplate();
 		for (int i = 0; i < features.length; i++) {
 			String feature = features[i];
 			double value = mfeatures.getCount(feature);

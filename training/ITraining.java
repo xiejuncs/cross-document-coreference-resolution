@@ -40,7 +40,7 @@ public abstract class ITraining {
 	
 	public ITraining() {
 		Properties mProps = ExperimentConstructor.experimentProps;
-		length = FeatureFactory.getFeatures().length;
+		length = FeatureFactory.getFeatureTemplate().length;
 		reader = new LargetFileReading();
 		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP, "true"));
 		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING, "false"));
@@ -79,8 +79,8 @@ public abstract class ITraining {
 	 * @param weight
 	 * @return
 	 */
-	protected double calculatePALoss(double gLossScore, double bLossScore, double[] gNumericalFeatures, double[] bNumericalFeatures
-			, double[] weight) {
+	protected double calculatePALoss(double gLossScore, double bLossScore, double[] gNumericalFeatures, 
+			 						 double[] bNumericalFeatures, double[] weight) {
 		double loss = 0.0;
 		
 		// calculate margin

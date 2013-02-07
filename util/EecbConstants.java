@@ -106,7 +106,6 @@ public class EecbConstants {
 	public static final String TEST_POSTPROCESS_PROP = "dcoref.test.postprocess";
 	public static final String WEIGHT_PROP = "dcoref.weight";
 	public static final String LOSSFUNCTION_SCORE_PROP = "dcoref.lossfunction.score";
-	public static final String STOPPING_PROP = "dcoref.stopping";
 	public static final String ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP = "dcoref.enablepreviouscurrentconstraint";
 	public static final String ENABLEBEAMCONSTRAINT_PROP = "dcoref.enablebeamconstraint";
 	public static final String ENABLEBEAMUNBEAMCONSTRAINT_PROP = "dcoref.enablebeamunbeamconstraint";
@@ -127,6 +126,8 @@ public class EecbConstants {
 	public static final String ENABLE_PA_DISCREPANCY = "dcoref.pa.discrepancy";
 	public static final String ENABLE_PA_MARGIN = "dcoref.pa.margin";
 	public static final String ENABLE_PA_NORMALIZE_WEIGHT = "dcoref.pa.normalize.weight";
+	public static final String ENABLE_STATE_FEATURE = "dcoref.state.feature";
+	public static final String ENABLE_BEST_SEARCH_SCORE = "dcoref.best.search.score";
 	
 	
 }

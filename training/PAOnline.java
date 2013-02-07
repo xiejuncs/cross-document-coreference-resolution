@@ -81,7 +81,7 @@ public class PAOnline extends ITraining {
 							
 							double directionNorm = DoubleOperation.calculateTwoNorm(direction);							
 							double tau = loss / directionNorm;
-							ResultOutput.writeTextFile(ExperimentConstructor.logFile, "tau : " + tau);
+							// ResultOutput.writeTextFile(ExperimentConstructor.logFile, "tau : " + tau);
 							double[] term = DoubleOperation.time(direction, tau);
 							finalWeight = DoubleOperation.add(finalWeight, term);
 							finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);

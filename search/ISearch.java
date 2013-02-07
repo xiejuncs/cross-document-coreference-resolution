@@ -16,5 +16,5 @@ public interface ISearch {
 	public void trainingBySearch(Document document, Parameter para, String phase);
 	
 	/* apply the learned weight to the testing document, and return the best loss state, later, we can output a terminate state for final performance */
-	public State<CorefCluster> testingBySearch(Document document, double[] weight, String phase, boolean outputFeature);
+	public State<CorefCluster> testingBySearch(Document document, double[] weight, String phase, boolean outputFeature, double stoppingrate);
 }

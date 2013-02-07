@@ -85,6 +85,9 @@ public class BeamSearch implements ISearch {
     /* debug mode */
     private final boolean mDebug;
     
+    /* enable state feature or just action feature */
+    private final boolean enableStateFeature;
+    
     /** constructor */
     public BeamSearch() {
     	mProps = ExperimentConstructor.experimentProps;
@@ -102,6 +105,7 @@ public class BeamSearch implements ISearch {
         ResultOutput.writeTextFile(logFile, "\nBeam Search Configuration : " + "width : " + mBeamWidth + "; maximumSearch : " + 
         							maximumSearch + "; type : " + type.toString() + "; lossFunction : " + 
         							mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP) + "; costFunction : " + mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
+        enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STATE_FEATURE, "false"));
         
         // set the dictionary
         dictionaries = new Dictionaries();
@@ -157,7 +161,7 @@ public class BeamSearch implements ISearch {
         ResultOutput.writeTextFile(logFile, "after create children: total of clusters : " + (size - 1));
         
         // Add HALT action
-        String stopping = mProps.getProperty(EecbConstants.STOPPING_PROP, "none");
+        String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION, "none");
 		if (stopping.equals("halt")) {
 			actions.add("HALT");
 		}
@@ -273,20 +277,22 @@ public class BeamSearch implements ISearch {
 		CorefCluster iCluster = initial.getState().get(i_id);
 		CorefCluster cpCluster = new CorefCluster(i_id, iCluster.getCorefMentions());
 		CorefCluster jCluster = initial.getState().get(j_id);
-		
+
 		// generate features
-		
-//		ResultOutput.writeTextFile(logFile, "action : " + action );
-//		ResultOutput.writeTextFile(logFile, i_id + " : " + iCluster.predictedCentroid);
-//		ResultOutput.writeTextFile(logFile, j_id + " : " + jCluster.predictedCentroid);
-		Counter<String> features = Feature.getFeatures(document, iCluster, jCluster, false, dictionaries);
-//		ResultOutput.writeTextFile(logFile, "feature : " + features);
+		Counter<String> features = null;
+		if (!enableStateFeature) {
+			features = Feature.getFeatures(document, iCluster, jCluster, false, dictionaries);
+		}
 		
 		// merge cluster
 		mergeClusters(cpCluster, jCluster);
 		initial.remove(i_id);
 		initial.remove(j_id);
 		initial.add(i_id, cpCluster);
+		
+		if (enableStateFeature) {
+			features = FeatureFactory.getFeatures(document, initial, dictionaries);
+		}
 		
 		// calculate the cost function for the state
 		double costScore = costFunction.calculateCostFunction(features, weight);
@@ -318,7 +324,7 @@ public class BeamSearch implements ISearch {
 		double[] localScores = lossFunction.getMetricScore(document);
 		initialState.setScore(localScores);
 		beam.add(initialState, localScores[0]);
-		String[] featureTemplate = FeatureFactory.getFeatures();
+		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
 		
 		// the best output y^{*}_{i} uncovered so far evaluated by the loss function
 		State<CorefCluster> bestState = new State<CorefCluster>();
@@ -421,7 +427,7 @@ public class BeamSearch implements ISearch {
 	// In addition, I did not use closed list to keep track of the duplicate states, because it costs a lot of time
 	// 
 	// define termination condition for test search
-	public State<CorefCluster> testingBySearch(Document document, double[] weight, String phaseID, boolean outputFeature) {
+	public State<CorefCluster> testingBySearch(Document document, double[] weight, String phaseID, boolean outputFeature, double stoppingRate) {
 		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION);
 		String mscorePath = experimentResultFolder + "/" + document.getID() + "/" + phaseID;
 		String trainingDataPath = experimentResultFolder + "/" + document.getID() + "/data";
@@ -429,13 +435,12 @@ public class BeamSearch implements ISearch {
 		
 		double globalCostScore = 0.0;
 		double stopscore = 0.0;
-		double stoppingRate = 0.0;
-		if (stopping.equals("tuning")) {
+		if (stoppingRate == 0.0) {
 			stoppingRate = Double.parseDouble(mProps.getProperty(EecbConstants.STOPPING_RATE, "2"));
 		}
 		double bestLossScore = 0.0;        // in order to track the state with the highest loss score
 		State<CorefCluster> bestLostState = new State<CorefCluster>();
-		String[] featureTemplate = FeatureFactory.getFeatures();
+		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
 		
 		// closed list to track duplicate method
 		FixedSizePriorityQueue<State<CorefCluster>> beam = new FixedSizePriorityQueue<State<CorefCluster>>(mBeamWidth);
@@ -612,7 +617,7 @@ public class BeamSearch implements ISearch {
 	 * @return
 	 */
 	private Counter<String> buildHaltFeature() {
-		String[] featureTemplate = FeatureFactory.getFeatures();
+		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
 		Counter<String> features = new ClassicCounter<String>();
 		for (String feature : featureTemplate) {
 			if (feature.equals("HALT")) {

@@ -95,7 +95,7 @@ public class DatasetFactory {
 		generateSingleSet(trainingTopics, "training-generation");
 		
 		// validation set 
-		String stopping = mProps.getProperty(EecbConstants.STOPPING_PROP, "none");
+		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION, "none");
 		if (stopping.equals("tuning")) {
 			generateSingleSet(developmentTopics, "validation-generation");
 		}

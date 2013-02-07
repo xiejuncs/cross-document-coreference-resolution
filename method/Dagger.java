@@ -16,6 +16,7 @@ import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.ISearch;
 import edu.oregonstate.search.State;
+import edu.oregonstate.training.Development;
 import edu.oregonstate.util.Command;
 import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
@@ -67,6 +68,9 @@ public class Dagger implements IMethod {
 
 	/* loss type */
 	private final ScoreType lossType;
+	
+	/* enable best search state score */
+	private final boolean bestStateScore;
 
 	public Dagger() {
 		mProps = ExperimentConstructor.experimentProps;
@@ -81,13 +85,14 @@ public class Dagger implements IMethod {
 		classificationMethod = mProps.getProperty(EecbConstants.CLASSIFIER_PROP, "StructuredPerceptron");
 		conllResultPath = experimentResultFolder + "/conllResult";
 		lossType = ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
+		bestStateScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_BEST_SEARCH_SCORE, "false"));
 	}
 
 	/**
 	 * Learn the final weight, which can be used for 
 	 */
 	public List<Parameter> executeMethod() {
-		int length = FeatureFactory.getFeatures().length;
+		int length = FeatureFactory.getFeatureTemplate().length;
 		List<Parameter> paras = new ArrayList<Parameter>();
 		double[] weight = new double[length];
 		Parameter para = new Parameter(weight);
@@ -178,7 +183,7 @@ public class Dagger implements IMethod {
 		} else {
 
 			// use average model to collect more data
-			testDocument(trainingTopics, generateWeightForTesting(para), i, j, trainPostProcess, "trainingset", true);
+			testDocument(trainingTopics, generateWeightForTesting(para), i, j, trainPostProcess, "trainingset", true, 0.0);
 		}
 
 		// train the model using the specified classifier for several iterations, using small learning rate
@@ -319,16 +324,26 @@ public class Dagger implements IMethod {
 	private void testModel(double[] weight, int i, int j) {
 		// do not need do testing on training
 		boolean testTraining = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_VALIDATION_PROP, "false"));
+		
+		
+		double stoppingrate = 0.0;
+		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION);
+		if (stopping.equals("tuning")) {
+			Development development = new Development(i, j, weight, 1.0, 3.0, 10);
+			stoppingrate = development.tuning();
+		}
+		
+		ResultOutput.writeTextFile(logFile, "the stopping rate is : " + stopping + " for " + i + "-" + j);
 
 		if (testTraining && (j == numberOfFunctions)) {
 			ResultOutput.writeTextFile(logFile, "\n\n(Dagger) testing on training set\n\n");
 			boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
-			testDocument(trainingTopics, weight, i, numberOfFunctions + 1, trainPostProcess, "trainingset", false);
+			testDocument(trainingTopics, weight, i, numberOfFunctions + 1, trainPostProcess, "trainingset", false, stoppingrate);
 		}
 
 		ResultOutput.writeTextFile(logFile, "\n\n(Dagger) testing on testing set\n\n");
 		boolean testPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
-		testDocument(testingTopics, weight, i, j, testPostProcess, "testingset", false);
+		testDocument(testingTopics, weight, i, j, testPostProcess, "testingset", false, stoppingrate);
 	}
 
 	/**
@@ -341,7 +356,7 @@ public class Dagger implements IMethod {
 	 * @param postProcess
 	 * @param phase
 	 */
-	public void testDocument(String[] topics, double[] weight, int i, int j, boolean postProcess, String phase, boolean outputFeature){
+	public void testDocument(String[] topics, double[] weight, int i, int j, boolean postProcess, String phase, boolean outputFeature, double stoppingrate){
 		// store the predicted mentions and gold mentions into corpus
 		Document corpus = new Document();
 		corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
@@ -358,9 +373,12 @@ public class Dagger implements IMethod {
 			ResultOutput.printParameters(document, topic, logFile);
 
 			ISearch search = EecbConstructor.createSearchMethod(searchMethod);
-			State<CorefCluster> bestLossState = search.testingBySearch(document, weight, phaseID, outputFeature);
-
-			document.corefClusters = bestLossState.getState();
+			State<CorefCluster> bestLossState = search.testingBySearch(document, weight, phaseID, outputFeature, stoppingrate);
+			
+			if (bestStateScore) {
+				document.corefClusters = bestLossState.getState();
+			}
+			
 			DocumentAlignment.alignDocument(document);
 
 			ResultOutput.printDocumentScore(document, lossType, logFile, "single " + phase + " document " + topic);

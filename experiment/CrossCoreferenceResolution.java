@@ -71,10 +71,11 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		
 		// 2. do search and training
 		boolean searchTraining = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.SEARCH_TRAINING_PROP, "true"));
+		List<Parameter> finalParas = null;
 		if (searchTraining) {
 			String methodName = experimentProps.getProperty(EecbConstants.METHOD_PROP, "Dagger");
 			IMethod method = EecbConstructor.createMethodModel(methodName);
-			List<Parameter> finalParas = method.executeMethod();
+			finalParas = method.executeMethod();
 
 			// do final testing
 			boolean debug = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DEBUG_PROP, "false"));
