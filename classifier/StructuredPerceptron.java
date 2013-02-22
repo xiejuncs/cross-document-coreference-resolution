@@ -55,6 +55,12 @@ public class StructuredPerceptron implements IClassifier {
 	/* learning rate constant or not */
 	private final boolean learningRateConstant;
 	
+	/* enable print the result of each iteration during training */
+	private final boolean enablePrintIterationResult;
+	
+	/* print the result of the iteration for how many gap */
+	private final int printIteartionGap;
+	
 	/**
 	 * constructor
 	 */
@@ -73,6 +79,8 @@ public class StructuredPerceptron implements IClassifier {
 		weights = new ArrayList<double[]>();
 		
 		learningRateConstant = Boolean.parseBoolean(mProps.getProperty(EecbConstants.LEARING_RATE_CONSTANT_PROP, "false"));
+		enablePrintIterationResult = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PRINT_ITERATION_RESULT, "false"));
+		printIteartionGap = Integer.parseInt(mProps.getProperty(EecbConstants.PRINT_ITEARTION_GAP, "1"));
 	}
 	
 	/**
@@ -85,7 +93,8 @@ public class StructuredPerceptron implements IClassifier {
 		// model index
 		modelIndex = index;
 		double[] weight = new double[length];
-		Parameter para = new Parameter(weight);
+		double[][] variance = DoubleOperation.generateIdentityMatrix(length);
+		Parameter para = new Parameter(weight, variance);
 
 		// store the structured perceptron intermediate result
 		ResultOutput.writeTextFile(experimentFolder + "/classification-training.csv", "ANOTHER EXPERIMENT");
@@ -131,11 +140,14 @@ public class StructuredPerceptron implements IClassifier {
 			ResultOutput.writeTextFile(experimentFolder + "/violation-" + modelIndex +".csv", (afterviolation - violations) + "\t" + para.getNumberOfInstance());
 			
 			//train the other models of Dagger
-//			if (i % 2 == 0) { 
-//				double[] learnedWeight = dagger.generateWeightForTesting(para);
-//				dagger.testDocument(trainingTopics, learnedWeight, modelIndex, i, trainPostProcess, "classification-training", false);
-//				dagger.testDocument(testingTopics, learnedWeight, modelIndex, i, testPostProcess, "classification-testing", false);
-//			}
+			if (enablePrintIterationResult && (i % printIteartionGap == 0)) {
+				double[] learnedWeight = dagger.generateWeightForTesting(para);
+				
+				double stoppingRate = dagger.tuneStoppingRate(learnedWeight, modelIndex, i);
+				
+				dagger.testDocument(trainingTopics, learnedWeight, modelIndex, i, trainPostProcess, "classification-training", false, stoppingRate);
+				dagger.testDocument(testingTopics, learnedWeight, modelIndex, i, testPostProcess, "classification-testing", false, stoppingRate);
+			}
 		}
 		
 		// calculate the weight difference between the previous iteration and the current iteration

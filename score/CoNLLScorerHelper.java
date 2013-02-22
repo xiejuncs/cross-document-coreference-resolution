@@ -105,9 +105,9 @@ public class CoNLLScorerHelper {
 	/**
 	 * print the final Conll score 
 	 * 
-	 * @param mGoldCorefCluster
-	 * @param mPredictedCorefCluster
-	 * @param phase
+	 * @param mGoldCorefCluster : gold coref cluster file
+	 * @param mPredictedCorefCluster : predicted coref cluster file
+	 * @param phase : used to indicate which phase the current process is
 	 */
 	public double[] printFinalCoNLLScore(String mGoldCorefCluster, String mPredictedCorefCluster, String phase) {
 		double[] finalScores = new double[5];

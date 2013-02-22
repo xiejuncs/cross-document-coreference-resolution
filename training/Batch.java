@@ -75,7 +75,7 @@ public class Batch extends ITraining {
 		double[] currentWeight = DoubleOperation.add(previousWeight, weightedDelta);
 		double[] currentTotalWeight = DoubleOperation.add(previousTotalWeight, weightedTotalDelta);
 		
-		return new Parameter(currentWeight, currentTotalWeight, violations, numberOfInstance);
+		return new Parameter(currentWeight, para.getVariance(), currentTotalWeight, violations, numberOfInstance);
 	}
 	
 }

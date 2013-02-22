@@ -4,15 +4,11 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import edu.oregonstate.dataset.CorefSystem;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.method.Dagger;
-import edu.oregonstate.score.CoNLLScorerHelper;
 import edu.oregonstate.search.ISearch;
 import edu.oregonstate.search.State;
 import edu.oregonstate.util.Command;
@@ -20,12 +16,8 @@ import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.CorefCluster;
-import edu.stanford.nlp.dcoref.CorefScorer;
 import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.ScorerMUC;
-import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
-import edu.stanford.nlp.dcoref.sievepasses.DeterministicCorefSieve;
 
 /**
  * Development Set used to tune the hyper-parameters. In our experiment, we need 
@@ -78,6 +70,9 @@ public class Development {
 	/* whether post-process the development set */
 	private final boolean postProcess;
 	
+	/* loss score type */
+	private final ScoreType lossScoreType;
+	
 	/**
 	 * 
 	 * @param developmentTopics 
@@ -103,6 +98,7 @@ public class Development {
 		mModelIndex = modelIndex;
 		
 		postProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
+		lossScoreType = ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
 	}
 	
 	/**
@@ -112,20 +108,19 @@ public class Development {
 		double[] stoppingRates = DoubleOperation.createDescendingArray(mStartNumber, mEndNumber, mIterations);
 		boolean bestStateScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_BEST_SEARCH_SCORE, "false"));
 
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "Begin Tuning parameter for the " + mModelIndex + "'s model in the " + mCurrentEpoch + "th iteration");
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nBegin Tuning parameter for the " + mModelIndex + "'s model in the " + mCurrentEpoch + "th iteration\n");
 
 		double maximumScore = 0.0;
 		double optimizedStoppingRate = 0.0;
-		double score = 0.0;
 		// do tuning
 		for (double stoppingRate : stoppingRates) {
 			Document corpus = new Document();
 			corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 			
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "stopping rate number : " + stoppingRate + " for the "  + mCurrentEpoch + "th iteration");
+			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nstopping rate number : " + stoppingRate + " for the "  + mCurrentEpoch + "th iteration\n");
 			
-			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-tuning-" + mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate;
 			String goldCorefCluster = conllResultPath + "/goldCorefCluster-tuning-" + mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate;
+			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-tuning-" + mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate;
 
 			PrintWriter writerPredicted = null;
 			PrintWriter writerGold = null;
@@ -138,7 +133,7 @@ public class Development {
 			String phaseID = mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate;
 
 			for (String topic : mDevelopmentTopics) {
-				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "Starting to tuning on " + topic + " with stpping rate " + stoppingRate + " for the " + mCurrentEpoch + "th iteration");
+				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nStarting to tuning on " + topic + " with stpping rate " + stoppingRate + " for the " + mCurrentEpoch + "th iteration\n");
 				Document document = ResultOutput.deserialize(topic, serializeOutput, false);
 
 				// before search : document parameters
@@ -158,21 +153,18 @@ public class Development {
 				
 				DocumentAlignment.alignDocument(document);
 
-				ResultOutput.printDocumentScore(document, ScoreType.Pairwise, logFile, "single " + phaseID + " document " + topic);
-				ResultOutput.printParameters(document, topic, logFile);
-
 				// do pronoun coreference resolution
 				CorefSystem cs = new CorefSystem();
 				cs.applyPronounSieve(document);
 
-//				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-//				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				// whether post-process the document
 				if (postProcess) {
 					DocumentAlignment.postProcessDocument(document);
 				}
 
 				// add single document to the corpus
+				ResultOutput.printDocumentScore(document, lossScoreType, logFile, "single " + phaseID + " document " + topic);
+				ResultOutput.printParameters(document, topic, logFile);
 				DocumentAlignment.mergeDocument(document, corpus);
 				
 				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
@@ -183,14 +175,15 @@ public class Development {
 			
 			// do scoring on this iteration
 			try {
-				// Stanford scoring
-				String[] scoreInformation = ResultOutput.printDocumentScore(corpus, ScoreType.Pairwise, logFile, phaseID);
+				// Pairwise
+				String[] scoreInformation = ResultOutput.printDocumentScore(corpus, lossScoreType, logFile, phaseID);
 
 				// CoNLL scoring
 				double[] finalScores = ResultOutput.printCorpusResult(mCurrentEpoch, logFile, goldCorefCluster, predictedCorefCluster, "model generation");
-				ResultOutput.writeTextFile(experimentResultFolder + "/" + phaseID + ".csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
+				ResultOutput.writeTextFile(experimentResultFolder + "/tuning/" + phaseID + ".csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
 												finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 				
+				double score = finalScores[4];
 				if (score > maximumScore) {
 					optimizedStoppingRate = stoppingRate;
 					maximumScore = score;

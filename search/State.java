@@ -48,6 +48,15 @@ public class State<T> implements Serializable {
 
 	/* the metric F1 score, for example, if we use Pairwise as metric score, then the F1score is Pairwise F1 score */
 	private double F1score;
+	
+	/* description */
+	private String actionDescription;
+	
+	/* predicted centroid of the ith cluster */
+	private HashMap<String, ClassicCounter<String>> mToClusterPredictedCentroid;
+	
+	/* predicted centroid of the jth cluster */
+	private HashMap<String, ClassicCounter<String>> mFromClusterPredictedCentroid;
 
 	public State() {
 		state = new HashMap<Integer, T>();
@@ -59,6 +68,7 @@ public class State<T> implements Serializable {
 		F1score = 0.0;
 		featureString = "";
 		numericalFeatures = new double[FeatureFactory.getFeatureTemplate().length];
+		actionDescription = "";
 	}
 	
 	/* set numerical feature which is used for Perceptron update */
@@ -102,10 +112,12 @@ public class State<T> implements Serializable {
 		for (int i = 0; i < features.length; i++) {
 			String feature = features[i];
 			double value = mfeatures.getCount(feature);
-			if (i == features.length - 1) {
-				sb.append(value);
-			} else {
-				sb.append(value + ", ");
+			if (value != 0) {
+				if (i == features.length - 1) {
+					sb.append(feature + " : " + value);
+				} else {
+					sb.append( feature + " : " + value + ", ");
+				}
 			}
 		}
 		
@@ -154,6 +166,14 @@ public class State<T> implements Serializable {
 		return this.id;
 	}
 	
+	public void setActionDescription(String action) {
+		actionDescription = action;
+	}
+	
+	public String getActionDescription() {
+		return actionDescription;
+	}
+	
 	/* set metric score */
 	public void setScore(double[] score) {
 		mMetricScore = score;
@@ -172,6 +192,23 @@ public class State<T> implements Serializable {
 	/* get cost score of the state */
 	public double getCostScore() {
 		return mCostScore;
+	}
+	
+	/* set and get predicted centroid for to and from cluster */
+	public void setToClusterPredictedCentroid( HashMap<String, ClassicCounter<String>> toClusterPredictedCentroid) {
+		mToClusterPredictedCentroid = toClusterPredictedCentroid;
+	}
+	
+	public void setFromClusterPredictedCentroid( HashMap<String, ClassicCounter<String>> fromClusterPredictedCentroid) {
+		mFromClusterPredictedCentroid = fromClusterPredictedCentroid;
+	}
+	
+	public HashMap<String, ClassicCounter<String>> getToClusterPredictedCentroid() {
+		return mToClusterPredictedCentroid;
+	}
+	
+	public HashMap<String, ClassicCounter<String>> getFromClusterPredictedCentroid() {
+		return mFromClusterPredictedCentroid;
 	}
 	
 	// This one needs to be take cared

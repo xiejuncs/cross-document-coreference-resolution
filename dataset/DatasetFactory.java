@@ -1,6 +1,7 @@
 package edu.oregonstate.dataset;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -10,6 +11,7 @@ import edu.oregonstate.util.Command;
 import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
+import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
 
@@ -45,20 +47,59 @@ public class DatasetFactory {
 	/* document serialized output */
 	private final String serializedOutput;
 	
-	/* enable stanfor pre-process step during data generation */
+	/* loss type */
+	private final ScoreType lossType;
+	
+	/* enable Stanford pre-process step during data generation */
 	private final boolean enableStanfordPreprocessStep;
+	
+	/* whether generate training set */
+	private boolean enableGenerateTrainingSet;
+	
+	// whether generate testing set
+	private boolean enableGenerateTestingSet;
+	
+	// whether generate development set;
+	private boolean enableGenerateDevelopmentSet;
 	
 	public DatasetFactory() {
 		mExperimentResultFolder = ExperimentConstructor.experimentResultFolder;
 		mProps = ExperimentConstructor.experimentProps;
+		logFile = ExperimentConstructor.logFile;
+		
 		totalGoalMentions = 0;
 		totalPredictedMentions = 0;
 		corpusStatisticsPath = mExperimentResultFolder + "/corpusStatisticsPath";
 		initialResult = mExperimentResultFolder + "/initialResult.csv";
-		logFile = ExperimentConstructor.logFile;
+		
 		serializedOutput = mExperimentResultFolder + "/documentobject";
 		Command.createDirectory(serializedOutput);
+		
 		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION, "true"));
+		lossType = ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
+		
+		enableGenerateTrainingSet = true;
+		enableGenerateTestingSet = true;
+		enableGenerateDevelopmentSet = true;
+		updateFlags();
+		
+	}
+	
+	// update the flags for generating set
+	private void updateFlags() {
+		// dcoref.training.without.tune
+		boolean trainingWithoutTune = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_WITHOUT_TUNE, "false"));
+		if (trainingWithoutTune) {
+			enableGenerateDevelopmentSet = false;
+		}
+		
+		// dcoref.just.tune.parameter
+		boolean justTuneParameter = Boolean.parseBoolean(mProps.getProperty(EecbConstants.JUST_TUNE_PARAMETER, "false"));
+		if (justTuneParameter) {
+			enableGenerateTrainingSet = false;
+			enableGenerateTestingSet = false;
+		}
+		
 	}
 	
 	/**
@@ -70,7 +111,7 @@ public class DatasetFactory {
 		topics.add(ExperimentConstructor.trainingTopics);
 		topics.add(ExperimentConstructor.testingTopics);
 		topics.add(ExperimentConstructor.developmentTopics);
-		generateSet(topics);                      // generate dataset
+		generateSet(topics);                      // generate Dataset
 		
 		//
 		// debug information: 7980 in total for all documents
@@ -92,16 +133,19 @@ public class DatasetFactory {
 		String[] developmentTopics = topics.get(2);
 		
 		// training set
-		generateSingleSet(trainingTopics, "training-generation");
+		if (enableGenerateTrainingSet) {
+			generateSingleSet(trainingTopics, "training-generation");
+		}
 		
-		// validation set 
-		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION, "none");
-		if (stopping.equals("tuning")) {
+		// validation set
+		if (enableGenerateDevelopmentSet) {
 			generateSingleSet(developmentTopics, "validation-generation");
 		}
 		
 		// testing set
-		generateSingleSet(testingTopics, "testing-generation");
+		if (enableGenerateTestingSet) {
+			generateSingleSet(testingTopics, "testing-generation");
+		}
 	}
 	
 	/**
@@ -112,11 +156,13 @@ public class DatasetFactory {
 	 */
 	private void generateSingleSet(String[] topics, String phase) {
 		String conllResultPath = mExperimentResultFolder + "/conllResult";
+		Document corpus = new Document();
+		corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 		
 		// gold only and whether post process
 		boolean goldOnly;
 		boolean postProcess;
-		if (phase.equals("testing")) {
+		if (phase.equals("testing-generation")) {
 			goldOnly = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_GOLD_PROP, "true"));
 			postProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
 		} else {
@@ -125,21 +171,20 @@ public class DatasetFactory {
 		}
 		
 		// generate file
-		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase;
 		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phase;
+		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase;
 		
 		//
 		// generate data set
 		//
 		for(String topic : topics) {
-			ResultOutput.writeTextFile(logFile, "create " + phase + " data set for " + topic);
+			ResultOutput.writeTextFile(logFile, "\ncreate " + phase + " data set for " + topic);
 			Document document = generateDocument(topic, goldOnly);
 			totalGoalMentions += document.allGoldMentions.size();
 			totalPredictedMentions += document.allPredictedMentions.size();
 			
+			// enable Stanford pre-process step
 			if (enableStanfordPreprocessStep) {
-				// align the three fields: allPredictedMentions, predictedMentionsOrderedBySentence, corefClusters of document
-				DocumentAlignment.alignDocument(document);
 
 				// do pronoun coreference resolution
 				// all predicted mention id can change according to the merge process
@@ -147,25 +192,27 @@ public class DatasetFactory {
 				cs.applyPronounSieve(document);
 
 				// do post process
-//				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-//				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				if (postProcess) {
 					DocumentAlignment.postProcessDocument(document);
 				}
 				
-//				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-//				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
+				DocumentAlignment.mergeDocument(document, corpus);
+				// Stanford scoring
+				
 
 				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
 			}
 		}
 		
+		// Stanford scoring
+		String[] scoreInformation = ResultOutput.printDocumentScore(corpus, lossType, logFile, phase);
 		//
 		// print the final result for the single set
 		//
 		if (enableStanfordPreprocessStep) {
 			double[] finalScores = ResultOutput.printCorpusResult(0, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
-			ResultOutput.writeTextFile(initialResult, finalScores[0] + "\t" + finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
+			ResultOutput.writeTextFile(initialResult, scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
+					finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 		}
 	}
 	
@@ -179,12 +226,10 @@ public class DatasetFactory {
 	private Document generateDocument(String topic, boolean goldOnly) {
 		String currentExperimentFolder = mExperimentResultFolder + "/" + topic;
 		Command.createDirectory(currentExperimentFolder);
-		ResultOutput.writeTextFile(logFile, "create data set for " + topic);
+		ResultOutput.writeTextFile(logFile, "\ncreate data set for " + topic);
 		
 		IDataSet mDatasetMode = createDataSetMode();
 		Document document = mDatasetMode.getData(topic, goldOnly);
-		//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
-		//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
 		
 		ResultOutput.writeTextFile(logFile, "number of gold mentions : " + document.allGoldMentions.size());
 		ResultOutput.writeTextFile(logFile, "number of predicted mentions : " + document.allPredictedMentions.size());

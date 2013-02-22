@@ -97,13 +97,6 @@ public class SrlResultIncorporation {
 		}
 	}
 	
-	private void findHead(Mention argument, Tree root, List<CoreLabel> sentence) {
-		Tree head = rule.findSyntacticHead(argument, root, sentence);
-		argument.headIndex = ((CoreLabel) head.label()).get(IndexAnnotation.class)-1;
-		argument.headWord = sentence.get(argument.headIndex);
-		argument.headString = argument.headWord.get(TextAnnotation.class).toLowerCase();
-	}
-	
 	/**
 	 * align the predict mention with the srl result
 	 * at first: match the sentence

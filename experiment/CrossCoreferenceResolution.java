@@ -2,16 +2,20 @@ package edu.oregonstate.experiment;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 
+import edu.oregonstate.method.Dagger;
 import edu.oregonstate.method.IMethod;
 import edu.oregonstate.util.Command;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.oregonstate.classifier.Parameter;
 import edu.oregonstate.dataset.DatasetFactory;
+import edu.oregonstate.features.FeatureFactory;
+import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.util.StringUtils;
 
@@ -34,7 +38,6 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 
 	/**
 	 * perform the cross coreference resolution experiment
-	 * 
 	 */
 	protected void performExperiment() {
 		// copy from existing serialized folder
@@ -76,16 +79,60 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 			String methodName = experimentProps.getProperty(EecbConstants.METHOD_PROP, "Dagger");
 			IMethod method = EecbConstructor.createMethodModel(methodName);
 			finalParas = method.executeMethod();
-
-			// do final testing
-			boolean debug = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DEBUG_PROP, "false"));
-			if (!debug) {
+		}
+		
+		// 3. enable the learned weight to do testing on training set and testing set
+		boolean enableLearnedWeight = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.ENABLE_LEARNED_WEIGHT, "false"));
+		if (enableLearnedWeight) {
+			// (1) if we have done search and training, then we can use the learned weight to do testing
+			// on training set and testing set.
+			// (2) if we have not done search and training, then we can use the existing learned weight
+			// to do testing on training set and testing set
+			//int index = 0;
+			Dagger dagger = new Dagger();
+			boolean justTuneParameter = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.JUST_TUNE_PARAMETER, "false"));
+			
+			// whether do post process on the document
+			boolean trainPostProcess = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
+			boolean testPostProcess = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
+			double[] learnedWeight = null;
+			if (finalParas == null) {
+				// "/nfs/guille/xfern/users/xie/Experiment/corpus/learnedweight.txt"
+				String path = experimentProps.getProperty(EecbConstants.LEARNED_WEIGHT_PATH);
+				Map<String, String> datas = ResultOutput.readFiles(path, ":");
+				learnedWeight = new double[FeatureFactory.getFeatureTemplate().length];
+				for (String key : datas.keySet()) {
+					int arrayIndex = Integer.parseInt(key);
+					double value = Double.parseDouble(datas.get(key));
+					learnedWeight[arrayIndex - 1] = value;
+				}
+				
+//				List<String> weights = ResultOutput.readFiles(path);
+//				String weight = weights.get(index);
+//				learnedWeight = DoubleOperation.transformString(weight, ",");
+				
+				
+			} else {
 				
 			}
+			
+			ResultOutput.writeTextFile(logFile, "learned weight vector : " + DoubleOperation.printArray(learnedWeight) + ", the length is " + learnedWeight.length);
+			int modelIndex = Integer.parseInt(experimentProps.getProperty(EecbConstants.METHOD_EPOCH_PROP, "1")) + 1;
+			int iterationIndex = 1;
+			double stoppingRate = dagger.tuneStoppingRate(learnedWeight, modelIndex, iterationIndex);
+			
+			// do testing
+			if (justTuneParameter) {
+				dagger.testDocument(developmentTopics, learnedWeight, modelIndex, iterationIndex, trainPostProcess, "final-validation", false, stoppingRate);
+			} else {
+				dagger.testDocument(trainingTopics, learnedWeight, modelIndex, iterationIndex, trainPostProcess, "final-training", false, stoppingRate);
+				dagger.testDocument(testingTopics, learnedWeight, modelIndex, iterationIndex, testPostProcess, "final-testing", false, stoppingRate);
+			}
+			
 		}
 	
 		// remove document object
-		// 3. remove the document object
+		// 4. remove the document object
 		// if data-set copy, then remove,
 		// if data-set generated, then not remove
 		if (dataSetCopy) {

@@ -95,7 +95,8 @@ public class Dagger implements IMethod {
 		int length = FeatureFactory.getFeatureTemplate().length;
 		List<Parameter> paras = new ArrayList<Parameter>();
 		double[] weight = new double[length];
-		Parameter para = new Parameter(weight);
+		double[][] variance = DoubleOperation.generateIdentityMatrix(length);
+		Parameter para = new Parameter(weight, variance);
 
 		// in the current time, just 1 epoch
 		for (int i = 1; i <= methodEpoch; i++) {
@@ -132,15 +133,15 @@ public class Dagger implements IMethod {
 	 */
 	private Parameter trainModel(Parameter para, int i, int j) {
 		ISearch search = EecbConstructor.createSearchMethod(searchMethod);
-		String phaseID = j * 1000 + "";
+		String phase = j * 1000 + "";
 		boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
 		// generate training data for classification
 		if (j == 1) {
 			Document corpus = new Document();
 			corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 
-			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-training" + "-" + i + "-" + j;
 			String goldCorefCluster = conllResultPath + "/goldCorefCluster-training" + "-" + i + "-" + j;
+			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-training" + "-" + i + "-" + j;
 
 			for (String topic : trainingTopics) {
 				ResultOutput.writeTextFile(logFile, "\n(Dagger) Training Iteration Epoch : " + i + "; Training Model : " + j + "; Document : " + topic + "\n");
@@ -151,26 +152,21 @@ public class Dagger implements IMethod {
 				Command.createDirectory(trainingDataPath);
 
 				// conduct search using the true loss function
-				search.trainingBySearch(document, para, phaseID);
-
-				// align the fields of document
-				DocumentAlignment.alignDocument(document);			
-				ResultOutput.printDocumentScore(document, lossType, logFile, "single training" + " document " + topic);
-
+				search.trainingBySearch(document, para, phase);
+				DocumentAlignment.alignDocument(document);
+			
 				// apply the pronoun sieve
 				CorefSystem cs = new CorefSystem();
 				cs.applyPronounSieve(document);
 
-//				ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-//				ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
 				// whether post-process the document
 				if (trainPostProcess) {
 					DocumentAlignment.postProcessDocument(document);
 				}
-
-				DocumentAlignment.mergeDocument(document, corpus);
-
+				
+				ResultOutput.printDocumentScore(document, lossType, logFile, "single training" + " document " + topic);
 				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, trainPostProcess);
+				DocumentAlignment.mergeDocument(document, corpus);
 			}
 
 			// Stanford scoring
@@ -313,6 +309,19 @@ public class Dagger implements IMethod {
 		}
 		return divideFile;
 	}
+	
+	// tune the stopping rate
+	public double tuneStoppingRate(double[] weight, int i, int j) {
+		double stoppingrate = 0.0;
+		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION);
+		if (stopping.equals("tuning")) {
+			Development development = new Development(i, j, weight, 1.0, 3.0, 10);
+			stoppingrate = development.tuning();
+			ResultOutput.writeTextFile(logFile, "\nthe stopping rate is : " + stoppingrate + " for " + i + "-" + j + "\n");
+		}
+		
+		return stoppingrate;
+	}
 
 	/**
 	 * test the model
@@ -325,22 +334,17 @@ public class Dagger implements IMethod {
 		// do not need do testing on training
 		boolean testTraining = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_VALIDATION_PROP, "false"));
 		
-		
-		double stoppingrate = 0.0;
-		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION);
-		if (stopping.equals("tuning")) {
-			Development development = new Development(i, j, weight, 1.0, 3.0, 10);
-			stoppingrate = development.tuning();
-		}
-		
-		ResultOutput.writeTextFile(logFile, "the stopping rate is : " + stopping + " for " + i + "-" + j);
+		// set stopping rate for tuning
+		double stoppingrate = tuneStoppingRate(weight, i, j);
 
+		// do testing on training set
 		if (testTraining && (j == numberOfFunctions)) {
 			ResultOutput.writeTextFile(logFile, "\n\n(Dagger) testing on training set\n\n");
 			boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
 			testDocument(trainingTopics, weight, i, numberOfFunctions + 1, trainPostProcess, "trainingset", false, stoppingrate);
 		}
 
+		// do testing on testing set
 		ResultOutput.writeTextFile(logFile, "\n\n(Dagger) testing on testing set\n\n");
 		boolean testPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
 		testDocument(testingTopics, weight, i, j, testPostProcess, "testingset", false, stoppingrate);
@@ -362,8 +366,8 @@ public class Dagger implements IMethod {
 		corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 
 		// conll scoring files
-		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase + "-" + i + "-" + j;
 		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phase + "-" + i + "-" + j;
+		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phase + "-" + i + "-" + j;
 
 		String phaseID = j * 1000 + "";
 		for(String topic : topics) {
@@ -375,27 +379,38 @@ public class Dagger implements IMethod {
 			ISearch search = EecbConstructor.createSearchMethod(searchMethod);
 			State<CorefCluster> bestLossState = search.testingBySearch(document, weight, phaseID, outputFeature, stoppingrate);
 			
+			// if enable best score
 			if (bestStateScore) {
 				document.corefClusters = bestLossState.getState();
 			}
-			
 			DocumentAlignment.alignDocument(document);
-
-			ResultOutput.printDocumentScore(document, lossType, logFile, "single " + phase + " document " + topic);
-			ResultOutput.printParameters(document, topic, logFile);
 
 			// do pronoun coreference resolution
 			CorefSystem cs = new CorefSystem();
 			cs.applyPronounSieve(document);
-
-//			ResultOutput.writeTextFile(logFile, "gold clusters : " + ResultOutput.printCluster(document.goldCorefClusters));
-//			ResultOutput.writeTextFile(logFile, "predicted clusters : " + ResultOutput.printCluster(document.corefClusters));
+			
+			// print the cluster result
+			//ResultOutput.writeTextFile(logFile, "\ngold clusters\n");
+			//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
+			//ResultOutput.writeTextFile(logFile, "\npredicted clusters\n");
+			//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
+			
 			// whether post-process the document
 			if (postProcess) {
 				DocumentAlignment.postProcessDocument(document);
 			}
+			
+			//print the cluster result
+			//ResultOutput.writeTextFile(logFile, "\n\nafter post-process\n\n");
+			//ResultOutput.writeTextFile(logFile, "\ngold clusters\n");
+			//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
+			//ResultOutput.writeTextFile(logFile, "\npredicted clusters\n");
+			//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
 
 			// add single document to the corpus
+			ResultOutput.printDocumentScore(document, lossType, logFile, "single " + phase + " document " + topic);
+			ResultOutput.printParameters(document, topic, logFile);
+			
 			DocumentAlignment.mergeDocument(document, corpus);
 			
 			ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);

@@ -40,7 +40,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	private String topicPath;
 	protected ArrayList<String> files;
 
-
 	public EECBMentionExtractor(String topic, LexicalizedParser p, Dictionaries dict, Properties props, Semantics semantics, boolean goldonly) throws Exception {
 		super(dict, semantics, goldonly);
 		stanfordProcessor = loadStanfordProcessor(props);

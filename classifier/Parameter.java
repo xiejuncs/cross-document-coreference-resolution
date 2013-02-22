@@ -20,22 +20,23 @@ public class Parameter {
 	/* number of instance */
 	private int mNumberofInstance;
 	
-	public Parameter() {
+	/* variance */
+	private double[][] mVariance;
+	
+	public Parameter(double[] weights, double[][] variance) {
+		this(weights, variance, new double[weights.length]);
 	}
 	
-	public Parameter(double[] weights) {
-		this(weights, new double[weights.length]);
+	public Parameter(double[] weights, double[][] variance, double[] totalWeights) {
+		this(weights, variance, totalWeights, 0, 0);
 	}
 	
-	public Parameter(double[] weights, double[] totalWeights) {
-		this(weights, totalWeights, 0, 0);
-	}
-	
-	public Parameter(double[] weights, double[] totalWeights, int noOfViolations, int numberOfInstances) {
+	public Parameter(double[] weights, double[][] variance, double[] totalWeights, int noOfViolations, int numberOfInstances) {
 		mWeight = weights;
 		mTotalWeight = totalWeights;
 		mNoOfViolation = noOfViolations;
 		mNumberofInstance = numberOfInstances;
+		mVariance = variance;
 	}
 	
 	public double[] getWeight() {
@@ -54,6 +55,10 @@ public class Parameter {
 		return mNumberofInstance;
 	}
 	
+	public double[][] getVariance() {
+		return mVariance;
+	}
+	
 	/**
 	 * make a deep copy of the current object
 	 * 
@@ -63,9 +68,15 @@ public class Parameter {
 		int length = mWeight.length;
 		double[] copyWeight = new double[length];
 		double[] copyTotalWeight = new double[length];
+		double[][] copyVariance = new double[length][length];
 		System.arraycopy(mWeight, 0, copyWeight, 0, length);
 		System.arraycopy(mTotalWeight, 0, copyTotalWeight, 0, length);
-		Parameter copyPara = new Parameter(copyWeight, copyTotalWeight, mNoOfViolation, mNumberofInstance);
+		
+		for (int index = 0; index < length; index++) {
+			System.arraycopy(mVariance[index], 0, copyVariance[index], 0, length);
+		}
+		
+		Parameter copyPara = new Parameter(copyWeight, copyVariance, copyTotalWeight, mNoOfViolation, mNumberofInstance);
 		return copyPara;
 	}
 	

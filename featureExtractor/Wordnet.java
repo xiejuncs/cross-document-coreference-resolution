@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.HashSet;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.util.EecbConstants;
 
 import net.didion.jwnl.JWNL;
 import net.didion.jwnl.JWNLException;
@@ -51,8 +50,8 @@ public class Wordnet {
 		configureJWordNet();
 		List<String> cluster1 = new ArrayList<String>();
 		List<String> cluster2 = new ArrayList<String>();
-		cluster1.add("London");
-		cluster2.add("London");
+		cluster1.add("develop");
+		cluster2.add("development");
 		Set<String> synos = new HashSet<String>();
 	
 		try {
@@ -76,7 +75,7 @@ public class Wordnet {
 	}
 
 	public static void configureJWordNet() {
-		String WORD_NET_CONFIGURATION_PATH = ExperimentConstructor.corpusPath + "corpus/file_properties.xml";
+		String WORD_NET_CONFIGURATION_PATH = "/scratch/JavaFile/corpus/file_properties.xml";
 		try {
 			JWNL.initialize(new FileInputStream(WORD_NET_CONFIGURATION_PATH));
 		} catch (Exception ex) {

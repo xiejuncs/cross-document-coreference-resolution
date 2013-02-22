@@ -111,9 +111,7 @@ public class BeamSearch implements ISearch {
         dictionaries = new Dictionaries();
         
         // debug mode
-        //TODO
-        //mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
-        mDebug = false;
+        mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
     }
     
     /**
@@ -298,9 +296,15 @@ public class BeamSearch implements ISearch {
 		double costScore = costFunction.calculateCostFunction(features, weight);
 		
 		// set the fields of the state
+		String actionDescription = iCluster.toString() + " <-- " + jCluster.toString() + "\n" +
+									ResultOutput.buildCounterFeatureString(iCluster.predictedCentroid) + "\n" +
+									ResultOutput.buildCounterFeatureString(jCluster.predictedCentroid);
 		initial.setID(action);
+		initial.setActionDescription(actionDescription);
 		initial.setFeatures(features);
 		initial.setCostScore(costScore);
+		initial.setToClusterPredictedCentroid(iCluster.predictedCentroid);
+		initial.setFromClusterPredictedCentroid(jCluster.predictedCentroid);
 	}
 	
 	/**
@@ -315,7 +319,6 @@ public class BeamSearch implements ISearch {
 	public void trainingBySearch(Document document, Parameter para, String phaseID) {
 		Double globalScore = 0.0;
 		double[] weight = para.getWeight();
-		String mscorePath = experimentResultFolder + "/" + document.getID() + "/" + phaseID;
 		String trainingDataPath = experimentResultFolder + "/" + document.getID() + "/data";
 		
 		// beam
@@ -336,23 +339,18 @@ public class BeamSearch implements ISearch {
 			// the state with the highest score
 			State<CorefCluster> state = beam.next();
 			
-			// whether continue the search: stopping criterion : greedy style, if local score 
-			// is smaller than the global score, stop the search
-			
 			// debug information
-			//ResultOutput.writeTextFile(logFile, state.featureString());
+			// ResultOutput.writeTextFile(logFile, state.featureString());
 			ResultOutput.writeTextFile(logFile, "action " + msearchStep + " : " + state.getID() );
 			ResultOutput.printScoreInformation(state.getScore(), type, logFile);
 			ResultOutput.writeTextFile(logFile, "global " + type.toString() +" F1 score: " + globalScore);
-			ResultOutput.writeTextFile(mscorePath, globalScore.toString() + " " + state.getCostScore());
 			
 			regenerateFeatures(document, state);
 			// print the debug information
 			if (mDebug) {
-				ResultOutput.printParameters(document, document.getID(), logFile);
-				ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
-//				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
-				ResultOutput.printClusterFeatures(document, logFile, msearchStep);
+				//ResultOutput.printParameters(document, document.getID(), logFile);
+				//ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
+				//ResultOutput.printClusterFeatures(document, logFile, msearchStep);
 			}
 			
 			// generate actions and learn weights
@@ -457,7 +455,18 @@ public class BeamSearch implements ISearch {
 			// the state with the highest cost score and print its related information
 			State<CorefCluster> state = beam.next();
 			
+			// generate new document state
+			regenerateFeatures(document, state);
+			
 			// debug information
+			if (mDebug) {
+				ResultOutput.writeTextFile(logFile, state.getActionDescription());
+				ResultOutput.writeTextFile(logFile, state.getID() + " : " + state.featureString());
+				ResultOutput.writeTextFile(logFile, "\npredicted clusters : " + document.corefClusters.size() + "\n");
+				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
+				ResultOutput.writeTextFile(logFile, "\ngold clusters\n");
+				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
+			}
 			ResultOutput.writeTextFile(logFile, "action " + msearchStep);
 			double[] scores = state.getScore();
 			ResultOutput.printScoreInformation(scores, type, logFile);
@@ -466,13 +475,12 @@ public class BeamSearch implements ISearch {
 			double localScore = state.getCostScore();
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, type.toString() +" Cost score: " + localScore);
 			
-			regenerateFeatures(document, state);
 			// print the debug information
 			if (mDebug) {
-				ResultOutput.printParameters(document, document.getID(), logFile);
-				ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
+				//ResultOutput.printParameters(document, document.getID(), logFile);
+				//ResultOutput.writeTextFile(logFile, "action name : " + state.getID());
 //				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(state.getState()));
-				ResultOutput.printClusterFeatures(document, logFile, msearchStep);
+				//ResultOutput.printClusterFeatures(document, logFile, msearchStep);
 			}
 			
 			try {
@@ -510,12 +518,25 @@ public class BeamSearch implements ISearch {
 					}
 					
 					// deal with tie
-	            	beam.add(initial, initial.getCostScore());
+					// if violated the constraint, not add into the beam
+					//boolean conformHardConstraint = satisfyHardConstraint(initial);
+					//if (conformHardConstraint) {
+					beam.add(initial, initial.getCostScore());
+					//}
 	            	states.put(action, initial);
-				}				
+				}
 				
 				if (beam.size() == 0) {
 					break;
+				}
+				
+				// print the local best state
+				if (mDebug) {
+					State<CorefCluster> localBestState = states.get(localBestLossStateID);
+					ResultOutput.writeTextFile(logFile, "\n best local state : \n");
+					ResultOutput.writeTextFile(logFile, localBestState.getScore()[0] + " " + localBestState.getActionDescription());
+					ResultOutput.writeTextFile(logFile, localBestState.getID() + " : " + localBestState.featureString());
+					ResultOutput.writeTextFile(logFile, "\n");
 				}
 				
 				State<CorefCluster> stateinBeam = beam.peek();
@@ -576,6 +597,40 @@ public class BeamSearch implements ISearch {
 	
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "the best loss state score for " + document.getID() + " is " + bestLossScore);
 		return copyBestLossState;
+	}
+	
+	/**
+	 * whether this state conforms hard constraint, which is defined as 
+	 * 
+	 * @param initial
+	 * @return
+	 */
+	private boolean satisfyHardConstraint(State<CorefCluster> initial) {
+		boolean conformHardConstraint = true;
+		
+		HashMap<String, ClassicCounter<String>> toPredictedCentroid = initial.getToClusterPredictedCentroid();
+		HashMap<String, ClassicCounter<String>> fromPredictedCentroid = initial.getFromClusterPredictedCentroid();
+		
+		for (String feature : toPredictedCentroid.keySet()) {
+			if (feature.startsWith("SRL") && !feature.contains("SRLAGREECOUNT")) {
+				Counter<String> centFeature1 = toPredictedCentroid.get(feature);
+				Counter<String> centFeature2 = fromPredictedCentroid.get(feature);
+				
+				int maximumSize = centFeature1.size() > centFeature2.size() ? centFeature1.size() : centFeature2.size();
+				
+				Set<String> featureSet = new HashSet<String>();
+				featureSet.addAll(centFeature1.keySet());
+				featureSet.addAll(centFeature2.keySet());
+				
+				if (featureSet.size() > maximumSize) {
+					conformHardConstraint = false;
+					break;
+				}
+			}
+		}
+		
+		
+		return conformHardConstraint;
 	}
 	
 	/**

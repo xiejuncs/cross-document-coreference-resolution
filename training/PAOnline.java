@@ -3,9 +3,7 @@ package edu.oregonstate.training;
 import java.util.List;
 
 import edu.oregonstate.classifier.Parameter;
-import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.general.DoubleOperation;
-import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.search.State;
 import edu.stanford.nlp.dcoref.CorefCluster;
 
@@ -91,7 +89,7 @@ public class PAOnline extends ITraining {
 			}
 		}
 		
-		return new Parameter(finalWeight, finalTotalWeight, violation, numberOfInstance);
+		return new Parameter(finalWeight, para.getVariance(), finalTotalWeight, violation, numberOfInstance);
 	}
 	
 }

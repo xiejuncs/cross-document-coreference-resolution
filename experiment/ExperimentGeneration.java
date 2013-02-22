@@ -14,23 +14,24 @@ import edu.oregonstate.util.Command;
  *
  */
 public class ExperimentGeneration {
-	
+
 	private final String mFolderName;
-	
+
 	private final String mFolderPath;
-	
+
 	//private final String[] iterations = {"200"};
-	
+
 	/* train method */
 	//private final String[] trainMethods = {"Online", "OnlineToBatch", "Batch"};
-	private final String[] trainMethods = {"OnlineToBatch"};
-	
+	//private final String[] trainMethods = {"OnlineToBatch", "Online", "PAOnline", "PAOnlineToBatch"};
+	private final String[] trainMethods = {"AROWOnlineToBatch"};
+
 	//private final String[] startRates = {"0.1", "0.05", "0.02", "0.01"};
-	
+
 	/* mention type */
-	//private final String[] mentionTypes = {"gold", "predicted"};
 	private final String[] mentionTypes = {"gold", "predicted"};
-	
+	// private final String[] mentionTypes = {"predicted"};
+
 	/* enable stanford pre-process */
 	//private final String[] enableStanfordPreprocess = {"enable", "disable"};
 	private final String[] enableStanfordPreprocess = {"enable"};
@@ -38,48 +39,59 @@ public class ExperimentGeneration {
 	/* learning rate type */
 	private final String[] learningRateTypes = {"constant"};
 	//private final String[] learningRateTypes = {"fixed", "constant", "lossscore"};
-	
+
 	/* normalize weight or not */
 	private final String[] normalizedWeights = {"normalize"};
 	
+	private final String[] hyperParameters = {"00001", "0001", "001", "01", "1", "10", "100", "1000"};
+
+	/* stopping criterion */
+	private final String[] stoppingCritetions = {"none"};
+
 	public ExperimentGeneration (String path, String folderName) {
 		mFolderPath = path + folderName;
 		mFolderName = folderName;
 	}
-	
+
 	public void generateExperimentFiles() {
 		// generate the main folder
 		generateMainFolder();
-		
+
 		generateSubFolders();		
 	}
-	
+
 	private void generateMainFolder() {
 		Command.createDirectory(mFolderPath);
 	}
-	
+
 	private void generateSubFolders() {
 		for (String mentionType : mentionTypes) {
 			for (String enableStanford : enableStanfordPreprocess) {
 				for (String trainMethod : trainMethods) {
 					for (String learnRateType : learningRateTypes) {
 						for (String normalizeWeight : normalizedWeights) {
-							String subFolderPath = mFolderPath + "/" + mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + normalizeWeight;
-							Command.createDirectory(subFolderPath);
+							for (String stoping : stoppingCritetions) {
+								for (String hyperParameter : hyperParameters) {
+									String subFolderPath = mFolderPath + "/" + mentionType + "-" + enableStanford + "-" + trainMethod + "-" + 
+											               learnRateType + "-" + normalizeWeight + "-" + stoping + "-" + hyperParameter;
+									Command.createDirectory(subFolderPath);
 
-							String prefix = mentionType + "-" + enableStanford + "-" + trainMethod + "-" + learnRateType + "-" + normalizeWeight;
-							generateConfigurationFile(subFolderPath, mentionType, enableStanford, trainMethod, learnRateType, normalizeWeight);
+									String prefix = mentionType + "-" + enableStanford + "-" + trainMethod + "-" + 
+									               learnRateType + "-" + normalizeWeight + "-" + stoping + "-" + hyperParameter;
+									generateConfigurationFile(subFolderPath, mentionType, enableStanford, trainMethod, learnRateType, normalizeWeight, stoping, hyperParameter);
 
-							generateRunFile(subFolderPath, prefix);
+									generateRunFile(subFolderPath, prefix);
 
-							generateSimpleFile(subFolderPath, prefix);
+									generateSimpleFile(subFolderPath, prefix);
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * generate config.properties
 	 * 
@@ -87,11 +99,12 @@ public class ExperimentGeneration {
 	 * @param method
 	 * @param startRate
 	 */
-	private void generateConfigurationFile(String subFolderPath, String mentionType, String enableStanford, String trainMethod, String learnRateType, String normalizeWeight) {
+	private void generateConfigurationFile(String subFolderPath, String mentionType, String enableStanford, 
+			String trainMethod, String learnRateType, String normalizeWeight, String stoping, String hyperParameter) {
 		String configPath = subFolderPath + "/config.properties";
 		StringBuilder sb = new StringBuilder();
 		sb.append("dcoref.dataset.generation = false\n\n");
-		sb.append("dcoref.searchtraining = true\n\n");
+		sb.append("dcoref.searchtraining = false\n\n");
 		sb.append("dcoref.annotators = tokenize, ssplit, pos, lemma, ner, parse, dcoref\n\n");
 		sb.append("dcoref.dataset = true\n\n");
 		sb.append("dcoref.classifier = StructuredPerceptron\n");
@@ -103,7 +116,7 @@ public class ExperimentGeneration {
 		sb.append("dcoref.search = BeamSearch\n");
 		sb.append("dcoref.search.beamwidth = 1\n");
 		sb.append("dcoref.search.maximumstep = 600\n\n");
-		
+
 		// specify the mention type
 		if (mentionType.equals("gold")) {
 			sb.append("dcoref.train.gold = true\n");
@@ -121,26 +134,26 @@ public class ExperimentGeneration {
 		sb.append("dcoref.sievePasses = partial\n\n");
 		sb.append("dcoref.training.testing = true\n\n");
 		sb.append("dcoref.weight = true\n\n");
-		sb.append("dcoref.stoppingcriterion = none\n\n");
+		sb.append("dcoref.stoppingcriterion = " + stoping + "\n\n");
 		sb.append("dcoref.method.epoch = 1\n");
 		sb.append("dcoref.method.function.number.prop = 1\n\n");
-		
+
 		sb.append("dcoref.training.style = " + trainMethod + "\n");
-		
+
 		String normaWeight = "true";
 		if (normalizeWeight.equals("unnormalize")) {
 			normaWeight = "false";
 		}
 		sb.append("dcoref.pa.normalize.weight = " + normaWeight + "\n\n");
-		
+
 		String stanfordPreprocess = "true";
 		if (enableStanford.equals("disable")) {
 			stanfordPreprocess = "false";
 		}
 		sb.append("dcoref.enable.stanford.processing.during.data.generation = " + stanfordPreprocess + "\n\n");
-		
+
 		if (!learnRateType.equals("fixed")) {
-		    sb.append("dcoref.pa.learning = true\n");
+			sb.append("dcoref.pa.learning = true\n");
 			String lossScore = "true";
 			if (learnRateType.equals("constant")) {
 				lossScore = "false";
@@ -150,16 +163,32 @@ public class ExperimentGeneration {
 			sb.append("dcoref.structuredperceptron.startrate = 0.02\n\n");
 		}
 		
+		// enable output the best state score or just the normal search score with stopping criterion
+		sb.append("\ndcoref.best.search.score = true\n");
+		
+		// enable post process gold cluster
+		sb.append("\ndcoref.gold.cluster.post.process = false\n");
+		
+		// enable state feature
+		sb.append("\ndcoref.state.feature = false\n");
+		
+		sb.append("dcoref.experiment.hyperparameter = " + hyperParameter + "\n\n");
+		
+		sb.append("dcoref.just.tune.parameter = true\n\n");
+		
+		sb.append("dcoref.enable.learned.weight = true\n");
+		sb.append("dcoref.learned.weight.path = /nfs/guille/xfern/users/xie/Experiment/corpus/svm-rank-weight/weight" + hyperParameter );
+		
 		ResultOutput.writeTextFile(configPath, sb.toString().trim());
 	}
-	
+
 	private void generateRunFile(String subFolderPath, String prefix) {
 		String runPath = subFolderPath + "/run.sh";
 		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
 		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/coreference-resolution.jar " + clusterPath + "/config.properties";
 		ResultOutput.writeTextFile(runPath, command);
 	}
-	
+
 	private void generateSimpleFile(String subFolderPath, String prefix) {
 		String simplePath = subFolderPath + "/simple.sh";
 		StringBuilder sb = new StringBuilder();
@@ -184,20 +213,20 @@ public class ExperimentGeneration {
 		sb.append("# Commands\n");
 		sb.append(clusterPath + "/run.sh\n");
 		ResultOutput.writeTextFile(simplePath, sb.toString().trim());
-		
+
 	}
-	
+
 	public static void main(String[] args) {
 		String path = "/nfs/guille/xfern/users/xie/Experiment/experiment/";
-		
+
 		//get current date time with Date()
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		Date date = new Date();
 		String folderName = dateFormat.format(date);
 		//String folderName = "2013-01-29";
-		
+
 		ExperimentGeneration generator = new ExperimentGeneration(path, folderName);
 		generator.generateExperimentFiles();
 	}
-	
+
 }

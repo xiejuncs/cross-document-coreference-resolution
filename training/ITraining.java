@@ -23,6 +23,9 @@ public abstract class ITraining {
 	/* whether incorporate the zero good state */
 	protected final boolean incorporateZeroVector;
 	
+	/* hyperparameter for AROW */
+	protected final double mHyperParameter;
+	
 	/* eanble PA learning */
 	protected final boolean enablePALearning;
 	
@@ -36,7 +39,7 @@ public abstract class ITraining {
 	private final boolean enablePAMargin;
 	
 	/* enable normalize the weight */
-	private final boolean enableNormalizeWeight;
+	protected final boolean enableNormalizeWeight;
 	
 	public ITraining() {
 		Properties mProps = ExperimentConstructor.experimentProps;
@@ -48,6 +51,7 @@ public abstract class ITraining {
 		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_DISCREPANCY, "true"));
 		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_MARGIN, "true"));
 		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_NORMALIZE_WEIGHT, "true"));
+		mHyperParameter = Double.parseDouble(mProps.getProperty(EecbConstants.EXPERIMENT_HYPERPARAMETER, "1.0"));
 	}
 	
 	/* different weight update styles, including Batch, Online and OnlineToBatch */

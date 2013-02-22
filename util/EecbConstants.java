@@ -1,5 +1,9 @@
 package edu.oregonstate.util;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * defined the constant fileds which are used in the experiment
  * 
@@ -50,14 +54,16 @@ public class EecbConstants {
 											 "43", "44", "45"};
 	
 	/** debug topics */
-	public static final String[] debugTopics = {"16", "10", "20", "38"};
+	
+	public static final String[] debugTopics = {"6", "16", "10", "20"};
+	//public static final String[] debugTopics = {"12", "22", "38"};
 //	public static final String[] debugTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
 //		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
 //		"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
 //		"36", "39", "41", "42", "45"};
 	
 	/** debug development topics */
-	public static final String[] debugDevelopmentTopics = {"6"};
+	public static final String[] debugDevelopmentTopics = {"12", "22", "38"};
 	
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
@@ -128,6 +134,14 @@ public class EecbConstants {
 	public static final String ENABLE_PA_NORMALIZE_WEIGHT = "dcoref.pa.normalize.weight";
 	public static final String ENABLE_STATE_FEATURE = "dcoref.state.feature";
 	public static final String ENABLE_BEST_SEARCH_SCORE = "dcoref.best.search.score";
+	public static final String ENABLE_LEARNED_WEIGHT = "dcoref.enable.learned.weight";
+	public static final String LEARNED_WEIGHT_PATH = "dcoref.learned.weight.path";
+	public static final String ENABLE_PRINT_ITERATION_RESULT = "dcoref.enable.print.iteration.result";
+	public static final String PRINT_ITEARTION_GAP = "dcoref.print.iteration.gap";
 	
+	public static final String EXPERIMENT_HYPERPARAMETER = "dcoref.experiment.hyperparameter";
 	
+	// default is training with tune
+	public static final String JUST_TUNE_PARAMETER = "dcoref.just.tune.parameter";
+	public static final String TRAINING_WITHOUT_TUNE = "dcoref.training.without.tune";	
 }

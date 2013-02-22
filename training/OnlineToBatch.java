@@ -95,7 +95,7 @@ public class OnlineToBatch extends ITraining {
 			}
 		}
 		
-		return new Parameter(finalWeight, finalTotalWeight, violation, numberOfInstance);
+		return new Parameter(finalWeight, para.getVariance(), finalTotalWeight, violation, numberOfInstance);
 	}
 	
 }

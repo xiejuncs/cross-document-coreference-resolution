@@ -164,11 +164,22 @@ public abstract class ExperimentConstructor {
         sb.append("-" + lossScoreType);
         
         //
+        // hyper parameter 
+        // 
+        String experimentHyperparameter = props.getProperty(EecbConstants.EXPERIMENT_HYPERPARAMETER, "");
+        if (!experimentHyperparameter.equals("")) {
+        	sb.append("-hy" + experimentHyperparameter);
+        }
+        
+        //
         // create experiment folder for storing the results
         //
         experimentResultFolder = sb.toString();
         Command.createDirectory(experimentResultFolder);
         logFile = experimentResultFolder + "/experimentlog";
+        if (stopping.equals("tuning")) {
+        	Command.createDirectory(experimentResultFolder + "/tuning");
+        }
         
         //
         // create conll result for storing the output of coreference resolution result
@@ -183,12 +194,13 @@ public abstract class ExperimentConstructor {
         // configure WORDNET and mention similarity dictionary
         //
         configureWordSimilarity();
-        configureJWordNet();  
+        configureJWordNet();
 	}
 	
+	// perform the experiments
 	protected abstract void performExperiment();
 	
-	/** 
+	/**
 	 * configure word similarity matrix 
 	 */
 	private void configureWordSimilarity() {
