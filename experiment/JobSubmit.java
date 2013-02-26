@@ -36,6 +36,8 @@ public class JobSubmit {
 			System.out.println(simplePath);
 			Process p = Runtime.getRuntime().exec("qsub " + simplePath);
 			p.waitFor();
+			p.destroy();
 		}
+		System.out.println("done!");
 	}
 }

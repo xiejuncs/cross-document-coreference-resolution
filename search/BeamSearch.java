@@ -13,6 +13,7 @@ import edu.oregonstate.costfunction.ICostFunction;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.Feature;
 import edu.oregonstate.features.FeatureFactory;
+import edu.oregonstate.features.FeatureVectorGenerator;
 import edu.oregonstate.general.FixedSizePriorityQueue;
 import edu.oregonstate.io.LargeFileWriting;
 import edu.oregonstate.io.ResultOutput;
@@ -79,9 +80,6 @@ public class BeamSearch implements ISearch {
     /* experiment result folder */
     private final String experimentResultFolder;
     
-    /* dictionary */
-    private final Dictionaries dictionaries;
-    
     /* debug mode */
     private final boolean mDebug;
     
@@ -100,18 +98,16 @@ public class BeamSearch implements ISearch {
     	mBeamWidth = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP));
     	maximumSearch = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP));
     	type = CorefScorer.ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP));
-        lossFunction = EecbConstructor.createLossFunction(mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP));
-        costFunction = EecbConstructor.createCostFunction(mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
+        lossFunction = EecbConstructor.createLossFunction(mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP, "MetricLossFunction"));
+        costFunction = EecbConstructor.createCostFunction(mProps.getProperty(EecbConstants.COSTFUNCTION_PROP, "LinearCostFunction"));
         ResultOutput.writeTextFile(logFile, "\nBeam Search Configuration : " + "width : " + mBeamWidth + "; maximumSearch : " + 
         							maximumSearch + "; type : " + type.toString() + "; lossFunction : " + 
         							mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP) + "; costFunction : " + mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
         enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STATE_FEATURE, "false"));
         
-        // set the dictionary
-        dictionaries = new Dictionaries();
-        
         // debug mode
         mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
+        //mDebug = false;
     }
     
     /**
@@ -279,7 +275,7 @@ public class BeamSearch implements ISearch {
 		// generate features
 		Counter<String> features = null;
 		if (!enableStateFeature) {
-			features = Feature.getFeatures(document, iCluster, jCluster, false, dictionaries);
+			features = FeatureVectorGenerator.getFeatures(document, iCluster, jCluster);
 		}
 		
 		// merge cluster
@@ -289,7 +285,7 @@ public class BeamSearch implements ISearch {
 		initial.add(i_id, cpCluster);
 		
 		if (enableStateFeature) {
-			features = FeatureFactory.getFeatures(document, initial, dictionaries);
+			//features = FeatureFactory.getFeatures(document, initial, dictionaries);
 		}
 		
 		// calculate the cost function for the state
@@ -327,7 +323,7 @@ public class BeamSearch implements ISearch {
 		double[] localScores = lossFunction.getMetricScore(document);
 		initialState.setScore(localScores);
 		beam.add(initialState, localScores[0]);
-		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
+		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		
 		// the best output y^{*}_{i} uncovered so far evaluated by the loss function
 		State<CorefCluster> bestState = new State<CorefCluster>();
@@ -367,7 +363,7 @@ public class BeamSearch implements ISearch {
 						// HALT action
 						initial.setID("HALT");
 						initial.setScore(stateScore);
-						initial.setCostScore(weight[featureTemplate.length - 1]);
+						initial.setCostScore(weight[featureTemplate.size() - 1]);
 						Counter<String> features = buildHaltFeature();
 						initial.setFeatures(features);
 					} else {
@@ -438,7 +434,7 @@ public class BeamSearch implements ISearch {
 		}
 		double bestLossScore = 0.0;        // in order to track the state with the highest loss score
 		State<CorefCluster> bestLostState = new State<CorefCluster>();
-		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
+		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		
 		// closed list to track duplicate method
 		FixedSizePriorityQueue<State<CorefCluster>> beam = new FixedSizePriorityQueue<State<CorefCluster>>(mBeamWidth);
@@ -459,9 +455,10 @@ public class BeamSearch implements ISearch {
 			regenerateFeatures(document, state);
 			
 			// debug information
+			ResultOutput.writeTextFile(logFile, state.getActionDescription());
+			ResultOutput.writeTextFile(logFile, state.getID() + " : " + state.featureString());
 			if (mDebug) {
-				ResultOutput.writeTextFile(logFile, state.getActionDescription());
-				ResultOutput.writeTextFile(logFile, state.getID() + " : " + state.featureString());
+				
 				ResultOutput.writeTextFile(logFile, "\npredicted clusters : " + document.corefClusters.size() + "\n");
 				ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
 				ResultOutput.writeTextFile(logFile, "\ngold clusters\n");
@@ -493,7 +490,7 @@ public class BeamSearch implements ISearch {
 					State<CorefCluster> initial = new State<CorefCluster>();
 					if (action.equals("HALT")) {
 						initial.setID("HALT");
-						initial.setCostScore(weight[featureTemplate.length - 1]);
+						initial.setCostScore(weight[featureTemplate.size() - 1]);
 						Counter<String> features = buildHaltFeature();
 						initial.setFeatures(features);
 					} else {
@@ -531,13 +528,19 @@ public class BeamSearch implements ISearch {
 				}
 				
 				// print the local best state
-				if (mDebug) {
+				//if (mDebug) {
 					State<CorefCluster> localBestState = states.get(localBestLossStateID);
 					ResultOutput.writeTextFile(logFile, "\n best local state : \n");
 					ResultOutput.writeTextFile(logFile, localBestState.getScore()[0] + " " + localBestState.getActionDescription());
 					ResultOutput.writeTextFile(logFile, localBestState.getID() + " : " + localBestState.featureString());
 					ResultOutput.writeTextFile(logFile, "\n");
-				}
+					
+					
+					ResultOutput.writeTextFile(logFile, "\n best state : \n");
+					ResultOutput.writeTextFile(logFile, bestLostState.getScore()[0] + " " + bestLostState.getActionDescription());
+					ResultOutput.writeTextFile(logFile, bestLostState.getID() + " : " + bestLostState.featureString());
+					ResultOutput.writeTextFile(logFile, "\n");
+				//}
 				
 				State<CorefCluster> stateinBeam = beam.peek();
 				
@@ -672,7 +675,7 @@ public class BeamSearch implements ISearch {
 	 * @return
 	 */
 	private Counter<String> buildHaltFeature() {
-		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
+		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		Counter<String> features = new ClassicCounter<String>();
 		for (String feature : featureTemplate) {
 			if (feature.equals("HALT")) {

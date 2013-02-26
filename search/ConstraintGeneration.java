@@ -162,12 +162,12 @@ public class ConstraintGeneration {
 	 * @return
 	 */
 	private String buildSparseConstraint(State<CorefCluster> state) {
-		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
+		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		StringBuilder sb = new StringBuilder();
 		Counter<String> features = state.getFeatures();
 		
-		for (int i = 0; i < featureTemplate.length; i++) {
-			String feature = featureTemplate[i];
+		for (int i = 0; i < featureTemplate.size(); i++) {
+			String feature = featureTemplate.get(i);
 			double value = features.getCount(feature);
 			if (value != 0.0) {
 				sb.append(i + ":" + value + "\t");

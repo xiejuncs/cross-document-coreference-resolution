@@ -92,7 +92,7 @@ public class Dagger implements IMethod {
 	 * Learn the final weight, which can be used for 
 	 */
 	public List<Parameter> executeMethod() {
-		int length = FeatureFactory.getFeatureTemplate().length;
+		int length = FeatureFactory.getFeatureTemplate().size();
 		List<Parameter> paras = new ArrayList<Parameter>();
 		double[] weight = new double[length];
 		double[][] variance = DoubleOperation.generateIdentityMatrix(length);

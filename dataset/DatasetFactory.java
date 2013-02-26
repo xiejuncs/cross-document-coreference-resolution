@@ -80,7 +80,7 @@ public class DatasetFactory {
 		
 		enableGenerateTrainingSet = true;
 		enableGenerateTestingSet = true;
-		enableGenerateDevelopmentSet = true;
+		enableGenerateDevelopmentSet = false;
 		updateFlags();
 		
 	}
@@ -88,9 +88,9 @@ public class DatasetFactory {
 	// update the flags for generating set
 	private void updateFlags() {
 		// dcoref.training.without.tune
-		boolean trainingWithoutTune = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_WITHOUT_TUNE, "false"));
-		if (trainingWithoutTune) {
-			enableGenerateDevelopmentSet = false;
+		boolean trainingWithTune = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_WITH_TUNE, "false"));
+		if (trainingWithTune) {
+			enableGenerateDevelopmentSet = true;
 		}
 		
 		// dcoref.just.tune.parameter
@@ -98,6 +98,7 @@ public class DatasetFactory {
 		if (justTuneParameter) {
 			enableGenerateTrainingSet = false;
 			enableGenerateTestingSet = false;
+			enableGenerateDevelopmentSet = true;
 		}
 		
 	}

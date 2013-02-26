@@ -223,6 +223,8 @@ public class SRLExtraction {
 			for (String role : roles.keySet()) {
 				int headPosition = roles.get(role);
 				EecbSrlAnnotation span = find(headPosition, annotations);
+				span.setHeadStartIndex(headPosition);
+				span.setHeadEndIndex(headPosition + 1);
 				// find its yield according to headsPosition
 				semRoles.put(role, span);
 			}

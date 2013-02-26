@@ -100,7 +100,7 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 				// "/nfs/guille/xfern/users/xie/Experiment/corpus/learnedweight.txt"
 				String path = experimentProps.getProperty(EecbConstants.LEARNED_WEIGHT_PATH);
 				Map<String, String> datas = ResultOutput.readFiles(path, ":");
-				learnedWeight = new double[FeatureFactory.getFeatureTemplate().length];
+				learnedWeight = new double[FeatureFactory.getFeatureTemplate().size()];
 				for (String key : datas.keySet()) {
 					int arrayIndex = Integer.parseInt(key);
 					double value = Double.parseDouble(datas.get(key));

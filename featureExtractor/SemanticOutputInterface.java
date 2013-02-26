@@ -138,7 +138,6 @@ public class SemanticOutputInterface {
 		startIndex = Collections.min(spans);
 		endIndex = Collections.max(spans);
 		assert endIndex > startIndex;
-		StringBuilder sb = new StringBuilder();
 		for (int i = startIndex; i <= endIndex; i++) {
 			span.add(tokens.get(i));
 		}

@@ -74,8 +74,8 @@ public class StructuredPerceptron implements IClassifier {
 		modelIndex = 0;
 		String trainingStyle = mProps.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
-		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
-		length = featureTemplate.length;
+		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
+		length = featureTemplate.size();
 		weights = new ArrayList<double[]>();
 		
 		learningRateConstant = Boolean.parseBoolean(mProps.getProperty(EecbConstants.LEARING_RATE_CONSTANT_PROP, "false"));

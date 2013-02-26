@@ -37,7 +37,7 @@ public class LargetFileReading {
 	public LargetFileReading() {
 		prop = ExperimentConstructor.experimentProps;
 		binary = Boolean.parseBoolean(prop.getProperty(EecbConstants.IO_BINARY_PROP, "false"));
-		featureSize = FeatureFactory.getFeatureTemplate().length;
+		featureSize = FeatureFactory.getFeatureTemplate().size();
 	}
 	
 	/**
@@ -202,7 +202,7 @@ public class LargetFileReading {
 	private List<double[]> readByteData(String path) {
 		DataInputStream dis = null;
 		List<double[]> dataset = new ArrayList<double[]>();
-		int length = FeatureFactory.getFeatureTemplate().length;
+		int length = FeatureFactory.getFeatureTemplate().size();
 		try {
 			dis = new DataInputStream(new FileInputStream(path));
 			double[] datas = new double[2 * length];

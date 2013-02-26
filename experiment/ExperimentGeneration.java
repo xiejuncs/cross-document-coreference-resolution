@@ -43,8 +43,9 @@ public class ExperimentGeneration {
 	/* normalize weight or not */
 	private final String[] normalizedWeights = {"normalize"};
 	
-	private final String[] hyperParameters = {"00001", "0001", "001", "01", "1", "10", "100", "1000"};
-
+	//private final String[] hyperParameters = {"00001", "0001", "001", "01", "1", "10", "100", "1000"};
+	private final String[] hyperParameters = {"00001", "0001", "001", "01", "1", "10"};
+	
 	/* stopping criterion */
 	private final String[] stoppingCritetions = {"none"};
 
@@ -177,7 +178,7 @@ public class ExperimentGeneration {
 		sb.append("dcoref.just.tune.parameter = true\n\n");
 		
 		sb.append("dcoref.enable.learned.weight = true\n");
-		sb.append("dcoref.learned.weight.path = /nfs/guille/xfern/users/xie/Experiment/corpus/svm-rank-weight/weight" + hyperParameter );
+		sb.append("dcoref.learned.weight.path = /nfs/guille/xfern/users/xie/Experiment/corpus/" + mentionType +"-svm-rank-weight/weight" + hyperParameter );
 		
 		ResultOutput.writeTextFile(configPath, sb.toString().trim());
 	}
@@ -185,7 +186,7 @@ public class ExperimentGeneration {
 	private void generateRunFile(String subFolderPath, String prefix) {
 		String runPath = subFolderPath + "/run.sh";
 		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
-		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/coreference-resolution.jar " + clusterPath + "/config.properties";
+		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/CoreferenceResolution.jar " + clusterPath + "/config.properties";
 		ResultOutput.writeTextFile(runPath, command);
 	}
 

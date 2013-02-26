@@ -2,6 +2,7 @@ package edu.oregonstate.search;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -67,7 +68,7 @@ public class State<T> implements Serializable {
 		scoreDetailInformation = "";
 		F1score = 0.0;
 		featureString = "";
-		numericalFeatures = new double[FeatureFactory.getFeatureTemplate().length];
+		numericalFeatures = new double[FeatureFactory.getFeatureTemplate().size()];
 		actionDescription = "";
 	}
 	
@@ -108,12 +109,12 @@ public class State<T> implements Serializable {
 		
 		StringBuffer sb = new StringBuffer();
 		sb.append("[");
-		String[] features = FeatureFactory.getFeatureTemplate();
-		for (int i = 0; i < features.length; i++) {
-			String feature = features[i];
+		List<String> features = FeatureFactory.getFeatureTemplate();
+		for (int i = 0; i < features.size(); i++) {
+			String feature = features.get(i);
 			double value = mfeatures.getCount(feature);
 			if (value != 0) {
-				if (i == features.length - 1) {
+				if (i == features.size() - 1) {
 					sb.append(feature + " : " + value);
 				} else {
 					sb.append( feature + " : " + value + ", ");

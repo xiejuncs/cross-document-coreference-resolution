@@ -104,8 +104,8 @@ public class ProcessDataSVM {
 	private List<String> generateOutput(List<String> dataset, int topicID) {
 		List<String> records = new ArrayList<String>();
 		int actionIndex = 0;
-		String[] featureTemplate = FeatureFactory.getFeatureTemplate();
-		int featureSize = featureTemplate.length;
+		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
+		int featureSize = featureTemplate.size();
 		
 		for (String data : dataset) {
 			if (data.equals("NEWDATASET")) {

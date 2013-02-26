@@ -26,6 +26,10 @@ public class EecbSrlAnnotation {
 	/*mention headWord*/
 	String headString;
 	
+	// head index
+	int headStartIndex;
+	int headEndIndex;
+	
 	/**predicate*/
 	String predicate;
 
@@ -36,6 +40,8 @@ public class EecbSrlAnnotation {
 	  this.parentPosition = parentPosition;
 	  this.start = start;
 	  this.end = end;
+	  headStartIndex = 0;
+	  headEndIndex = 0;
 	}
 	
 	public EecbSrlAnnotation() {
@@ -44,6 +50,22 @@ public class EecbSrlAnnotation {
 	
 	public void setHead(String headString) {
 		this.headString = headString;
+	}
+	
+	public void setHeadStartIndex(int startIndex) {
+		headStartIndex = startIndex;
+	}
+	
+	public int getHeadStartIndex() {
+		return headStartIndex;
+	}
+	
+	public void setHeadEndIndex(int endIndex) {
+		headEndIndex = endIndex;
+	}
+	
+	public int getHeadEndIndex() {
+		return headEndIndex;
 	}
 	
 	public String getHead() {
@@ -102,7 +124,7 @@ public class EecbSrlAnnotation {
 	/** Output representation of the annotation */
 	@Override
 	public String toString() {
-		return mText + "(" + start + " " + end + ")";
+		return mText + "(" + start + "/" + end + "; "+ headStartIndex + "/" + headEndIndex +")";
 	}
 	
 	public void setText(String text) {

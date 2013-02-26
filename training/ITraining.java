@@ -43,7 +43,7 @@ public abstract class ITraining {
 	
 	public ITraining() {
 		Properties mProps = ExperimentConstructor.experimentProps;
-		length = FeatureFactory.getFeatureTemplate().length;
+		length = FeatureFactory.getFeatureTemplate().size();
 		reader = new LargetFileReading();
 		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP, "true"));
 		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING, "false"));
