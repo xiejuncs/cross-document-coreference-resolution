@@ -29,8 +29,8 @@ public class ExperimentGeneration {
 	//private final String[] startRates = {"0.1", "0.05", "0.02", "0.01"};
 
 	/* mention type */
-	private final String[] mentionTypes = {"gold", "predicted"};
-	// private final String[] mentionTypes = {"predicted"};
+	private final String[] mentionTypes = {"predicted"};
+	//private final String[] mentionTypes = {"predicted"};
 
 	/* enable stanford pre-process */
 	//private final String[] enableStanfordPreprocess = {"enable", "disable"};
@@ -175,7 +175,7 @@ public class ExperimentGeneration {
 		
 		sb.append("dcoref.experiment.hyperparameter = " + hyperParameter + "\n\n");
 		
-		sb.append("dcoref.just.tune.parameter = true\n\n");
+		sb.append("dcoref.just.tune.parameter = false\n\n");
 		
 		sb.append("dcoref.enable.learned.weight = true\n");
 		sb.append("dcoref.learned.weight.path = /nfs/guille/xfern/users/xie/Experiment/corpus/" + mentionType +"-svm-rank-weight/weight" + hyperParameter );

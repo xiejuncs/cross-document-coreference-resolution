@@ -39,7 +39,13 @@ public class Synonym extends NumericFeature {
 			}
 		}
 		
-		return synonymNom/synonymDenom;
+		// if two pronoun clusters, then synonymDenom is 0, then the value will be NaN
+		double synonym = 0.0;
+		if (synonymDenom > 0) {
+			synonym = synonymNom/synonymDenom;
+		}
+		
+		return synonym;
 	}
 
 }

@@ -9,6 +9,7 @@ import java.util.Properties;
 import net.didion.jwnl.JWNL;
 
 import edu.oregonstate.featureExtractor.WordSimilarity;
+import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.util.Command;
 import edu.oregonstate.util.EecbConstants;
 
@@ -39,6 +40,9 @@ public abstract class ExperimentConstructor {
 	public static String[] trainingTopics;
 	public static String[] testingTopics;
 	public static String[] developmentTopics;
+	
+	// feature template used in the whole experiment
+	public static List<String> featureTemplate;
 
 	/**
 	 * configure the experiment
@@ -195,6 +199,7 @@ public abstract class ExperimentConstructor {
         //
         configureWordSimilarity();
         configureJWordNet();
+        
 	}
 	
 	// perform the experiments

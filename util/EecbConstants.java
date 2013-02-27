@@ -42,7 +42,7 @@ public class EecbConstants {
 	
 	/** development topics */
 	//public static final String[] stanfordDevelopmentTopics = {"30", "31", "43"};
-	public static final String[] stanfordDevelopmentTopics = {"12", "22", "38"};
+	public static final String[] stanfordDevelopmentTopics = {"12", "22", "38"}; //,
 	
 	/** the total topics */
 	public static final String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
@@ -61,20 +61,20 @@ public class EecbConstants {
 //		"36", "39", "41", "42", "45"};
 	
 	/** debug development topics */
-	public static final String[] debugDevelopmentTopics = {"12", "22", "38"};
+	public static final String[] debugDevelopmentTopics = {"12", "22", "38"}; // 
 	
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
 	
 	// traditional features
-	public static String[] featuresName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
-		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
-		"SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", "SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", 
-		"SRLROLES-A2", "SRLROLES-A2-PROPER", "SRLROLES-A2-NOMINAL", "SRLROLES-AM-LOC", "SRLROLES-AM-LOC-PROPER", 
-		"SRLROLES-AM-LOC-NOMINAL", "SRLPRED-A0-PROPER", "SRLPRED-A0-NOMINAL", "SRLPRED-A1-PROPER", "SRLPRED-A1-NOMINAL",
-		"SRLPRED-A2-PROPER", "SRLPRED-A2-NOMINAL", "SRLPRED-AM-LOC-PROPER", "SRLPRED-AM-LOC-NOMINAL", "MENTION_WORDS-PROPER",
-		"MENTION_WORDS-NOMINAL", "NETYPE-PROPER", "NUMBER-NOMINAL", "ANIMACY-PROPER", "ANIMACY-NOMINAL", 
-		"GENDER-PROPER", "GENDER-NOMINAL", "NUMBER-PROPER", "NETYPE-NOMINAL"};
+	public static String[] featuresName = {"Head-PROPER", "Head-NOMINAL", "Lemma", "Synonym", "Synonym-PROPER",
+		"Synonym-NOMINAL", "SrlAgreeCount", "SrlAgreeCount-PROPER", "SrlAgreeCount-NOMINAL", "SrlA0", 
+		"SrlA0-PROPER", "SrlA0-NOMINAL", "SrlA1", "SrlA1-PROPER", "SrlA1-NOMINAL", 
+		"SrlA2", "SrlA2-PROPER", "SrlA2-NOMINAL", "SrlAM-LOC", "SrlAM-LOC-PROPER", 
+		"SrlAM-LOC-NOMINAL", "SrlPA0-PROPER", "SrlPA0-NOMINAL", "SrlPA1-PROPER", "SrlPA1-NOMINAL",
+		"SrlPA2-PROPER", "SrlPA2-NOMINAL", "SrlPAM-LOC-PROPER", "SrlPAM-LOC-NOMINAL", "MentionWord-PROPER",
+		"MentionWord-NOMINAL", "NEType-PROPER", "Number-NOMINAL", "Animacy-PROPER", "Animacy-NOMINAL", 
+		"Gender-PROPER", "Gender-NOMINAL", "Number-PROPER", "NEType-NOMINAL"};
 	
 	/** introduce the HALT feature */
 	public static String[] extendFeaturesName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",

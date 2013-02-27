@@ -59,6 +59,13 @@ public class FeatureVectorGenerator {
 			try {
 				Feature individualFeature = (Feature) Class.forName("edu.oregonstate.features.individualfeature."+feature).getConstructor().newInstance();
 				double value = individualFeature.generateFeatureValue(document, former, latter, mentionType);
+				if (feature.equals("SrlAMLoc")) {
+					feature = "SrlAM-LOC";
+				}
+				
+				if (feature.equals("SrlPAMLoc")) {
+					feature = "SrlPAM-LOC";
+				}
 				features.incrementCount(feature + mentionType, value);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -87,7 +94,7 @@ public class FeatureVectorGenerator {
 		if(!isVerb) {
 			if(formerRep.mentionType==MentionType.PROPER && latterRep.mentionType==MentionType.PROPER) mentionType = "-PROPER";
 			else if(formerRep.mentionType==MentionType.PRONOMINAL || latterRep.mentionType==MentionType.PRONOMINAL) mentionType = "-PRONOMINAL";
-			else mentionType = "-COMMON";
+			else mentionType = "-NOMINAL";
 		}
 		
 		return mentionType;

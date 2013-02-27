@@ -2,7 +2,6 @@ package edu.oregonstate.features;
 
 import java.util.HashMap;
 import java.util.Set;
-import java.util.HashSet;
 
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
@@ -43,7 +42,7 @@ public abstract class Feature {
 		return featureName;
 	}
 	
-	// generate feature value according to the document, the two clusters, 
+	// generate feature value according to the document, the two clusters, and mention type
 	public abstract double generateFeatureValue(Document document, CorefCluster former, CorefCluster latter, String mentionType);
 	
 	/**
@@ -116,7 +115,7 @@ public abstract class Feature {
 	protected double calculateNonAgreement(CorefCluster former, CorefCluster latter, String name, String mentionType) {
 		String featureName = name.substring(1);
 		
-		if(mentionType.equals("-PRONOMINAL") && (featureName.startsWith("MentionWord") || featureName.startsWith("Head"))) {
+		if(mentionType.equals("-PRONOMINAL") && (name.startsWith("MentionWord") || name.startsWith("Head"))) {
 			return 0.0;
 		}
 		
@@ -126,7 +125,7 @@ public abstract class Feature {
 		Counter<String> formerVector = formerCentroid.get(featureName);
 		Counter<String> latterVector = latterCentroid.get(featureName);
 		
-		if(featureName.equals("Lemma") && latterVector.getCount("say")>0 && formerVector.getCount("say") > 0) {
+		if(name.equals("Lemma") && latterVector.getCount("say")>0 && formerVector.getCount("say") > 0) {
 			return 0.0;
 		}
 		

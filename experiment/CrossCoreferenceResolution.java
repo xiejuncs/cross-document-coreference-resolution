@@ -116,6 +116,10 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 				
 			}
 			
+			for (int i = 0; i < learnedWeight.length; i++) {
+				ResultOutput.writeTextFile(logFile, FeatureFactory.getFeatureTemplate().get(i) + " : " + learnedWeight[i]);
+			}
+			
 			ResultOutput.writeTextFile(logFile, "learned weight vector : " + DoubleOperation.printArray(learnedWeight) + ", the length is " + learnedWeight.length);
 			int modelIndex = Integer.parseInt(experimentProps.getProperty(EecbConstants.METHOD_EPOCH_PROP, "1")) + 1;
 			int iterationIndex = 1;

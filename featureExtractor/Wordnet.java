@@ -50,8 +50,8 @@ public class Wordnet {
 		configureJWordNet();
 		List<String> cluster1 = new ArrayList<String>();
 		List<String> cluster2 = new ArrayList<String>();
-		cluster1.add("develop");
-		cluster2.add("development");
+		cluster1.add("earthquake");
+		cluster2.add("temblor");
 		Set<String> synos = new HashSet<String>();
 	
 		try {

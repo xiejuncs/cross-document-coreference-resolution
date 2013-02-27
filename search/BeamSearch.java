@@ -106,8 +106,8 @@ public class BeamSearch implements ISearch {
         enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STATE_FEATURE, "false"));
         
         // debug mode
-        mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
-        //mDebug = false;
+        //mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
+        mDebug = false;
     }
     
     /**
@@ -532,13 +532,13 @@ public class BeamSearch implements ISearch {
 					State<CorefCluster> localBestState = states.get(localBestLossStateID);
 					ResultOutput.writeTextFile(logFile, "\n best local state : \n");
 					ResultOutput.writeTextFile(logFile, localBestState.getScore()[0] + " " + localBestState.getActionDescription());
-					ResultOutput.writeTextFile(logFile, localBestState.getID() + " : " + localBestState.featureString());
+					ResultOutput.writeTextFile(logFile, localBestState.getID() + " : " + localBestState.featureString() + " : " + localBestState.getCostScore());
 					ResultOutput.writeTextFile(logFile, "\n");
 					
 					
 					ResultOutput.writeTextFile(logFile, "\n best state : \n");
 					ResultOutput.writeTextFile(logFile, bestLostState.getScore()[0] + " " + bestLostState.getActionDescription());
-					ResultOutput.writeTextFile(logFile, bestLostState.getID() + " : " + bestLostState.featureString());
+					ResultOutput.writeTextFile(logFile, bestLostState.getID() + " : " + bestLostState.featureString() + " : " + bestLostState.getCostScore());
 					ResultOutput.writeTextFile(logFile, "\n");
 				//}
 				
