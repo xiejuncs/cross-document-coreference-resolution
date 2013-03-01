@@ -6,8 +6,6 @@ import java.io.FileInputStream;
 import java.util.Set;
 import java.util.HashSet;
 
-import edu.oregonstate.experiment.ExperimentConstructor;
-
 import net.didion.jwnl.JWNL;
 import net.didion.jwnl.JWNLException;
 import net.didion.jwnl.data.IndexWord;

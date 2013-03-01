@@ -41,8 +41,6 @@ public abstract class ExperimentConstructor {
 	public static String[] testingTopics;
 	public static String[] developmentTopics;
 	
-	// feature template used in the whole experiment
-	public static List<String> featureTemplate;
 
 	/**
 	 * configure the experiment
