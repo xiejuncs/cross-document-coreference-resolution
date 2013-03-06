@@ -17,7 +17,7 @@ import edu.stanford.nlp.dcoref.Mention;
 public class Command {
 
 	// create a directory given a path string
-	public static void createDirectory(String path) {
+	public static void mkdir(String path) {
 		File file = new File(path);
 		if (!file.exists()) {
 			file.mkdir();

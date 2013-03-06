@@ -85,7 +85,7 @@ public class DocumentAlignment {
 	 * @param document
 	 */
 	public static void postProcessDocument(Document document) {
-		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.ENABLE_GOLD_CLUSTER_POST_PROCESS, "false"));
+		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.POSTPROCESS_GOLD_PROP, "false"));
 		SieveCoreferenceSystem.postProcessing(document);
 		if (postProcessGold) {
 			SieveCoreferenceSystem.postProcessingGoldClusters(document);

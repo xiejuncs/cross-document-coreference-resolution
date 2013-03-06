@@ -1,13 +1,8 @@
 package edu.oregonstate.features.individualfeature;
 
-import java.util.Arrays;
-import java.util.HashSet;
-
-import edu.oregonstate.features.FeatureVectorGenerator;
 import edu.oregonstate.features.NumericFeature;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
-import edu.stanford.nlp.dcoref.Mention;
 
 /**
  * Number of non-Coreferent Arguments or Predicates :
@@ -28,23 +23,15 @@ public class NSrlAgreeCount extends NumericFeature {
 		String[] verbElements = {"NSrlA0", "NSrlA1", "NSrlA2", "NSrlAM-LOC"};
 		String[] nounElements = {"NSrlPA0", "NSrlPA1", "NSrlPA2", "NSrlPAM-LOC"};
 		
-		for(Mention m1 : former.getCorefMentions()) {
-			CorefCluster c1 = new CorefCluster(m1.mentionID, new HashSet<Mention>(Arrays.asList(m1)));
-			c1.regenerateFeature();
-			
-			for(Mention m2 : latter.getCorefMentions()) {
-				CorefCluster c2 = new CorefCluster(m2.mentionID, new HashSet<Mention>(Arrays.asList(m2)));
-				c2.regenerateFeature();
-				
-				if (mentionType.equals("")) {
-					for (String feature : verbElements) {
-						totalNonAgreement += calculateNonAgreement(c1, c2, feature, mentionType);
-					}
-				} else {
-					for (String feature : nounElements) {
-						totalNonAgreement += calculateNonAgreement(c1, c2, feature, mentionType);
-					}
-				}
+		if (mentionType.equals("")) {
+			for (String feature : verbElements) {
+				double number = calculateNonAgreement(former, latter, feature, mentionType);
+				totalNonAgreement += (number > 0.0) ? 1.0 : 0.0;
+			}
+		} else {
+			for (String feature : nounElements) {
+				double number = calculateNonAgreement(former, latter, feature, mentionType);
+				totalNonAgreement += (number > 0.0) ? 1.0 : 0.0;
 			}
 		}
 		

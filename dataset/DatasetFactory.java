@@ -27,7 +27,7 @@ public class DatasetFactory {
 	private final String mExperimentResultFolder;
 	
 	/* property file */
-	private final Properties mProps;
+	private final Properties experimentProperties;
 	
 	/* total number of gold mentions */
 	private int totalGoalMentions;
@@ -53,18 +53,9 @@ public class DatasetFactory {
 	/* enable Stanford pre-process step during data generation */
 	private final boolean enableStanfordPreprocessStep;
 	
-	/* whether generate training set */
-	private boolean enableGenerateTrainingSet;
-	
-	// whether generate testing set
-	private boolean enableGenerateTestingSet;
-	
-	// whether generate development set;
-	private boolean enableGenerateDevelopmentSet;
-	
 	public DatasetFactory() {
-		mExperimentResultFolder = ExperimentConstructor.experimentResultFolder;
-		mProps = ExperimentConstructor.experimentProps;
+		mExperimentResultFolder = ExperimentConstructor.resultPath;
+		experimentProperties = ExperimentConstructor.experimentProps;
 		logFile = ExperimentConstructor.logFile;
 		
 		totalGoalMentions = 0;
@@ -72,47 +63,42 @@ public class DatasetFactory {
 		corpusStatisticsPath = mExperimentResultFolder + "/corpusStatisticsPath";
 		initialResult = mExperimentResultFolder + "/initialResult.csv";
 		
-		serializedOutput = mExperimentResultFolder + "/documentobject";
-		Command.createDirectory(serializedOutput);
+		serializedOutput = mExperimentResultFolder + "/document";
+		Command.mkdir(serializedOutput);
 		
-		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION, "true"));
-		lossType = ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
-		
-		enableGenerateTrainingSet = true;
-		enableGenerateTestingSet = true;
-		enableGenerateDevelopmentSet = false;
-		updateFlags();
-		
-	}
-	
-	// update the flags for generating set
-	private void updateFlags() {
-		// dcoref.training.without.tune
-		boolean trainingWithTune = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_WITH_TUNE, "false"));
-		if (trainingWithTune) {
-			enableGenerateDevelopmentSet = true;
-		}
-		
-		// dcoref.just.tune.parameter
-		boolean justTuneParameter = Boolean.parseBoolean(mProps.getProperty(EecbConstants.JUST_TUNE_PARAMETER, "false"));
-		if (justTuneParameter) {
-			enableGenerateTrainingSet = false;
-			enableGenerateTestingSet = false;
-			enableGenerateDevelopmentSet = true;
-		}
+		enableStanfordPreprocessStep = Boolean.parseBoolean(experimentProperties.getProperty(EecbConstants.STANFORD_PREPROCESSING, "true"));
+		lossType = ScoreType.valueOf(experimentProperties.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
 		
 	}
 	
 	/**
-	 * generate the dataset
+	 * generate all dataset, including training set, testing set and development set
+	 * 
+	 * @param topics
+	 * @param developmentTopics
 	 */
 	public void generateDataSet() {
+		TopicGeneration topicGenerator = new TopicGeneration(experimentProperties);
 		
-		List<String[]> topics = new ArrayList<String[]>();
-		topics.add(ExperimentConstructor.trainingTopics);
-		topics.add(ExperimentConstructor.testingTopics);
-		topics.add(ExperimentConstructor.developmentTopics);
-		generateSet(topics);                      // generate Dataset
+		String[] trainingTopics = topicGenerator.trainingTopics();
+		String[] testingTopics = topicGenerator.testingTopics();
+		String[] developmentTopics = topicGenerator.developmentTopics();
+		
+		
+		// training set
+		if (trainingTopics != null) {
+			generateSingleSet(trainingTopics, "training-generation");
+		}
+		
+		// validation set
+		if (testingTopics != null) {
+			generateSingleSet(testingTopics, "testing-generation");
+		}
+		
+		// testing set
+		if (developmentTopics != null) {
+			generateSingleSet(developmentTopics, "validation-generation");
+		}
 		
 		//
 		// debug information: 7980 in total for all documents
@@ -123,53 +109,19 @@ public class DatasetFactory {
 	}
 	
 	/**
-	 * generate all dataset, including training set, testing set and development set
-	 * 
-	 * @param topics
-	 * @param developmentTopics
-	 */
-	private void generateSet(List<String[]> topics) {
-		String[] trainingTopics = topics.get(0);
-		String[] testingTopics = topics.get(1);
-		String[] developmentTopics = topics.get(2);
-		
-		// training set
-		if (enableGenerateTrainingSet) {
-			generateSingleSet(trainingTopics, "training-generation");
-		}
-		
-		// validation set
-		if (enableGenerateDevelopmentSet) {
-			generateSingleSet(developmentTopics, "validation-generation");
-		}
-		
-		// testing set
-		if (enableGenerateTestingSet) {
-			generateSingleSet(testingTopics, "testing-generation");
-		}
-	}
-	
-	/**
 	 * create single set
 	 * 
 	 * @param topics
 	 * @param phase
 	 */
 	private void generateSingleSet(String[] topics, String phase) {
-		String conllResultPath = mExperimentResultFolder + "/conllResult";
+		String conllResultPath = mExperimentResultFolder + "/conll";
 		Document corpus = new Document();
 		corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 		
 		// gold only and whether post process
-		boolean goldOnly;
-		boolean postProcess;
-		if (phase.equals("testing-generation")) {
-			goldOnly = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_GOLD_PROP, "true"));
-			postProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
-		} else {
-			goldOnly = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_GOLD_PROP, "true"));
-			postProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
-		}
+		boolean goldOnly = Boolean.parseBoolean(experimentProperties.getProperty(EecbConstants.GOLDMENTION_PROP, "true"));
+		boolean postProcess= ExperimentConstructor.postProcess;
 		
 		// generate file
 		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phase;
@@ -201,7 +153,7 @@ public class DatasetFactory {
 				// Stanford scoring
 				
 
-				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
+				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster);
 			}
 		}
 		
@@ -211,7 +163,7 @@ public class DatasetFactory {
 		// print the final result for the single set
 		//
 		if (enableStanfordPreprocessStep) {
-			double[] finalScores = ResultOutput.printCorpusResult(0, logFile, goldCorefCluster, predictedCorefCluster, "data generation");
+			double[] finalScores = ResultOutput.printCorpusResult(logFile, goldCorefCluster, predictedCorefCluster, "data generation");
 			ResultOutput.writeTextFile(initialResult, scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
 					finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 		}
@@ -226,7 +178,7 @@ public class DatasetFactory {
 	 */
 	private Document generateDocument(String topic, boolean goldOnly) {
 		String currentExperimentFolder = mExperimentResultFolder + "/" + topic;
-		Command.createDirectory(currentExperimentFolder);
+		Command.mkdir(currentExperimentFolder);
 		ResultOutput.writeTextFile(logFile, "\ncreate data set for " + topic);
 		
 		IDataSet mDatasetMode = createDataSetMode();
@@ -245,7 +197,7 @@ public class DatasetFactory {
 	/* whether put all documents of a topic together, true CrossTopic, false WithinCross */
 	private IDataSet createDataSetMode() {
 		/* data set mode : within or cross topic */
-		boolean dataSetMode = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DATASET_PROP, "true"));
+		boolean dataSetMode = Boolean.parseBoolean(experimentProperties.getProperty(EecbConstants.DATASET_PROP, "true"));
 		
 		IDataSet mDatasetMode;
 		

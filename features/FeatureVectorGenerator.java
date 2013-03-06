@@ -3,6 +3,7 @@ package edu.oregonstate.features;
 import java.util.Properties;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.general.StringOperation;
 import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
@@ -59,13 +60,8 @@ public class FeatureVectorGenerator {
 			try {
 				Feature individualFeature = (Feature) Class.forName("edu.oregonstate.features.individualfeature."+feature).getConstructor().newInstance();
 				double value = individualFeature.generateFeatureValue(document, former, latter, mentionType);
-				if (feature.equals("SrlAMLoc")) {
-					feature = "SrlAM-LOC";
-				}
+				feature = transformFeature(feature);
 				
-				if (feature.equals("SrlPAMLoc")) {
-					feature = "SrlPAM-LOC";
-				}
 				features.incrementCount(feature + mentionType, value);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -75,13 +71,47 @@ public class FeatureVectorGenerator {
 		return features;
 	}
 	
+	/**
+	 * because dash is allowed in the class name, so need to transform the feature 
+	 * if necessary
+	 * 
+	 * @param feature
+	 * @return
+	 */
+	public static String transformFeature(String feature) {
+		if (feature.equals("SrlAMLoc")) {
+			feature = "SrlAM-LOC";
+		}
+		
+		if (feature.equals("SrlPAMLoc")) {
+			feature = "SrlPAM-LOC";
+		}
+		
+		if (feature.equals("NSrlAMLoc")) {
+			feature = "NSrlAM-LOC";
+		}
+		
+		if (feature.equals("NSrlPAMLoc")) {
+			feature = "NSrlPAM-LOC";
+		}
+		
+		return feature;		
+	}
+	
 	// get Atomic Feature Name
-	private static String[] getAtomicFeatureNames() {
+	public static String[] getAtomicFeatureNames() {
 		String propertyKey = EecbConstants.FEATURE_ATOMIC_NAMES;
 		String propertyValue = EecbConstants.FEATURE_NAMES;
 		Properties mProps = ExperimentConstructor.experimentProps;
-		String atomicFeatureNames = mProps.getProperty(propertyKey, propertyValue);
-		String[] featureNames = atomicFeatureNames.split(",");
+		String featureIndicator = mProps.getProperty(propertyKey, propertyValue);
+		String atomicFeatureNames = "";
+		if (featureIndicator.equals("F")) {
+			atomicFeatureNames = EecbConstants.FEATURE_NAMES;
+		} else {
+			atomicFeatureNames = EecbConstants.NFEATURE_NAMES;
+		}
+		
+		String[] featureNames = StringOperation.splitString(atomicFeatureNames, ",");
 		return featureNames;
 	}
 	

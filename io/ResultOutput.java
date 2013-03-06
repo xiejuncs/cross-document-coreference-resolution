@@ -16,9 +16,11 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import edu.oregonstate.classifier.Parameter;
@@ -369,7 +371,8 @@ public class ResultOutput {
 	 * @param predictedCorefCluster : predicted coref cluster result file
 	 * @param postProcess : whether post-process the result
 	 */
-	public static void printDocumentResultToFile(Document document, String goldCorefCluster, String predictedCorefCluster,  boolean postProcess) {
+	public static void printDocumentResultToFile(Document document, String goldCorefCluster, String predictedCorefCluster) {
+		boolean postProcess = ExperimentConstructor.postProcess;
 		PrintWriter writerPredicted = null;
 		PrintWriter writerGold = null;
 		try {
@@ -380,7 +383,7 @@ public class ResultOutput {
 		}
 
 		SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
-		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.ENABLE_GOLD_CLUSTER_POST_PROCESS, "false"));
+		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.POSTPROCESS_GOLD_PROP, "false"));
 		if (postProcessGold) {
 			SieveCoreferenceSystem.printConllOutput(document, writerGold, true, postProcess);
 		} else {
@@ -400,8 +403,8 @@ public class ResultOutput {
 	 * @param predictedCorefCluster : predicted coref cluster file
 	 * @param phase : used to indicate which phase the current process is
 	 */
-	public static double[] printCorpusResult(int index, String logFile, String goldCorefCluster, String predictedCorefCluster, String phase) {
-		CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(index, logFile);
+	public static double[] printCorpusResult(String logFile, String goldCorefCluster, String predictedCorefCluster, String phase) {
+		CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(logFile);
 		double[] finalScores = conllScorerHelper.printFinalCoNLLScore(goldCorefCluster, predictedCorefCluster, phase);
 
 		return finalScores;
@@ -485,5 +488,20 @@ public class ResultOutput {
 		sb.append("]");
 		return sb.toString().trim();
 		
+	}
+	
+	/**
+	 * print properties file
+	 * 
+	 * @param props
+	 * @param logFile
+	 */
+	public static void printProperties(Properties props, String logFile) {
+        Enumeration keys = props.keys();
+        while (keys.hasMoreElements()) {
+          String key = (String)keys.nextElement();
+          String value = (String)props.get(key);
+          ResultOutput.writeTextFile(logFile ,key + " : " + value);
+        }
 	}
 }

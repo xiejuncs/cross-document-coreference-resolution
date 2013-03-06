@@ -1,5 +1,8 @@
 package edu.oregonstate.features.individualfeature;
 
+import java.util.Arrays;
+import java.util.List;
+
 import edu.oregonstate.features.NumericFeature;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
@@ -20,16 +23,28 @@ public class SrlAgreeCount extends NumericFeature {
 	@Override
 	public double generateFeatureValue(Document document, CorefCluster former, CorefCluster latter, String mentionType) {
 		double totalAgreement = 0.0;
-		String[] verbElements = {"SrlA0", "SrlA1", "SrlA2", "SrlAM-LOC", "Left", "Right"}; 
+		String[] verbElements = {"SrlA0", "SrlA1", "SrlA2", "SrlAM-LOC", "Left", "Right"};
 		String[] nounElements = {"SrlPA0", "SrlPA1", "SrlPA2", "SrlPAM-LOC"};
 		
+		List<String> verbRoles = Arrays.asList(verbElements);
+		List<String> nounRoles = Arrays.asList(nounElements);
+		
+		// remove Left and Right
+//		if ((former.predictedCentroid.get("SrlA0").size() > 0) && (latter.predictedCentroid.get("SrlA0").size() > 0) ) {
+//			verbRoles.remove("Left");
+//		}
+//		
+//		if ((former.predictedCentroid.get("SrlA1").size() > 0) && (latter.predictedCentroid.get("SrlA1").size() > 0)) {
+//			verbRoles.remove("Right");
+//		}
+		
 		if (mentionType.equals("")) {
-			for (String feature : verbElements) {
+			for (String feature : verbRoles) {
 				double number = calculateAgreement(former, latter, feature, mentionType);
 				totalAgreement += (number > 0.0) ? 1.0 : 0.0;
 			}
 		} else {
-			for (String feature : nounElements) {
+			for (String feature : nounRoles) {
 				double number = calculateAgreement(former, latter, feature, mentionType);
 				totalAgreement += (number > 0.0) ? 1.0 : 0.0;
 			}

@@ -8,11 +8,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.util.Command;
 import edu.stanford.nlp.dcoref.Constants;
 import edu.stanford.nlp.dcoref.CorefMentionFinder;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -71,11 +68,6 @@ public class EmentionExtractor {
 		logger = Logger.getLogger(EmentionExtractor.class.getName());
 		this.mentionFinder = new RuleBasedCorefMentionFinder();
 		goldOnly = goldonly;
-		
-		if (goldOnly) {
-			mentionRepositoryPath = ExperimentConstructor.experimentResultFolder + "/mentionResult";
-			Command.createDirectory(mentionRepositoryPath);
-		}
 	}
 	
 	protected class EntityComparator implements Comparator<EntityMention> {

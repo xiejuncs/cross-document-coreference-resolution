@@ -12,6 +12,12 @@ import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.LargetFileReading;
 import edu.oregonstate.util.EecbConstants;
 
+/**
+ * whether incorporate the negative instance, according to the paper : Tuning as Ranking
+ * 
+ * @author Jun Xie (xie@eecs.oregonstate.edu)
+ *
+ */
 public abstract class ITraining {
 
 	/* the length of the weight */
@@ -45,12 +51,12 @@ public abstract class ITraining {
 		Properties mProps = ExperimentConstructor.experimentProps;
 		length = FeatureFactory.getFeatureTemplate().size();
 		reader = new LargetFileReading();
-		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.INCORPORATE_ZERO_CASE_PROP, "true"));
-		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING, "false"));
-		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_LEARNING_RATE_LOSSSCORE, "true"));
-		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_DISCREPANCY, "true"));
-		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_MARGIN, "true"));
-		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PA_NORMALIZE_WEIGHT, "true"));
+		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_INCORPORATE_ZERO_CASE_PROP, "true"));
+		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_LEARNING, "false"));
+		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_LEARNING_RATE_LOSSSCORE, "true"));
+		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_DISCREPANCY, "true"));
+		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_MARGIN, "true"));
+		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_NORMALIZE_WEIGHT, "true"));
 		mHyperParameter = Double.parseDouble(mProps.getProperty(EecbConstants.EXPERIMENT_HYPERPARAMETER, "1.0"));
 	}
 	

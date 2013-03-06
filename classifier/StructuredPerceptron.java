@@ -5,11 +5,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import edu.oregonstate.dataset.TopicGeneration;
+import edu.oregonstate.experiment.ExperimentConfigurationFactory;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.method.Dagger;
+import edu.oregonstate.method.CoreferenceResolutionDecoding;
 import edu.oregonstate.training.ITraining;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
@@ -27,12 +29,6 @@ public class StructuredPerceptron implements IClassifier {
 
 	/* the total number of iterations */
 	private final int mIterations;
-	
-	/* training topics */
-	private final String[] trainingTopics;
-	
-	/* testing topics */
-	private final String[] testingTopics;
 	
 	/* experiment folder */
 	private final String experimentFolder;
@@ -66,11 +62,10 @@ public class StructuredPerceptron implements IClassifier {
 	 */
 	public StructuredPerceptron() {
 		mProps = ExperimentConstructor.experimentProps;
-		experimentFolder = ExperimentConstructor.experimentResultFolder;
-		mIterations = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "1"));
+		experimentFolder = ExperimentConstructor.resultPath;
+		mIterations = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "5"));
+		
 		logFile = ExperimentConstructor.logFile;
-		trainingTopics = ExperimentConstructor.trainingTopics;
-		testingTopics = ExperimentConstructor.testingTopics;
 		modelIndex = 0;
 		String trainingStyle = mProps.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
@@ -78,9 +73,9 @@ public class StructuredPerceptron implements IClassifier {
 		length = featureTemplate.size();
 		weights = new ArrayList<double[]>();
 		
-		learningRateConstant = Boolean.parseBoolean(mProps.getProperty(EecbConstants.LEARING_RATE_CONSTANT_PROP, "false"));
-		enablePrintIterationResult = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_PRINT_ITERATION_RESULT, "false"));
-		printIteartionGap = Integer.parseInt(mProps.getProperty(EecbConstants.PRINT_ITEARTION_GAP, "1"));
+		learningRateConstant = Boolean.parseBoolean(mProps.getProperty(EecbConstants.STRUCTUREDPERCEPTRON_LEARINGRATE_CONSTANT_PROP, "false"));
+		enablePrintIterationResult = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_ITERATION_RESULT, "false"));
+		printIteartionGap = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER__ITEARTION_GAP, "2"));
 	}
 	
 	/**
@@ -115,12 +110,6 @@ public class StructuredPerceptron implements IClassifier {
 		}
 		double[] learningRates = DoubleOperation.createDescendingArray(startingRate, endRate, mIterations);
 		
-		Dagger dagger = new Dagger();
-		
-		// whether do post process on the document
-		boolean trainPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
-		boolean testPostProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TEST_POSTPROCESS_PROP, "false"));
-		
 		// do gradient update
 		for (int i = 0; i < mIterations; i++) {
 			double learningRate = learningRates[i];
@@ -141,12 +130,21 @@ public class StructuredPerceptron implements IClassifier {
 			
 			//train the other models of Dagger
 			if (enablePrintIterationResult && (i % printIteartionGap == 0)) {
-				double[] learnedWeight = dagger.generateWeightForTesting(para);
+				TopicGeneration topicGenerator = new TopicGeneration(mProps);
+				String[] trainingTopics = topicGenerator.trainingTopics();
+				String[] testingTopics = topicGenerator.testingTopics();
 				
-				double stoppingRate = dagger.tuneStoppingRate(learnedWeight, modelIndex, i);
+				double[] learnedWeight = para.generateWeightForTesting();
 				
-				dagger.testDocument(trainingTopics, learnedWeight, modelIndex, i, trainPostProcess, "classification-training", false, stoppingRate);
-				dagger.testDocument(testingTopics, learnedWeight, modelIndex, i, testPostProcess, "classification-testing", false, stoppingRate);
+				double stoppingRate = ExperimentConfigurationFactory.tuneStoppingRate(learnedWeight, i);
+				
+				String trainingPhase = "training-" + modelIndex + "-" + i;
+				CoreferenceResolutionDecoding trainingDecoder = new CoreferenceResolutionDecoding(trainingPhase, trainingTopics, false, stoppingRate);
+				trainingDecoder.decode(learnedWeight);
+				
+				String testingPhase = "testing-" + modelIndex + "-" + i;
+				CoreferenceResolutionDecoding testingDecoder = new CoreferenceResolutionDecoding(testingPhase, testingTopics, false, stoppingRate);
+				testingDecoder.decode(learnedWeight);
 			}
 		}
 		

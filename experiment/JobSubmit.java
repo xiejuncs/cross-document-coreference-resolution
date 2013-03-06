@@ -34,9 +34,7 @@ public class JobSubmit {
 			if (directory.startsWith("Job")) continue;
 			String simplePath = folderPath + "/" + directory + "/simple.sh";
 			System.out.println(simplePath);
-			Process p = Runtime.getRuntime().exec("qsub " + simplePath);
-			p.waitFor();
-			p.destroy();
+			Runtime.getRuntime().exec("qsub " + simplePath);
 		}
 		System.out.println("done!");
 	}

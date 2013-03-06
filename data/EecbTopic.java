@@ -496,7 +496,7 @@ public class EecbTopic extends EecbElement {
 		// put all documents into one document
 		for (String file : mFiles) {
 			try {
-				String dataPath = ExperimentConstructor.corpusPath + "corpus/EECB1.0/data/";
+				String dataPath = ExperimentConstructor.corpusPath + "/EECB1.0/data/";
 				String filename = dataPath + mID + File.separator + file;
 				BufferedReader br = new BufferedReader(new FileReader(filename));
 				int i = 0;
@@ -617,7 +617,7 @@ public class EecbTopic extends EecbElement {
 	 */
 	public static HashMap<String, ArrayList<String>> readAnnotation() {
 		HashMap<String, ArrayList<String>> annotation = new HashMap<String, ArrayList<String>>();
-		String mentionPath = ExperimentConstructor.corpusPath + "corpus/mentions.txt";    // mentions.txt path
+		String mentionPath = ExperimentConstructor.corpusPath + "/mentions.txt";    // mentions.txt path
 		
 		try {
 			BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(mentionPath));

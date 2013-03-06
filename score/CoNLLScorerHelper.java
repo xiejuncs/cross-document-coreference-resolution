@@ -17,9 +17,6 @@ import edu.stanford.nlp.dcoref.SieveCoreferenceSystem;
  */
 public class CoNLLScorerHelper {
 
-	/* current epoch */
-	private int mEpoch;
-
 	/* log file */
 	private String mLogFile;
 	
@@ -50,11 +47,9 @@ public class CoNLLScorerHelper {
 	 * @param epoch
 	 * @param logFile
 	 */
-	public CoNLLScorerHelper(int epoch, String logFile) {
-		mEpoch = epoch;
+	public CoNLLScorerHelper(String logFile) {
 		mLogFile = logFile;
-		String clusterScorePath = ExperimentConstructor.corpusPath + "corpus/scorer/v4/scorer.pl";
-		mConllScorerPath = ExperimentConstructor.experimentProps.getProperty(EecbConstants.CONLL_SCORER_PROP, clusterScorePath);
+		mConllScorerPath = ExperimentConstructor.experimentProps.getProperty(EecbConstants.CONLL_SCORER_PROP);
 		coNllF1Result = 0.0;
 		mucScoreF1Result = 0.0;
 		bcubedScoreF1Result = 0.0;
@@ -113,7 +108,7 @@ public class CoNLLScorerHelper {
 		double[] finalScores = new double[5];
 		try {
 			ResultOutput.writeTextFile(mLogFile, "\n\n");
-			ResultOutput.writeTextFile(mLogFile, "the score summary of resolution for " + phase + " on the " + mEpoch + "th iteration");
+			ResultOutput.writeTextFile(mLogFile, "the score summary of resolution for " + phase + "\n");
 			String summary = SieveCoreferenceSystem.getConllEvalSummary(mConllScorerPath, mGoldCorefCluster, mPredictedCorefCluster);
 			printScoreSummary(summary, true);
 			printFinalScore(summary);

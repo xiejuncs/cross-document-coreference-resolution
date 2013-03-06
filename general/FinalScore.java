@@ -220,7 +220,7 @@ public class FinalScore {
 		
 		String corpusPath = "/nfs/guille/xfern/users/xie/Experiment/corpus/TEMPORYRESUT/Thu-Nov-15-16:46:51-PST-2012CrossCoreferenceResolutionGold2.5";
 		String finalResultPath = corpusPath + "/finalresult";
-		Command.createDirectory(finalResultPath);
+		Command.mkdir(finalResultPath);
 		FinalScore finalScore = new FinalScore(trainingTopics, testingTopics, corpusPath);
 		for (int i = 1; i <= iteration; i++) {
 			for (String scoreType : scoreTypes) {

@@ -94,7 +94,7 @@ public class SrlResultIncorporation {
 	
 	// add the closest left and right mentions into the srl incorporation
 	// we have added the left and right mentions before
-	public void alignSRL(List<List<Mention>> allPredictedMentions) {
+	public void alignSRLResult(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 
 		for (int i = 0; i < allPredictedMentions.size(); i++) {
@@ -151,7 +151,7 @@ public class SrlResultIncorporation {
 		}
 	}
 	
-	public void alignSRLResult(List<List<Mention>> allPredictedMentions) {
+	public void alignSRL(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 		
 		for (int i = 0; i < allPredictedMentions.size(); i++) {

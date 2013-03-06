@@ -90,7 +90,7 @@ public class BeamSearch implements ISearch {
     public BeamSearch() {
     	mProps = ExperimentConstructor.experimentProps;
     	logFile = ExperimentConstructor.logFile;
-    	experimentResultFolder = ExperimentConstructor.experimentResultFolder;
+    	experimentResultFolder = ExperimentConstructor.resultPath;
     	
     	//
     	// set the configuration constant 
@@ -103,7 +103,7 @@ public class BeamSearch implements ISearch {
         ResultOutput.writeTextFile(logFile, "\nBeam Search Configuration : " + "width : " + mBeamWidth + "; maximumSearch : " + 
         							maximumSearch + "; type : " + type.toString() + "; lossFunction : " + 
         							mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP) + "; costFunction : " + mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
-        enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STATE_FEATURE, "false"));
+        enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.STATE_FEATURE, "false"));
         
         // debug mode
         //mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
@@ -399,8 +399,7 @@ public class BeamSearch implements ISearch {
 				}
 				
 				// output constraints
-				int id = Integer.parseInt(phaseID);
-				String path = trainingDataPath + "/" + id;
+				String path = trainingDataPath + "/" + phaseID;
 				ConstraintGeneration constraintGenerator = new ConstraintGeneration(path);
 				constraintGenerator.generateConstraints(states, beam, previousBestState, bestState);
 				
@@ -649,8 +648,7 @@ public class BeamSearch implements ISearch {
 	private void generateOutput(Map<String, State<CorefCluster>> states, String bestLossStateID, String phaseID, String trainingDataPath, int searchStep) {
 		List<String> constraints = new ArrayList<String>();
 		constraints.add("NEWDATASET");
-		int id = Integer.parseInt(phaseID);
-		String path = trainingDataPath + "/" + id;
+		String path = trainingDataPath + "/" + phaseID;
 		ConstraintGeneration generator = new ConstraintGeneration(path);
 		
 		State<CorefCluster> goodState = states.get(bestLossStateID);

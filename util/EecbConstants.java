@@ -7,65 +7,61 @@ package edu.oregonstate.util;
  *
  */
 public class EecbConstants {
-	
+
 	/* non-instantiable class */
 	private EecbConstants() {
 	}
-	
-	/** String constants */
-	/** local corpus path, which is used for debug */
-	public static final String LOCAL_CORPUS_PATH = "../";
-	
-	/** cluster corpus path, which is used to run the whole experiment */
-	public static final String CLUSTER_CPRPUS_PATH = "/nfs/guille/xfern/users/xie/Experiment/";
-	
+
 	/** partial sieves, does not including pronoun sieve, which is the right configuration for Stanford experiment and our own experiment */
 	public static final String PARTIAL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch";
 
 	/** full sieve, including Pronoun Sieve */
 	public static final String FULL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch, PronounMatch";
+
+	public static final String FEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlPA0, SrlPA1, SrlPA2, SrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
 	
-	public static final String FEATURE_NAMES = "Head,Lemma,Synonym,SrlAgreeCount,SrlA0,SrlA1,SrlA2,SrlAMLoc,SrlPA0,SrlPA1,SrlPA2,SrlPAMLoc,MentionWord,NEType,Animacy,Gender,Number";
-	
+	public static final String NFEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlPA0, SrlPA1, SrlPA2, SrlPAMLoc, NSrlAgreeCount, " +
+	"NSrlA0, NSrlA1, NSrlA2, NSrlAMLoc, NSrlPA0, NSrlPA1, NSrlPA2, NSrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
+
 	/** the topics used in the Stanford experiments
 	 * "12", "22", "38",                                                        // development topics 
 	 * */
-//	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "12", "16", "22", "25",  "37", "38", "40", "44",     // training topics
-//														"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
-//														"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
-//														"36", "39", "41", "42", "45"};
-	
+	//	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "12", "16", "22", "25",  "37", "38", "40", "44",     // training topics
+	//														"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
+	//														"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
+	//														"36", "39", "41", "42", "45"};
+
 	public static final String[] stanfordTotalTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
-		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
-		"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
+		"1", "2", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
+		"21", "22", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
 		"36", "39", "41", "42", "45"};
-	
+
 	/** development topics */
 	//public static final String[] stanfordDevelopmentTopics = {"30", "31", "43"};
-	public static final String[] stanfordDevelopmentTopics = {"12", "22", "38"}; //,
-	
+	public static final String[] stanfordDevelopmentTopics = {"3", "12", "38"}; //,
+
 	/** the total topics */
 	public static final String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
-											 "11", "12", "13", "14", "16", "18", "19", "20", "21", "22", 
-											 "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", 
-											 "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", 
-											 "43", "44", "45"};
-	
+		"11", "12", "13", "14", "16", "18", "19", "20", "21", "22", 
+		"23", "24", "25", "26", "27", "28", "29", "30", "31", "32", 
+		"33", "34", "35", "36", "37", "38", "39", "40", "41", "42", 
+		"43", "44", "45"};
+
 	/** debug topics */
-	
+
 	public static final String[] debugTopics = {"6", "16", "10", "20"};
 	//public static final String[] debugTopics = {"12", "22", "38"};
-//	public static final String[] debugTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
-//		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
-//		"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
-//		"36", "39", "41", "42", "45"};
-	
+	//	public static final String[] debugTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
+	//		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
+	//		"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
+	//		"36", "39", "41", "42", "45"};
+
 	/** debug development topics */
-	public static final String[] debugDevelopmentTopics = {"12", "22", "38"}; // 
-	
+	public static final String[] debugDevelopmentTopics = {"3", "12", "38"}; //
+
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
-	
+
 	// traditional features
 	public static String[] featuresName = {"Head-PROPER", "Head-NOMINAL", "Lemma", "Synonym", "Synonym-PROPER",
 		"Synonym-NOMINAL", "SrlAgreeCount", "SrlAgreeCount-PROPER", "SrlAgreeCount-NOMINAL", "SrlA0", 
@@ -75,7 +71,7 @@ public class EecbConstants {
 		"SrlPA2-PROPER", "SrlPA2-NOMINAL", "SrlPAM-LOC-PROPER", "SrlPAM-LOC-NOMINAL", "MentionWord-PROPER",
 		"MentionWord-NOMINAL", "NEType-PROPER", "Number-NOMINAL", "Animacy-PROPER", "Animacy-NOMINAL", 
 		"Gender-PROPER", "Gender-NOMINAL", "Number-PROPER", "NEType-NOMINAL"};
-	
+
 	/** introduce the HALT feature */
 	public static String[] extendFeaturesName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
 		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
@@ -86,62 +82,120 @@ public class EecbConstants {
 		"MENTION_WORDS-NOMINAL", "NETYPE-PROPER", "NUMBER-NOMINAL", "ANIMACY-PROPER", "ANIMACY-NOMINAL", 
 		"GENDER-PROPER", "GENDER-NOMINAL", "NUMBER-PROPER", "NETYPE-NOMINAL", "HALT"};
 	
-	/** configuration setting */
+	// experiment name component
+	// the vlaue for this property is shown as below:
+	// dcoref.experiment = "lossfunction,lossscore";
+	public static final String EXPERIMENT_PROP = "dcoref.experiment";		// MUST
+	
+	// corpus path
+	public static final String CORPUS_PROP = "dcoref.corpus";		// MUST
+
+	// CONLL scorer path  MUST
+	public static final String CONLL_SCORER_PROP = "dcoref.conll.scorer";		// MUST
+
+	// whether the experiment is in the debug model or cluster model
+	// used to print out the detail information, while in the real clustering
+	// running, we would like to like faster by reducing the output
+	public static final String DEBUG_PROP = "dcoref.debug";		// MUST
+
+	// annotators used in the experiment
+	public static final String ANNOTATORS_PROP = "dcoref.annotators";		// MUST
+
+	// gold mention (true) or predicted mention (false)
+	public static final String GOLDMENTION_PROP = "dcoref.goldmention";		// MUST
+	// GOLD cluster post process
+	public static final String POSTPROCESS_GOLD_PROP = "dcoref.postprocess.gold";
+	
+	
+	// within (false) or cross (true) reading data
 	public static final String DATASET_PROP = "dcoref.dataset";
-	public static final String DATASET_GENERATION_PROP = "dcoref.dataset.generation";
+	// training set
+	public static final String TRAININGSET_PROP = "dcoref.trainingset";		// MUST
+	// testing set
+	public static final String TESTINGSET_PROP = "dcoref.testingset";		// MUST
+	// development set
+	public static final String DEVELOPMENTSET_PROP = "dcoref.developmentset";		// MUST
+
+	// WORDNET path
+	public static final String WORDNET_PROP = "dcoref.wordnet";		// MUST
+
+	// best state score 
+	public static final String BEST_STATE_PROP = "dcoref.best.state";		// MUST
+
+	// whether use all sieves or all sieves except Pronoun sieve
+	public static final String SIEVE_PROP = "dcoref.sieve";
+
+	// do training to learn a weight
+	public static final String DOTRAINING_PROP = "dcoref.dotraining";
+
+	// use existed weight to do testing, whether do validation or do final testing
+	public static final String EXISTEDWEIGHT_PROP = "dcoref.existedweight";
+	// existed weight path
+	public static final String EXISTEDWEIGHT_PATH_PROP = "dcoref.existedweight.path";
+
+	// classifier
 	public static final String CLASSIFIER_PROP = "dcoref.classifier";
 	public static final String CLASSIFIER_EPOCH_PROP = "dcoref.classifier.epoch";
+	public static final String CLASSIFIER_ITERATION_RESULT = "dcoref.classifier.iteration.result";
+	public static final String CLASSIFIER__ITEARTION_GAP = "dcoref.classifier.iteration.gap";
+
+	// cost function used, for example, linear 
 	public static final String COSTFUNCTION_PROP = "dcoref.costfunction";
-	public static final String LOSSFUNCTION_PROP = "dcoref.lossfunction";
-	public static final String CLUSTERING_PROP = "dcoref.clustering";
+
+	// loss function used score type
+	public static final String LOSSFUNCTION_PROP = "dcoref.lossfunction"; 
+	public static final String LOSSFUNCTION_SCORE_PROP = "dcoref.lossfunction.score";
+
+	// search, its beam width, maximum step
 	public static final String SEARCH_PROP = "dcoref.search";
 	public static final String SEARCH_BEAMWIDTH_PROP = "dcoref.search.beamwidth";
 	public static final String SEARCH_MAXIMUMSTEP_PROP = "dcoref.search.maximumstep";
-	public static final String SIEVES_PROP = "dcoref.sievePasses";
-	public static final String SCORE_PROP = "dcoref.score";
-	public static final String TRAIN_GOLD_PROP = "dcoref.train.gold";
-	public static final String TEST_GOLD_PROP = "dcoref.test.gold";
-	public static final String DEBUG_PROP = "dcoref.debug";
+
+	// stopping criterion (if tune, then its stopping rate)
 	public static final String STOPPING_CRITERION = "dcoref.stoppingcriterion";
 	public static final String STOPPING_RATE = "dcoref.stoppingrate";
-	public static final String TRAINING_VALIDATION_PROP = "dcoref.training.testing";
-	public static final String ANNOTATORS_PROP = "dcoref.annotators";
-	public static final String TRAIN_POSTPROCESS_PROP = "dcoref.train.postprocess";
-	public static final String TEST_POSTPROCESS_PROP = "dcoref.test.postprocess";
+
+	// average weight or latest weight
 	public static final String WEIGHT_PROP = "dcoref.weight";
-	public static final String LOSSFUNCTION_SCORE_PROP = "dcoref.lossfunction.score";
+
+	// constraints enable
 	public static final String ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP = "dcoref.enablepreviouscurrentconstraint";
 	public static final String ENABLEBEAMCONSTRAINT_PROP = "dcoref.enablebeamconstraint";
 	public static final String ENABLEBEAMUNBEAMCONSTRAINT_PROP = "dcoref.enablebeamunbeamconstraint";
+
+	// Perceptron started rate
 	public static final String STRUCTUREDPERCEPTRON_STARTRATE_PROP = "dcoref.structuredperceptron.startrate";
+	public static final String STRUCTUREDPERCEPTRON_LEARINGRATE_CONSTANT_PROP = "dcoref.structuredperceptron.learningrate.constant";
+
+	// Method configuration
 	public static final String METHOD_PROP = "dcoref.method";
 	public static final String METHOD_EPOCH_PROP = "dcoref.method.epoch";
-	public static final String METHOD_FUNCTION_NUMBER_PROP = "dcoref.method.function.number.prop";
-	public static final String CONLL_SCORER_PROP = "dcoref.conll.scorer";
-	public static final String SEARCH_TRAINING_PROP = "dcoref.searchtraining";
+	public static final String METHOD_FUNCTION_NUMBER_PROP = "dcoref.method.function.number";
+
+	// use binary to write and read
 	public static final String IO_BINARY_PROP = "dcoref.io.binary";
-	public static final String INCORPORATE_ZERO_CASE_PROP = "dcoref.incorporate.zero.case";
+
+	// use which training method to train the algorithm, Online, OnlineToBatch, Batch
 	public static final String TRAINING_STYLE_PROP = "dcoref.training.style";
-	public static final String LEARING_RATE_CONSTANT_PROP = "dcoref.learningrate.constant";
-	public static final String ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION = "dcoref.enable.stanford.processing.during.data.generation";
-	public static final String ENABLE_PA_LEARNING = "dcoref.pa.learning";
-	public static final String ENABLE_PA_LEARNING_RATE_LOSSSCORE = "dcoref.pa.learning.rate.lossscore";
-	public static final String ENABLE_GOLD_CLUSTER_POST_PROCESS = "dcoref.gold.cluster.post.process";
-	public static final String ENABLE_PA_DISCREPANCY = "dcoref.pa.discrepancy";
-	public static final String ENABLE_PA_MARGIN = "dcoref.pa.margin";
-	public static final String ENABLE_PA_NORMALIZE_WEIGHT = "dcoref.pa.normalize.weight";
-	public static final String ENABLE_STATE_FEATURE = "dcoref.state.feature";
-	public static final String ENABLE_BEST_SEARCH_SCORE = "dcoref.best.search.score";
-	public static final String ENABLE_LEARNED_WEIGHT = "dcoref.enable.learned.weight";
-	public static final String LEARNED_WEIGHT_PATH = "dcoref.learned.weight.path";
-	public static final String ENABLE_PRINT_ITERATION_RESULT = "dcoref.enable.print.iteration.result";
-	public static final String PRINT_ITEARTION_GAP = "dcoref.print.iteration.gap";
-	
+	public static final String TRAINING_NORMALIZE_WEIGHT = "dcoref.training.normalize.weight";
+	public static final String TRAINING_INCORPORATE_ZERO_CASE_PROP = "dcoref.training.incorporate.zero.case";
+
+	// stanford preprocessing
+	public static final String STANFORD_PREPROCESSING = "dcoref.stanford.preprocessing";
+
+	// enable PA learning and its margin type
+	public static final String PA_LEARNING = "dcoref.pa.learning";
+	public static final String PA_LEARNING_RATE_LOSSSCORE = "dcoref.pa.learning.rate.lossscore";
+	public static final String PA_DISCREPANCY = "dcoref.pa.discrepancy";
+	public static final String PA_MARGIN = "dcoref.pa.margin";
+
+	// state feature
+	public static final String STATE_FEATURE = "dcoref.state.feature";
+
+	// experiment hyperparameter
 	public static final String EXPERIMENT_HYPERPARAMETER = "dcoref.experiment.hyperparameter";
-	
-	// default is training with tune
-	public static final String JUST_TUNE_PARAMETER = "dcoref.just.tune.parameter";
-	public static final String TRAINING_WITH_TUNE = "dcoref.training.with.tune";
-	
+
+	// Atomic features
 	public static final String FEATURE_ATOMIC_NAMES = "dcoref.feature.atomic.names";
+
 }

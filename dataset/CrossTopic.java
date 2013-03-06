@@ -43,10 +43,10 @@ public class CrossTopic implements IDataSet {
 	public CrossTopic() {
 		mProps = ExperimentConstructor.experimentProps;
 		logFile = ExperimentConstructor.logFile;
-		experimentResultFolder = ExperimentConstructor.experimentResultFolder;
+		experimentResultFolder = ExperimentConstructor.resultPath;
 		corpusPath = ExperimentConstructor.corpusPath;
-		dataPath = corpusPath + "corpus/EECB1.0/data/";
-		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_STANFORD_PROCESSING_DURING_DATA_GENERATION, "true"));
+		dataPath = corpusPath + "/EECB1.0/data/";
+		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.STANFORD_PREPROCESSING, "true"));
 	}
 
 	@Override

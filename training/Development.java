@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import edu.oregonstate.dataset.CorefSystem;
+import edu.oregonstate.dataset.TopicGeneration;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
@@ -55,9 +56,6 @@ public class Development {
 	/* log file */
 	private final String logFile;
 	
-	/* model index */
-	private final int mModelIndex;
-	
 	/* conll result folder */
 	private final String conllResultPath;
 	
@@ -81,12 +79,13 @@ public class Development {
 	 * @param startNumber : the number used for indicating the beginning number for validation
 	 * @param endNumber : the number used for indicating the end number for validation
 	 */
-	public Development(int modelIndex, int currentEpoch, double[] learnedWeight, double startNumber, double endNumber, int iterations) {
+	public Development(int currentEpoch, double[] learnedWeight, double startNumber, double endNumber, int iterations) {
 		mProps = ExperimentConstructor.experimentProps;
-		mDevelopmentTopics = ExperimentConstructor.developmentTopics;
-		experimentResultFolder = ExperimentConstructor.experimentResultFolder;
-		conllResultPath = experimentResultFolder + "/conllResult";
-		serializeOutput = experimentResultFolder + "/documentobject";
+		TopicGeneration topicGenerator = new TopicGeneration(ExperimentConstructor.experimentProps);
+		mDevelopmentTopics = topicGenerator.developmentTopics();
+		experimentResultFolder = ExperimentConstructor.resultPath;
+		conllResultPath = experimentResultFolder + "/conll";
+		serializeOutput = experimentResultFolder + "/document";
 		
 		mCurrentEpoch = currentEpoch;
 		searchMethod = mProps.getProperty(EecbConstants.SEARCH_PROP);
@@ -95,9 +94,8 @@ public class Development {
 		mEndNumber = endNumber;
 		mIterations = iterations;
 		logFile = ExperimentConstructor.logFile;
-		mModelIndex = modelIndex;
 		
-		postProcess = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAIN_POSTPROCESS_PROP, "false"));
+		postProcess = ExperimentConstructor.postProcess;
 		lossScoreType = ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
 	}
 	
@@ -106,9 +104,9 @@ public class Development {
 	 */
 	public double tuning() {
 		double[] stoppingRates = DoubleOperation.createDescendingArray(mStartNumber, mEndNumber, mIterations);
-		boolean bestStateScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.ENABLE_BEST_SEARCH_SCORE, "false"));
+		boolean bestStateScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.BEST_STATE_PROP, "false"));
 
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nBegin Tuning parameter for the " + mModelIndex + "'s model in the " + mCurrentEpoch + "th iteration\n");
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nBegin Tuning parameter for the model in the " + mCurrentEpoch + "th iteration\n");
 
 		double maximumScore = 0.0;
 		double optimizedStoppingRate = 0.0;
@@ -119,8 +117,8 @@ public class Development {
 			
 			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nstopping rate number : " + stoppingRate + " for the "  + mCurrentEpoch + "th iteration\n");
 			
-			String goldCorefCluster = conllResultPath + "/goldCorefCluster-tuning-" + mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate;
-			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-tuning-" + mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate;
+			String goldCorefCluster = conllResultPath + "/goldCorefCluster-tuning-" + mCurrentEpoch + "-" + stoppingRate;
+			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-tuning-" + mCurrentEpoch + "-" + stoppingRate;
 
 			PrintWriter writerPredicted = null;
 			PrintWriter writerGold = null;
@@ -130,19 +128,19 @@ public class Development {
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
-			String phaseID = mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate;
+			String phaseID = mCurrentEpoch + "-" + stoppingRate;
 
 			for (String topic : mDevelopmentTopics) {
 				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nStarting to tuning on " + topic + " with stpping rate " + stoppingRate + " for the " + mCurrentEpoch + "th iteration\n");
 				Document document = ResultOutput.deserialize(topic, serializeOutput, false);
 
 				// before search : document parameters
-				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "topic " + topic + "'s detail before search during tuning-" + mModelIndex + "-" + mCurrentEpoch + "-" + stoppingRate);
+				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "topic " + topic + "'s detail before search during tuning-" + mCurrentEpoch + "-" + stoppingRate);
 				ResultOutput.printParameters(document, topic, logFile);
 
 				// configure dynamic file and folder path
 				String currentExperimentFolder = experimentResultFolder + "/" + topic;
-				Command.createDirectory(currentExperimentFolder);
+				Command.mkdir(currentExperimentFolder);
 				
 				ISearch search = EecbConstructor.createSearchMethod(searchMethod);
 				State<CorefCluster> bestLossState = search.testingBySearch(document, mLearnedWeight, phaseID, false, stoppingRate);
@@ -167,7 +165,7 @@ public class Development {
 				ResultOutput.printParameters(document, topic, logFile);
 				DocumentAlignment.mergeDocument(document, corpus);
 				
-				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster, postProcess);
+				ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster);
 			}
 
 			writerPredicted.close();
@@ -179,7 +177,7 @@ public class Development {
 				String[] scoreInformation = ResultOutput.printDocumentScore(corpus, lossScoreType, logFile, phaseID);
 
 				// CoNLL scoring
-				double[] finalScores = ResultOutput.printCorpusResult(mCurrentEpoch, logFile, goldCorefCluster, predictedCorefCluster, "model generation");
+				double[] finalScores = ResultOutput.printCorpusResult(logFile, goldCorefCluster, predictedCorefCluster, "model generation");
 				ResultOutput.writeTextFile(experimentResultFolder + "/tuning/" + phaseID + ".csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
 												finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 				

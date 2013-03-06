@@ -43,7 +43,7 @@ public class CorefSystem {
 	public CorefSystem(boolean enableParser) {
 		mExperimentProps = ExperimentConstructor.experimentProps;
 		String sieve = "";
-		if (mExperimentProps.getProperty(EecbConstants.SIEVES_PROP).equals("partial")) {
+		if (mExperimentProps.getProperty(EecbConstants.SIEVE_PROP, "partial").equals("partial")) {
 			sieve = EecbConstants.PARTIAL_SIEVE_STRING;
 		} else {
 			sieve = EecbConstants.FULL_SIEVE_STRING;
@@ -67,16 +67,10 @@ public class CorefSystem {
 		Properties props = new Properties();
 		props.setProperty("annotators", mExperimentProps.getProperty(EecbConstants.ANNOTATORS_PROP));
 		
-		boolean debug = Boolean.parseBoolean(mExperimentProps.getProperty(EecbConstants.DEBUG_PROP, "false"));
-		String corpusPath = "";
-		if (debug) {
-			corpusPath = EecbConstants.LOCAL_CORPUS_PATH;
-		} else {
-			corpusPath = EecbConstants.CLUSTER_CPRPUS_PATH;
-		}
-		String dataPath = corpusPath + "corpus/EECB1.0/data/";
+		String corpusPath = ExperimentConstructor.corpusPath;
+		String dataPath = corpusPath + "/EECB1.0/data/";
 		props.setProperty("dcoref.eecb", dataPath);
-		props.setProperty("dcoref.score", mExperimentProps.getProperty(EecbConstants.SCORE_PROP, "false"));
+		props.setProperty("dcoref.score", "false");
 		props.setProperty("dcoref.sievePasses", sieve);
 		
 		return props;
