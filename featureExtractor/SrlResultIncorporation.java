@@ -14,7 +14,7 @@ import edu.stanford.nlp.ling.CoreAnnotations.TokenEndAnnotation;
 
 /**
  * Incorporate the SRL result from Semantic Parsing software into EECB co-reference resolution
- * SRL result is very important for Joint Entity and Event Co-reference resolution.
+ * SRL result is very important for Joint Entity and Event Coreference resolution.
  * 
  * Seven out of ten features are based on the SRL result
  * 
@@ -151,6 +151,11 @@ public class SrlResultIncorporation {
 		}
 	}
 	
+	/**
+	 * align the predicted mentions with the SRL result
+	 * 
+	 * @param allPredictedMentions
+	 */
 	public void alignSRL(List<List<Mention>> allPredictedMentions) {
 		matchSenten(allPredictedMentions);
 		

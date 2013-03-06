@@ -88,7 +88,7 @@ public class SRLExtraction {
 	 * @param s
 	 * @return
 	 */
-    public List<Integer> bfs(Node s) {    	
+    public List<Integer> bfs(Node s) {
     	List<Integer> children = new ArrayList<Integer>();
         Set<Node> keys = nodes.keySet();
         for (Node u : keys) {

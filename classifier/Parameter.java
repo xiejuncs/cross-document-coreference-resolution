@@ -5,7 +5,7 @@ import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.util.EecbConstants;
 
 /**
- * there are three fields for this class, including weights, totalWeights and violations
+ * there are three fields for this class, including weights, totalWeights and violations, number of instance, and variance
  * 
  * @author Jun Xie (xiejuncs@gmail.com)
  *
