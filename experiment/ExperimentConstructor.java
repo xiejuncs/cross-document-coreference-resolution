@@ -63,8 +63,8 @@ public abstract class ExperimentConstructor {
 		corpusPath = props.getProperty(EecbConstants.CORPUS_PROP);
 		 
 		StringBuilder sb = new StringBuilder();
-		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-").replaceAll(":", "-");
-        sb.append(corpusPath + "/TEMPORYRESUT/" + timeStamp);
+		//String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-").replaceAll(":", "-");
+        sb.append(corpusPath + "/TEMPORYRESUT/");
         
         ExperimentConfigurationFactory factory = new ExperimentConfigurationFactory(props);
         String name = factory.defineExperimentName();
