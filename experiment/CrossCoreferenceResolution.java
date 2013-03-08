@@ -21,7 +21,7 @@ import edu.stanford.nlp.util.StringUtils;
  *
  */
 public class CrossCoreferenceResolution extends ExperimentConstructor {
-	
+	 
 	/**
 	 * set experiment properties
 	 * 
@@ -36,8 +36,8 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 	 */
 	protected void performExperiment() {
 		// 1. generate dataset
-		DatasetFactory dataset = new DatasetFactory();
-		dataset.generateDataSet();
+//		DatasetFactory dataset = new DatasetFactory();
+//		dataset.generateDataSet();
 		
 		// 2. do search and training
 		boolean searchTraining = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DOTRAINING_PROP, "true"));

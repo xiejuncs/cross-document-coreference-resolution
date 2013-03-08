@@ -55,14 +55,6 @@ public class ExperimentConfigurationFactory {
 	public void configureWordNet() {
 		String wordnetPath = props.getProperty(EecbConstants.WORDNET_PROP);
 		System.setProperty("wordnet.database.dir", wordnetPath);
-		
-		// JWNT
-//		String wordnetpath = ExperimentConstructor.corpusPath + "/file_properties.xml";
-//		try {
-//			JWNL.initialize(new FileInputStream(wordnetpath));
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
 	}
 	
 	// load data from Word Similarity Dictionary

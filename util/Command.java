@@ -24,6 +24,21 @@ public class Command {
 		}
 	}
 	
+	// execute the Unix command
+	public static void execCommand(String command) {
+		try {
+			Runtime.getRuntime().exec(command);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// execute the chmod command for a whole folderPath
+	public static void chmod(String folderPath) {
+		String command = "chmod -R u+x " + folderPath;
+		execCommand(command);
+	}
+	
 	/** 
 	 * count the total number of mentions
 	 * 
@@ -60,4 +75,6 @@ public class Command {
 			}
 		}
 	}
+	
+	
 }

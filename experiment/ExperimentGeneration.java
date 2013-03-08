@@ -32,9 +32,9 @@ public class ExperimentGeneration {
 
 	public String[] GOLDMENTION_PROP = {"true", "false"};
 
-	public String[] METHOD_FUNCTION_NUMBER_PROP = {"1", "3", "5"};
+	public String[] METHOD_FUNCTION_NUMBER_PROP = {"1"};
 
-	public String[] FEATURE_ATOMIC_NAMES = {"F", "N"};
+	public String[] FEATURE_ATOMIC_NAMES = {"F"};
 
 	public ExperimentGeneration (String path, String folderName) {
 		mFolderPath = path + folderName;
@@ -124,9 +124,9 @@ public class ExperimentGeneration {
 			generateConfigurationFile(subFolderPath, combinations.get(i));
 			String prefix = "experiment" + i;
 			
-			generateRunFile(subFolderPath, prefix);
+			//generateRunFile(subFolderPath, prefix);
 
-			generateSimpleFile(subFolderPath, prefix);
+			//generateSimpleFile(subFolderPath, prefix);
 		}
 		
 	}

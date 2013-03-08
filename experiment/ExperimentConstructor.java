@@ -1,7 +1,5 @@
 package edu.oregonstate.experiment;
 
-import java.util.Calendar;
-import java.util.Enumeration;
 import java.util.Map;
 
 import java.util.Properties;
@@ -54,8 +52,6 @@ public abstract class ExperimentConstructor {
 	public ExperimentConstructor(Properties props) {
 		experimentProps = props;
 		
-		
-		
 		// debug mode
 		debugMode = Boolean.parseBoolean(props.getProperty(EecbConstants.DEBUG_PROP, "false"));
 		
@@ -87,7 +83,7 @@ public abstract class ExperimentConstructor {
         verbSimilarityThesaurus = factory.loadSimilarityDictionary(corpusPath + "/simV.lsp");
         adjectiveSimilarityThesaurus = factory.loadSimilarityDictionary(corpusPath + "/simA.lsp");
         
-        boolean goldMentions = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.GOLDMENTION_PROP));
+        boolean goldMentions = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP));
         postProcess = !goldMentions;
 	}
 	

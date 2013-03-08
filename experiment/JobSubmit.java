@@ -23,8 +23,7 @@ public class JobSubmit {
 		System.out.println(folderName);
 		
 		String folderPath = originalPath + folderName;
-		Process chmodProcess = Runtime.getRuntime().exec("chmod -R u+x " + folderPath);
-		chmodProcess.waitFor();
+		Runtime.getRuntime().exec("chmod -R u+x " + folderPath);
 		
 		File corpusDir = new File(folderPath);
 		String[] directories = corpusDir.list();

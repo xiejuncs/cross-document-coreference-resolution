@@ -1,33 +1,18 @@
 package edu.oregonstate.example;
 
-
-import java.util.HashSet;
-import java.util.Set;
+import edu.oregonstate.general.StringOperation;
 
 public class VectorNormalization {
 
 	public static void main(String[] args) {
-		Set<String> former = new HashSet<String>();
-		former.add("1");
-		former.add("2");
-		former.add("3");
 		
-		Set<String> latter = new HashSet<String>();
-		latter.add("1");
-		latter.add("3");
-		latter.add("4");
+		String weight = "2.515455967971009, 1.4610287566855817, 3.2275688533394, 1.6190271487176158, -2.291055729184178, 1.144562479424411, 1.5225892221679653, -3.1022777958811893, -1.3503747117597225, -0.6534728867248215, -3.1739056113746233, 0.01679431618380933, 0.06382146396345381, -1.7347683141663683, -0.46975078572415013, -3.8556676861629793, 0.0, 0.869063442386219, -2.875888612615562, 0.0, 1.2658682499956768, -4.342242893491552, 3.5423229741421625, 6.395270973819255, 2.4899300474867463, -1.9100730329234965, -5.216578349717575, -3.2452328437454314, -2.1660493693990235, 0.3395179932968526, 0.759833113986878, 0.8851909266115631, -0.27481421469983924, 0.8877178991849703, 0.6087154776714426, -0.03736026082749925, -0.26106175963605305, -0.041084487933864884, -0.4929234469101178, -1.6519750185216087, 0.3044374008917877, 0.0, 0.0, 0.0, -0.925637313796473, -0.3772432227228544, -0.8890619601803316, -0.4393840074405368, 0.06961822623688288, -0.09792363227628804, 0.0, 0.0, 4.672098180646349, 3.234039525170178, 1.818083363722526, 0.0, 0.8092889787127303, -0.21616726683719983, -0.293108136418807, 0.3628902036060498, -0.6132634879596055, 0.3009104031122114";
 		
-		Set<String> union = new HashSet<String>();
-		union.addAll(former);
-		union.addAll(latter);
-		System.out.println(union.size());
+		String[] elements = StringOperation.splitString(weight, ",");
 		
-		Set<String> intersection = new HashSet<String>();
-		intersection.addAll(former);
-		intersection.retainAll(latter);
-		System.out.println(intersection.size());
-
-		System.out.println( union.size() - intersection.size());
+		for (String element : elements) {
+			System.out.println(element);
+		}
 		
 		
 		

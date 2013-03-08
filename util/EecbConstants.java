@@ -19,9 +19,9 @@ public class EecbConstants {
 	public static final String FULL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch, PronounMatch";
 
 	public static final String FEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlPA0, SrlPA1, SrlPA2, SrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
-	
+
 	public static final String NFEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlPA0, SrlPA1, SrlPA2, SrlPAMLoc, NSrlAgreeCount, " +
-	"NSrlA0, NSrlA1, NSrlA2, NSrlAMLoc, NSrlPA0, NSrlPA1, NSrlPA2, NSrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
+			"NSrlA0, NSrlA1, NSrlA2, NSrlAMLoc, NSrlPA0, NSrlPA1, NSrlPA2, NSrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
 
 	/** the topics used in the Stanford experiments
 	 * "12", "22", "38",                                                        // development topics 
@@ -81,43 +81,46 @@ public class EecbConstants {
 		"SRLPRED-A2-PROPER", "SRLPRED-A2-NOMINAL", "SRLPRED-AM-LOC-PROPER", "SRLPRED-AM-LOC-NOMINAL", "MENTION_WORDS-PROPER",
 		"MENTION_WORDS-NOMINAL", "NETYPE-PROPER", "NUMBER-NOMINAL", "ANIMACY-PROPER", "ANIMACY-NOMINAL", 
 		"GENDER-PROPER", "GENDER-NOMINAL", "NUMBER-PROPER", "NETYPE-NOMINAL", "HALT"};
-	
+
 	// experiment name component
 	// the vlaue for this property is shown as below:
 	// dcoref.experiment = "lossfunction,lossscore";
-	public static final String EXPERIMENT_PROP = "dcoref.experiment";		// MUST
-	
+	public static final String EXPERIMENT_PROP = "experiment";		// MUST
+
 	// corpus path
-	public static final String CORPUS_PROP = "dcoref.corpus";		// MUST
+	public static final String CORPUS_PROP = "corpus";		// MUST
 
 	// CONLL scorer path  MUST
-	public static final String CONLL_SCORER_PROP = "dcoref.conll.scorer";		// MUST
+	public static final String CONLL_SCORER_PROP = "conll.scorer";		// MUST
 
 	// whether the experiment is in the debug model or cluster model
 	// used to print out the detail information, while in the real clustering
 	// running, we would like to like faster by reducing the output
-	public static final String DEBUG_PROP = "dcoref.debug";		// MUST
-
-	// annotators used in the experiment
-	public static final String ANNOTATORS_PROP = "dcoref.annotators";		// MUST
-
-	// gold mention (true) or predicted mention (false)
-	public static final String GOLDMENTION_PROP = "dcoref.goldmention";		// MUST
-	// GOLD cluster post process
-	public static final String POSTPROCESS_GOLD_PROP = "dcoref.postprocess.gold";
-	
-	
-	// within (false) or cross (true) reading data
-	public static final String DATASET_PROP = "dcoref.dataset";
-	// training set
-	public static final String TRAININGSET_PROP = "dcoref.trainingset";		// MUST
-	// testing set
-	public static final String TESTINGSET_PROP = "dcoref.testingset";		// MUST
-	// development set
-	public static final String DEVELOPMENTSET_PROP = "dcoref.developmentset";		// MUST
+	public static final String DEBUG_PROP = "debug";		// MUST
 
 	// WORDNET path
-	public static final String WORDNET_PROP = "dcoref.wordnet";		// MUST
+	public static final String WORDNET_PROP = "wordnet";		// MUST
+
+	//
+	// datageneration settings
+	//
+	// within (false) or cross (true) reading data
+	public static final String DATAGENERATION_DATASET_PROP = "datageneration.dataset";
+	// gold mention (true) or predicted mention (false)
+	public static final String DATAGENERATION_GOLDMENTION_PROP = "datageneration.goldmention";		// MUST
+	// GOLD cluster post process
+	public static final String DATAGENERATION_POSTPROCESS_GOLD_PROP = "datageneration.postprocess.gold";
+
+	// Annotators used in the experiment
+	public static final String DATAGENERATION_ANNOTATORS_PROP = "datageneration.annotators";		// MUST
+	// training set
+	public static final String DATAGENERATION_TRAININGSET_PROP = "datageneration.trainingset";		// MUST
+	// testing set
+	public static final String DATAGENERATION_TESTINGSET_PROP = "datageneration.testingset";		// MUST
+	// development set
+	public static final String DATAGENERATION_DEVELOPMENTSET_PROP = "datageneration.developmentset";		// MUST
+
+
 
 	// best state score 
 	public static final String BEST_STATE_PROP = "dcoref.best.state";		// MUST

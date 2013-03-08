@@ -1,5 +1,6 @@
 package edu.oregonstate.server;
 
+import java.lang.reflect.Method;
 import java.util.*;
 
 import edu.oregonstate.general.StringOperation;
@@ -58,9 +59,16 @@ public class Pipeline {
 	 * and submit the jobs, the following job needs to be specified with the previous job id in order to run the job after the completion
 	 * of those previous jobs, just depend on the previous job id
 	 */
-	public void generateConfigurationFile() {
+	public void generateConfigurationFile(Properties props) {
+		PipelineConfiguration pipelineConfiguration = new PipelineConfiguration(props);
+		
 		for (String procedure : procedures) {
-			
+			try {
+				Method method = pipelineConfiguration.getClass().getMethod(procedure, new Class[0]);
+				method.invoke(pipelineConfiguration, new Object[0]);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			
 		}
 	}
@@ -118,7 +126,9 @@ public class Pipeline {
 			System.out.println(step);
 		}
 		
+		pipeline.generateConfigurationFile(props);
 	}
+
 }
 
 //connect to the server

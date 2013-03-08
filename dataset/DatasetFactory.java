@@ -1,8 +1,6 @@
 package edu.oregonstate.dataset;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Properties;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
@@ -21,13 +19,10 @@ import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-public class DatasetFactory {
+public class DatasetFactory extends ExperimentConstructor {
 	
 	/* experiment result folder */
 	private final String mExperimentResultFolder;
-	
-	/* property file */
-	private final Properties experimentProperties;
 	
 	/* total number of gold mentions */
 	private int totalGoalMentions;
@@ -53,9 +48,9 @@ public class DatasetFactory {
 	/* enable Stanford pre-process step during data generation */
 	private final boolean enableStanfordPreprocessStep;
 	
-	public DatasetFactory() {
+	public DatasetFactory(Properties props) {
+		super(props);
 		mExperimentResultFolder = ExperimentConstructor.resultPath;
-		experimentProperties = ExperimentConstructor.experimentProps;
 		logFile = ExperimentConstructor.logFile;
 		
 		totalGoalMentions = 0;
@@ -66,9 +61,17 @@ public class DatasetFactory {
 		serializedOutput = mExperimentResultFolder + "/document";
 		Command.mkdir(serializedOutput);
 		
-		enableStanfordPreprocessStep = Boolean.parseBoolean(experimentProperties.getProperty(EecbConstants.STANFORD_PREPROCESSING, "true"));
-		lossType = ScoreType.valueOf(experimentProperties.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
+		enableStanfordPreprocessStep = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.STANFORD_PREPROCESSING, "true"));
+		lossType = ScoreType.valueOf(experimentProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
 		
+	}
+	
+	/**
+	 * generating data set
+	 * 
+	 */
+	public void performExperiment() {
+		generateDataSet();
 	}
 	
 	/**
@@ -78,7 +81,7 @@ public class DatasetFactory {
 	 * @param developmentTopics
 	 */
 	public void generateDataSet() {
-		TopicGeneration topicGenerator = new TopicGeneration(experimentProperties);
+		TopicGeneration topicGenerator = new TopicGeneration(experimentProps);
 		
 		String[] trainingTopics = topicGenerator.trainingTopics();
 		String[] testingTopics = topicGenerator.testingTopics();
@@ -120,7 +123,7 @@ public class DatasetFactory {
 		corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 		
 		// gold only and whether post process
-		boolean goldOnly = Boolean.parseBoolean(experimentProperties.getProperty(EecbConstants.GOLDMENTION_PROP, "true"));
+		boolean goldOnly = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP, "true"));
 		boolean postProcess= ExperimentConstructor.postProcess;
 		
 		// generate file
@@ -197,7 +200,7 @@ public class DatasetFactory {
 	/* whether put all documents of a topic together, true CrossTopic, false WithinCross */
 	private IDataSet createDataSetMode() {
 		/* data set mode : within or cross topic */
-		boolean dataSetMode = Boolean.parseBoolean(experimentProperties.getProperty(EecbConstants.DATASET_PROP, "true"));
+		boolean dataSetMode = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_DATASET_PROP, "true"));
 		
 		IDataSet mDatasetMode;
 		

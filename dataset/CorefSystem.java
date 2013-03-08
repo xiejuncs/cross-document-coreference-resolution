@@ -65,7 +65,7 @@ public class CorefSystem {
 	
 	private Properties setProperties(String sieve) {
 		Properties props = new Properties();
-		props.setProperty("annotators", mExperimentProps.getProperty(EecbConstants.ANNOTATORS_PROP));
+		props.setProperty("annotators", mExperimentProps.getProperty(EecbConstants.DATAGENERATION_ANNOTATORS_PROP));
 		
 		String corpusPath = ExperimentConstructor.corpusPath;
 		String dataPath = corpusPath + "/EECB1.0/data/";

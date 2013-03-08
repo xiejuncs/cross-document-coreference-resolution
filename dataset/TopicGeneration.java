@@ -38,21 +38,21 @@ public class TopicGeneration {
 	 * 
 	 */
 	public void generateTopics() {
-		String[] sets = new String[]{EecbConstants.TRAININGSET_PROP, EecbConstants.DEVELOPMENTSET_PROP, EecbConstants.TESTINGSET_PROP};
+		String[] sets = new String[]{EecbConstants.DATAGENERATION_TRAININGSET_PROP, EecbConstants.DATAGENERATION_DEVELOPMENTSET_PROP, EecbConstants.DATAGENERATION_TESTINGSET_PROP};
 		
 		for (String set : sets) {
 			String topicString = experimentProps.getProperty(set, "");
 			if (topicString != "") {
 				
-				if (set.equals(EecbConstants.TRAININGSET_PROP)) {
+				if (set.equals(EecbConstants.DATAGENERATION_TRAININGSET_PROP)) {
 					trainingTopics = StringOperation.splitString(topicString, ",");
 				}
 				
-				if (set.equals(EecbConstants.DEVELOPMENTSET_PROP)) {
+				if (set.equals(EecbConstants.DATAGENERATION_DEVELOPMENTSET_PROP)) {
 					developmentTopics = StringOperation.splitString(topicString, ",");
 				}
 				
-				if (set.equals(EecbConstants.TESTINGSET_PROP)) {
+				if (set.equals(EecbConstants.DATAGENERATION_TESTINGSET_PROP)) {
 					testingTopics = StringOperation.splitString(topicString, ",");
 				}
 				
