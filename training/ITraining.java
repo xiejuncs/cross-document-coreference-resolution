@@ -51,13 +51,13 @@ public abstract class ITraining {
 		Properties mProps = ExperimentConstructor.experimentProps;
 		length = FeatureFactory.getFeatureTemplate().size();
 		reader = new LargetFileReading();
-		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_INCORPORATE_ZERO_CASE_PROP, "true"));
-		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_LEARNING, "false"));
-		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_LEARNING_RATE_LOSSSCORE, "true"));
-		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_DISCREPANCY, "true"));
-		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.PA_MARGIN, "true"));
-		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.TRAINING_NORMALIZE_WEIGHT, "true"));
-		mHyperParameter = Double.parseDouble(mProps.getProperty(EecbConstants.EXPERIMENT_HYPERPARAMETER, "1.0"));
+		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_INCORPORATE_ZERO_CASE, "true"));
+		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA, "false"));
+		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_RATE_LOSSSCORE, "true"));
+		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_DISCREPANCY, "true"));
+		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_MARGIN, "true"));
+		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_NORMALIZE_WEIGHT, "true"));
+		mHyperParameter = Double.parseDouble(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_HYPERPARAMETER, "1.0"));
 	}
 	
 	/* different weight update styles, including Batch, Online and OnlineToBatch */

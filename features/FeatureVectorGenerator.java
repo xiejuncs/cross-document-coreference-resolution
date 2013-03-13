@@ -103,7 +103,8 @@ public class FeatureVectorGenerator {
 		String propertyKey = EecbConstants.FEATURE_ATOMIC_NAMES;
 		String propertyValue = EecbConstants.FEATURE_NAMES;
 		Properties mProps = ExperimentConstructor.experimentProps;
-		String featureIndicator = mProps.getProperty(propertyKey, propertyValue);
+//		String featureIndicator = mProps.getProperty(propertyKey, propertyValue);
+		String featureIndicator = "N";
 		String atomicFeatureNames = "";
 		if (featureIndicator.equals("F")) {
 			atomicFeatureNames = EecbConstants.FEATURE_NAMES;

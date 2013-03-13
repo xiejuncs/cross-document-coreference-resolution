@@ -100,6 +100,9 @@ public class EecbConstants {
 
 	// WORDNET path
 	public static final String WORDNET_PROP = "wordnet";		// MUST
+	
+	// whether use all sieves or all sieves except Pronoun sieve
+	public static final String SIEVE_PROP = "sieve";
 
 	//
 	// datageneration settings
@@ -107,68 +110,92 @@ public class EecbConstants {
 	// within (false) or cross (true) reading data
 	public static final String DATAGENERATION_DATASET_PROP = "datageneration.dataset";
 	// gold mention (true) or predicted mention (false)
-	public static final String DATAGENERATION_GOLDMENTION_PROP = "datageneration.goldmention";		// MUST
+	public static final String DATAGENERATION_GOLDMENTION_PROP = "datageneration.goldmention";
 	// GOLD cluster post process
 	public static final String DATAGENERATION_POSTPROCESS_GOLD_PROP = "datageneration.postprocess.gold";
-
 	// Annotators used in the experiment
-	public static final String DATAGENERATION_ANNOTATORS_PROP = "datageneration.annotators";		// MUST
+	public static final String DATAGENERATION_ANNOTATORS_PROP = "datageneration.annotators";
 	// training set
-	public static final String DATAGENERATION_TRAININGSET_PROP = "datageneration.trainingset";		// MUST
+	public static final String DATAGENERATION_TRAININGSET_PROP = "datageneration.trainingset";
 	// testing set
-	public static final String DATAGENERATION_TESTINGSET_PROP = "datageneration.testingset";		// MUST
+	public static final String DATAGENERATION_TESTINGSET_PROP = "datageneration.testingset";
 	// development set
-	public static final String DATAGENERATION_DEVELOPMENTSET_PROP = "datageneration.developmentset";		// MUST
-
-
-
+	public static final String DATAGENERATION_DEVELOPMENTSET_PROP = "datageneration.developmentset";
+	// stanford preprocessing
+	public static final String DATAGENERATION_STANFORD_PREPROCESSING = "datageneration.stanford.preprocessing";
+	
+	//
+	// search settings
+	//
+	// search type
+	public static final String SEARCH_TYPE = "search.type";
+	// search method
+	public static final String SEARCH_METHOD = "search.method";
+	public static final String SEARCH_METHOD_BEAMWIDTH = "search.method.beamwidth";
+	public static final String SEARCH_METHOD_MAXIMUMSTEP = "search.method.maximumstep";
+	// stopping criterion (if tune, then its stopping rate)
+	public static final String SEARCH_STOPPINGCRITERION = "search.stoppingcriterion";
+	public static final String SEARCH_STOPPINGRATE = "search.stoppingrate";
 	// best state score 
-	public static final String BEST_STATE_PROP = "dcoref.best.state";		// MUST
-
-	// whether use all sieves or all sieves except Pronoun sieve
-	public static final String SIEVE_PROP = "dcoref.sieve";
-
-	// do training to learn a weight
-	public static final String DOTRAINING_PROP = "dcoref.dotraining";
+	public static final String SEARCH_BESTSTATE = "search.beststate";		// MUST
+	// average weight or latest weight
+	public static final String SEARCH_WEIGHT = "search.weight";
+	// constraints enable
+	public static final String SEARCH_ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP = "search.enablepreviouscurrentconstraint";
+	public static final String SEARCH_ENABLEBEAMCONSTRAINT_PROP = "search.enablebeamconstraint";
+	public static final String SEARCH_ENABLEBEAMUNBEAMCONSTRAINT_PROP = "search.enablebeamunbeamconstraint";
 
 	// use existed weight to do testing, whether do validation or do final testing
 	public static final String EXISTEDWEIGHT_PROP = "dcoref.existedweight";
 	// existed weight path
 	public static final String EXISTEDWEIGHT_PATH_PROP = "dcoref.existedweight.path";
 
-	// classifier
-	public static final String CLASSIFIER_PROP = "dcoref.classifier";
-	public static final String CLASSIFIER_EPOCH_PROP = "dcoref.classifier.epoch";
-	public static final String CLASSIFIER_ITERATION_RESULT = "dcoref.classifier.iteration.result";
-	public static final String CLASSIFIER__ITEARTION_GAP = "dcoref.classifier.iteration.gap";
-
-	// cost function used, for example, linear 
-	public static final String COSTFUNCTION_PROP = "dcoref.costfunction";
-
-	// loss function used score type
-	public static final String LOSSFUNCTION_PROP = "dcoref.lossfunction"; 
-	public static final String LOSSFUNCTION_SCORE_PROP = "dcoref.lossfunction.score";
-
-	// search, its beam width, maximum step
-	public static final String SEARCH_PROP = "dcoref.search";
-	public static final String SEARCH_BEAMWIDTH_PROP = "dcoref.search.beamwidth";
-	public static final String SEARCH_MAXIMUMSTEP_PROP = "dcoref.search.maximumstep";
-
-	// stopping criterion (if tune, then its stopping rate)
-	public static final String STOPPING_CRITERION = "dcoref.stoppingcriterion";
-	public static final String STOPPING_RATE = "dcoref.stoppingrate";
-
-	// average weight or latest weight
-	public static final String WEIGHT_PROP = "dcoref.weight";
-
-	// constraints enable
-	public static final String ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP = "dcoref.enablepreviouscurrentconstraint";
-	public static final String ENABLEBEAMCONSTRAINT_PROP = "dcoref.enablebeamconstraint";
-	public static final String ENABLEBEAMUNBEAMCONSTRAINT_PROP = "dcoref.enablebeamunbeamconstraint";
-
+	//
+	// classifier setting
+	//
+	public static final String CLASSIFIER_METHOD = "classifier";
+	public static final String CLASSIFIER_EPOCH_PROP = "classifier.epoch";
+	public static final String CLASSIFIER_ITERATION_RESULT = "classifier.iteration.result";
+	public static final String CLASSIFIER_ITEARTION_GAP = "classifier.iteration.gap";
+	// use which training method to train the algorithm, Online, OnlineToBatch, Batch
+	public static final String CLASSIFIER_TRAINING_METHOD = "classifier.training.method";
+	public static final String CLASSIFIER_TRAINING_NORMALIZE_WEIGHT = "classifier.training.normalize.weight";
+	public static final String CLASSIFIER_TRAINING_INCORPORATE_ZERO_CASE = "classifier.training.incorporate.zero.case";
 	// Perceptron started rate
-	public static final String STRUCTUREDPERCEPTRON_STARTRATE_PROP = "dcoref.structuredperceptron.startrate";
-	public static final String STRUCTUREDPERCEPTRON_LEARINGRATE_CONSTANT_PROP = "dcoref.structuredperceptron.learningrate.constant";
+	public static final String CLASSIFIER_TRAINING_PERCEPTRON_STARTRATE = "classifier.training.perceptron.startrate";
+	public static final String CLASSIFIER_TRAINING_PERCEPTRON_LEARINGRATE_CONSTANT = "classifier.training.perceptron.learningrate.constant";
+	// enable PA learning and its margin type
+	public static final String CLASSIFIER_TRAINING_PA = "classifier.training.pa";
+	public static final String CLASSIFIER_TRAINING_PA_RATE_LOSSSCORE = "classifier.training.pa.rate.lossscore";
+	public static final String CLASSIFIER_TRAINING_PA_DISCREPANCY = "classifier.training.pa.discrepancy";
+	public static final String CLASSIFIER_TRAINING_PA_MARGIN = "classifier.training.pa.margin";
+	// experiment hyperparameter
+	public static final String CLASSIFIER_TRAINING_HYPERPARAMETER = "classifier.training.hyperparameter";
+	
+	
+	//
+	// cost function setting
+	//
+	// cost function used, for example, linear 
+	public static final String COSTFUNCTION_METHOD = "costfunction";
+
+	//
+	// Lost function setting
+	//
+	// loss function used score type
+	public static final String LOSSFUNCTION_METHOD = "lossfunction"; 
+	public static final String LOSSFUNCTION_SCORE_PROP = "lossfunction.score";
+	
+	//
+	// feature setting
+	//
+	// state feature
+	public static final String FEATURE_STATE = "feature.state";
+	// Atomic features
+	public static final String FEATURE_ATOMIC_NAMES = "feature.atomic.names";
+
+	
+	
 
 	// Method configuration
 	public static final String METHOD_PROP = "dcoref.method";
@@ -177,28 +204,5 @@ public class EecbConstants {
 
 	// use binary to write and read
 	public static final String IO_BINARY_PROP = "dcoref.io.binary";
-
-	// use which training method to train the algorithm, Online, OnlineToBatch, Batch
-	public static final String TRAINING_STYLE_PROP = "dcoref.training.style";
-	public static final String TRAINING_NORMALIZE_WEIGHT = "dcoref.training.normalize.weight";
-	public static final String TRAINING_INCORPORATE_ZERO_CASE_PROP = "dcoref.training.incorporate.zero.case";
-
-	// stanford preprocessing
-	public static final String STANFORD_PREPROCESSING = "dcoref.stanford.preprocessing";
-
-	// enable PA learning and its margin type
-	public static final String PA_LEARNING = "dcoref.pa.learning";
-	public static final String PA_LEARNING_RATE_LOSSSCORE = "dcoref.pa.learning.rate.lossscore";
-	public static final String PA_DISCREPANCY = "dcoref.pa.discrepancy";
-	public static final String PA_MARGIN = "dcoref.pa.margin";
-
-	// state feature
-	public static final String STATE_FEATURE = "dcoref.state.feature";
-
-	// experiment hyperparameter
-	public static final String EXPERIMENT_HYPERPARAMETER = "dcoref.experiment.hyperparameter";
-
-	// Atomic features
-	public static final String FEATURE_ATOMIC_NAMES = "dcoref.feature.atomic.names";
 
 }

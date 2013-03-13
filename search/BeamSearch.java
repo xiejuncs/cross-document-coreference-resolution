@@ -95,15 +95,15 @@ public class BeamSearch implements ISearch {
     	//
     	// set the configuration constant 
     	//
-    	mBeamWidth = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_BEAMWIDTH_PROP));
-    	maximumSearch = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_MAXIMUMSTEP_PROP));
+    	mBeamWidth = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_METHOD_BEAMWIDTH));
+    	maximumSearch = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_METHOD_MAXIMUMSTEP));
     	type = CorefScorer.ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP));
-        lossFunction = EecbConstructor.createLossFunction(mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP, "MetricLossFunction"));
-        costFunction = EecbConstructor.createCostFunction(mProps.getProperty(EecbConstants.COSTFUNCTION_PROP, "LinearCostFunction"));
+        lossFunction = EecbConstructor.createLossFunction(mProps.getProperty(EecbConstants.LOSSFUNCTION_METHOD, "MetricLossFunction"));
+        costFunction = EecbConstructor.createCostFunction(mProps.getProperty(EecbConstants.COSTFUNCTION_METHOD, "LinearCostFunction"));
         ResultOutput.writeTextFile(logFile, "\nBeam Search Configuration : " + "width : " + mBeamWidth + "; maximumSearch : " + 
         							maximumSearch + "; type : " + type.toString() + "; lossFunction : " + 
-        							mProps.getProperty(EecbConstants.LOSSFUNCTION_PROP) + "; costFunction : " + mProps.getProperty(EecbConstants.COSTFUNCTION_PROP));
-        enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.STATE_FEATURE, "false"));
+        							mProps.getProperty(EecbConstants.LOSSFUNCTION_METHOD) + "; costFunction : " + mProps.getProperty(EecbConstants.COSTFUNCTION_METHOD));
+        enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.FEATURE_STATE, "false"));
         
         // debug mode
         //mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
@@ -155,7 +155,7 @@ public class BeamSearch implements ISearch {
         ResultOutput.writeTextFile(logFile, "after create children: total of clusters : " + (size - 1));
         
         // Add HALT action
-        String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION, "none");
+        String stopping = mProps.getProperty(EecbConstants.SEARCH_STOPPINGCRITERION, "none");
 		if (stopping.equals("halt")) {
 			actions.add("HALT");
 		}
@@ -421,7 +421,7 @@ public class BeamSearch implements ISearch {
 	// 
 	// define termination condition for test search
 	public State<CorefCluster> testingBySearch(Document document, double[] weight, String phaseID, boolean outputFeature, double stoppingRate) {
-		String stopping = mProps.getProperty(EecbConstants.STOPPING_CRITERION);
+		String stopping = mProps.getProperty(EecbConstants.SEARCH_STOPPINGCRITERION);
 		String mscorePath = experimentResultFolder + "/" + document.getID() + "/" + phaseID;
 		String trainingDataPath = experimentResultFolder + "/" + document.getID() + "/data";
 		String bestLossScorePath = experimentResultFolder + "/" + document.getID() + "/" + phaseID + "-bestlossscore";
@@ -429,7 +429,7 @@ public class BeamSearch implements ISearch {
 		double globalCostScore = 0.0;
 		double stopscore = 0.0;
 		if (stoppingRate == 0.0) {
-			stoppingRate = Double.parseDouble(mProps.getProperty(EecbConstants.STOPPING_RATE, "2"));
+			stoppingRate = Double.parseDouble(mProps.getProperty(EecbConstants.SEARCH_STOPPINGRATE, "2"));
 		}
 		double bestLossScore = 0.0;        // in order to track the state with the highest loss score
 		State<CorefCluster> bestLostState = new State<CorefCluster>();
@@ -758,5 +758,6 @@ public class BeamSearch implements ISearch {
 		}
 		return duplciate;
 	}
+	
 	
 }

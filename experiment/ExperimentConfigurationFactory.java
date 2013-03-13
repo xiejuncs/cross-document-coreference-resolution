@@ -42,10 +42,17 @@ public class ExperimentConfigurationFactory {
 		// such that Pairwise-StructuredPerceptron
 		String experimentProp = props.getProperty(EecbConstants.EXPERIMENT_PROP);
 		String[] experimentElements = experimentProp.split(",");
-		for (String element : experimentElements) {
-			String key = "dcoref." + element.trim();
+		int length = experimentElements.length;
+		for (int index = 0; index < length; index++ ) {
+
+			String key = experimentElements[index].trim();
 			String value = props.getProperty(key.trim());
-			sb.append("-" + value);
+			
+			if (index == (length - 1)) {
+				sb.append(value);
+			} else {
+				sb.append(value + "-");
+			}
 		}
 		
 		return sb.toString().trim();
@@ -110,7 +117,7 @@ public class ExperimentConfigurationFactory {
 	public static double tuneStoppingRate(double[] weight, int j) {
 		double stoppingrate = 0.0;
 		
-		String stopping = ExperimentConstructor.experimentProps.getProperty(EecbConstants.STOPPING_CRITERION);
+		String stopping = ExperimentConstructor.experimentProps.getProperty(EecbConstants.SEARCH_STOPPINGCRITERION);
 		if (stopping.equals("tuning")) {
 			Development development = new Development(j, weight, 1.0, 3.0, 10);
 			stoppingrate = development.tuning();

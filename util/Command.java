@@ -1,12 +1,14 @@
 package edu.oregonstate.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import edu.oregonstate.search.State;
 import edu.stanford.nlp.dcoref.CorefCluster;
 import edu.stanford.nlp.dcoref.Document;
 import edu.stanford.nlp.dcoref.Mention;
+import edu.stanford.nlp.util.SystemUtils;
 
 /**
  * those commands used for creating file or something else
@@ -23,22 +25,39 @@ public class Command {
 			file.mkdir();
 		}
 	}
-	
+
 	// execute the Unix command
-	public static void execCommand(String command) {
+	public static void execCommand(String... command) {
 		try {
-			Runtime.getRuntime().exec(command);
+			ProcessBuilder ps = new ProcessBuilder(command);
+			SystemUtils.run(ps);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	// execute the chmod command for a whole folderPath
 	public static void chmod(String folderPath) {
 		String command = "chmod -R u+x " + folderPath;
-		execCommand(command);
+		execCommand(command.split(" "));
 	}
-	
+
+	/**
+	 * delete the whole directory
+	 * 
+	 * @param directoryName
+	 */
+	public static void rmdir(String directoryName) {
+		File directory = new File(directoryName);
+
+		if (directory != null) {
+			ProcessBuilder ps = new ProcessBuilder("rm", "-rf", directoryName);
+			SystemUtils.run(ps);
+		}
+
+		return;
+	}
+
 	/** 
 	 * count the total number of mentions
 	 * 
@@ -50,10 +69,10 @@ public class Command {
 		for (List<Mention> mentions : mentionList ) {
 			totalNumber += mentions.size();
 		}
-		
+
 		return totalNumber;
 	}
-	
+
 	/**
 	 * update the allPredictedMentions, which is used for Stanford scoring function
 	 * The reason for this is that the corefClusters information has been updated. The mention id should be consistent 
@@ -64,7 +83,7 @@ public class Command {
 	 */
 	public static void generateStateDocument(Document stateDocument, State<CorefCluster> state) {
 		stateDocument.corefClusters = state.getState();
-		
+
 		for (Integer id : stateDocument.corefClusters.keySet()) {
 			CorefCluster cluster = stateDocument.corefClusters.get(id);
 			for (Mention m : cluster.corefMentions) {
@@ -75,6 +94,6 @@ public class Command {
 			}
 		}
 	}
-	
-	
+
+
 }

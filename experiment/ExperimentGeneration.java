@@ -28,7 +28,7 @@ public class ExperimentGeneration {
 
 	private final String mFolderName;
 
-	private final String mFolderPath;
+	private final String mDirecotryPath;
 
 	public String[] GOLDMENTION_PROP = {"true", "false"};
 
@@ -37,8 +37,8 @@ public class ExperimentGeneration {
 	public String[] FEATURE_ATOMIC_NAMES = {"F"};
 
 	public ExperimentGeneration (String path, String folderName) {
-		mFolderPath = path + folderName;
 		mFolderName = folderName;
+		mDirecotryPath = path + "/" + folderName;
 	}
 
 	public void generateExperimentFiles() {
@@ -49,7 +49,7 @@ public class ExperimentGeneration {
 	}
 
 	private void generateMainFolder() {
-		Command.mkdir(mFolderPath);
+		Command.mkdir(mDirecotryPath);
 	}
 
 	private void generateSubFolders() {
@@ -118,7 +118,7 @@ public class ExperimentGeneration {
 		}
 
 		for (int i = 0; i < combinations.size(); i++) {
-			String subFolderPath = mFolderPath + "/experiment" + i;
+			String subFolderPath = mDirecotryPath + "/experiment" + i;
 			Command.mkdir(subFolderPath);
 			
 			generateConfigurationFile(subFolderPath, combinations.get(i));
@@ -162,39 +162,39 @@ public class ExperimentGeneration {
 		ResultOutput.writeTextFile(configPath, sb.toString().trim());
 	}
 
-	private void generateRunFile(String subFolderPath, String prefix) {
-		String runPath = subFolderPath + "/run.sh";
-		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
-		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/CoreferenceResolution.jar " + clusterPath + "/config.properties";
-		ResultOutput.writeTextFile(runPath, command);
-	}
-
-	private void generateSimpleFile(String subFolderPath, String prefix) {
-		String simplePath = subFolderPath + "/simple.sh";
-		StringBuilder sb = new StringBuilder();
-		sb.append("#!/bin/csh\n\n");
-		sb.append("# Give the job a name\n");
-		sb.append("#$ -N Jun-coreference-resolution-" + prefix + "\n");
-		sb.append("# set working directory on all host to\n");
-		sb.append("# directory where the job was started\n");
-		sb.append("#$ -cwd\n\n");
-
-		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
-		sb.append("# send all process STDOUT (fd 2) to this file\n");
-		sb.append("#$ -o " + clusterPath + "/screencross.txt\n\n");
-
-		sb.append("# send all process STDERR (fd 3) to this file\n");
-		sb.append("#$ -e " + clusterPath + "/job_outputcross.err\n\n");
-
-		sb.append("# specify the hardware platform to run the job on.\n");
-		sb.append("# options are: amd64, em64t, i386, volumejob (use i386 if you don't care)\n");
-		sb.append("#$ -q eecs,eecs1,eecs2,share\n\n");
-
-		sb.append("# Commands\n");
-		sb.append(clusterPath + "/run.sh\n");
-		ResultOutput.writeTextFile(simplePath, sb.toString().trim());
-
-	}
+//	private void generateRunFile(String subFolderPath, String prefix) {
+//		String runPath = subFolderPath + "/run.sh";
+//		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
+//		String command = "java -Xmx8g -jar /nfs/guille/xfern/users/xie/Experiment/jarfile/CoreferenceResolution.jar " + clusterPath + "/config.properties";
+//		ResultOutput.writeTextFile(runPath, command);
+//	}
+//
+//	private void generateSimpleFile(String subFolderPath, String prefix) {
+//		String simplePath = subFolderPath + "/simple.sh";
+//		StringBuilder sb = new StringBuilder();
+//		sb.append("#!/bin/csh\n\n");
+//		sb.append("# Give the job a name\n");
+//		sb.append("#$ -N Jun-coreference-resolution-" + prefix + "\n");
+//		sb.append("# set working directory on all host to\n");
+//		sb.append("# directory where the job was started\n");
+//		sb.append("#$ -cwd\n\n");
+//
+//		String clusterPath = "/nfs/guille/xfern/users/xie/Experiment/experiment/" + mFolderName + "/" + prefix;
+//		sb.append("# send all process STDOUT (fd 2) to this file\n");
+//		sb.append("#$ -o " + clusterPath + "/screencross.txt\n\n");
+//
+//		sb.append("# send all process STDERR (fd 3) to this file\n");
+//		sb.append("#$ -e " + clusterPath + "/job_outputcross.err\n\n");
+//
+//		sb.append("# specify the hardware platform to run the job on.\n");
+//		sb.append("# options are: amd64, em64t, i386, volumejob (use i386 if you don't care)\n");
+//		sb.append("#$ -q eecs,eecs1,eecs2,share\n\n");
+//
+//		sb.append("# Commands\n");
+//		sb.append(clusterPath + "/run.sh\n");
+//		ResultOutput.writeTextFile(simplePath, sb.toString().trim());
+//
+//	}
 
 	public static void main(String[] args) {
 		String path = "/nfs/guille/xfern/users/xie/Experiment/experiment/";

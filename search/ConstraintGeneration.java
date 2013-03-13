@@ -41,9 +41,9 @@ public class ConstraintGeneration {
 	public ConstraintGeneration(String path) {
 		mPath = path;
 		Properties props = ExperimentConstructor.experimentProps;
-		enablePreviousCurrentConstraint = Boolean.parseBoolean(props.getProperty( EecbConstants.ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP, "false"));
-		enableBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMCONSTRAINT_PROP, "true"));
-		enableBeamUnBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.ENABLEBEAMUNBEAMCONSTRAINT_PROP, "true"));
+		enablePreviousCurrentConstraint = Boolean.parseBoolean(props.getProperty( EecbConstants.SEARCH_ENABLEPREVIOUSCCURRENTCCONSTRAINT_PROP, "false"));
+		enableBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.SEARCH_ENABLEBEAMCONSTRAINT_PROP, "true"));
+		enableBeamUnBeamConstraint = Boolean.parseBoolean(props.getProperty(EecbConstants.SEARCH_ENABLEBEAMUNBEAMCONSTRAINT_PROP, "true"));
 	}
 	
 	/**

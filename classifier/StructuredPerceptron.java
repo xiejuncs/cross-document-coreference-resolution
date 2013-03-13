@@ -67,15 +67,15 @@ public class StructuredPerceptron implements IClassifier {
 		
 		logFile = ExperimentConstructor.logFile;
 		modelIndex = 0;
-		String trainingStyle = mProps.getProperty(EecbConstants.TRAINING_STYLE_PROP, "OnlineTobatch");
+		String trainingStyle = mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_METHOD, "OnlineTobatch");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
 		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		length = featureTemplate.size();
 		weights = new ArrayList<double[]>();
 		
-		learningRateConstant = Boolean.parseBoolean(mProps.getProperty(EecbConstants.STRUCTUREDPERCEPTRON_LEARINGRATE_CONSTANT_PROP, "false"));
+		learningRateConstant = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PERCEPTRON_LEARINGRATE_CONSTANT, "false"));
 		enablePrintIterationResult = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_ITERATION_RESULT, "false"));
-		printIteartionGap = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER__ITEARTION_GAP, "2"));
+		printIteartionGap = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_ITEARTION_GAP, "2"));
 	}
 	
 	/**
@@ -103,7 +103,7 @@ public class StructuredPerceptron implements IClassifier {
 	 * train the model according to lots of files
 	 */
 	public Parameter train(List<String> paths, Parameter para) {
-		double startingRate = Double.parseDouble(mProps.getProperty(EecbConstants.STRUCTUREDPERCEPTRON_STARTRATE_PROP, "0.1"));
+		double startingRate = Double.parseDouble(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PERCEPTRON_STARTRATE, "0.1"));
 		double endRate = 0.0;
 		if (learningRateConstant) {
 			endRate = startingRate;

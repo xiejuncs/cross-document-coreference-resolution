@@ -4,9 +4,9 @@ import java.lang.reflect.Field;
 
 public class ExperimentArguments {
 	
-	public String[] PROCEDURES_PROP = {"datageneration"};
+	public String[] PROCEDURES_PROP = {"datageneration, searchtrueloss"};
 
-	public String[] EXPERIMENT_PROP = {"debug, method.function.number, feature.atomic.names"};		// MUST
+	public String[] EXPERIMENT_PROP = {"datageneration.goldmention"};		// MUST
 
 	// corpus path
 	public String[] CORPUS_PROP = {"/nfs/guille/xfern/users/xie/Experiment/corpus"};		// MUST
@@ -38,10 +38,11 @@ public class ExperimentArguments {
 	public String[] DATAGENERATION_ANNOTATORS_PROP = {"tokenize, ssplit, pos, lemma, ner, parse, dcoref"};		// MUST
 
 	// training set
-	public String[] DATAGENERATION_TRAININGSET_PROP = {"5, 6, 8, 11, 16, 25, 30, 31, 37, 40, 43, 44"};		// MUST
+	public String[] DATAGENERATION_TRAININGSET_PROP = {"5, 6"};		// MUST
+	//"5, 6, 8, 11, 16, 25, 30, 31, 37, 40, 43, 44"
 	// testing set
-	public String[] DATAGENERATION_TESTINGSET_PROP = {"1, 2, 4, 7, 9, 10, 13, 14, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 32, 33, 34, 35, 36, 39, 41, 42, 45"};		// MUST
-
+	//public String[] DATAGENERATION_TESTINGSET_PROP = {"1"};		// MUST
+	//"1, 2, 4, 7, 9, 10, 13, 14, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 32, 33, 34, 35, 36, 39, 41, 42, 45"
 
 
 	//	// best state score 

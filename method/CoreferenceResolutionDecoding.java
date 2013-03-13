@@ -62,7 +62,7 @@ public class CoreferenceResolutionDecoding extends Decoding {
 		conllResultPath = ExperimentConstructor.resultPath + "/conll";
 		logFile = ExperimentConstructor.logFile;
 		serializedPath = ExperimentConstructor.resultPath + "/document";
-		bestState = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.BEST_STATE_PROP, "false"));
+		bestState = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.SEARCH_BESTSTATE, "false"));
 		String lossTypeString = ExperimentConstructor.experimentProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise");
 		lossType = ScoreType.valueOf(lossTypeString);
 		resultPath = ExperimentConstructor.resultPath;

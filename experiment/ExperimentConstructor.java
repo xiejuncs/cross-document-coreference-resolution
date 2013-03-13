@@ -88,6 +88,6 @@ public abstract class ExperimentConstructor {
 	}
 	
 	// perform the experiments
-	protected abstract void performExperiment();
+	public abstract void performExperiment();
 	
 }

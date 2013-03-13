@@ -76,9 +76,9 @@ public class Dagger implements IMethod {
 		trainingTopics = topicGenerator.trainingTopics();
 		testingTopics = topicGenerator.testingTopics();
 		
-		searchMethod = mProps.getProperty(EecbConstants.SEARCH_PROP, "BeamSearch");
+		searchMethod = mProps.getProperty(EecbConstants.SEARCH_METHOD, "BeamSearch");
 		serializeOutput = experimentResultFolder + "/document";
-		classificationMethod = mProps.getProperty(EecbConstants.CLASSIFIER_PROP, "StructuredPerceptron");
+		classificationMethod = mProps.getProperty(EecbConstants.CLASSIFIER_METHOD, "StructuredPerceptron");
 		conllResultPath = experimentResultFolder + "/conll";
 		lossType = ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
 	}

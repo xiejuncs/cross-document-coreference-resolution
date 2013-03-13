@@ -22,11 +22,23 @@ public class Pipeline {
 	// the procedures for the experiment
 	private List<String> procedures;
 	
-	// default procedure for the experiment
-	public final String DEFAULTPROCEDURE = "datageneration, searchtrueloss, learn, searchlearnedweightwithoutfeature";
+	// experiment path
+	private final String experimentPath;
 	
-	public Pipeline() {
+	// default procedure for the experiment
+	// searchlearnedweightwithoutfeature is just testing
+	private final String DEFAULTPROCEDURE = "datageneration, searchtrueloss, learn, searchlearnedweightwithoutfeature";
+	
+	// properties for the experiment
+	private Properties props; 
+	
+	public Pipeline(String experiPath) {
 		procedures = new ArrayList<String>();
+		experimentPath = experiPath;
+		props = null;
+		
+		// initialize the procedures with procedure sequence
+		generateProcedures();
 	}
 	
 	// add procedure to the procedure list, and the execution sequence is specified according 
@@ -48,6 +60,7 @@ public class Pipeline {
 		}
 	}
 	
+	// get procedure for the experiment
 	public List<String> getProcedure() {
 		return procedures;
 	}
@@ -59,17 +72,39 @@ public class Pipeline {
 	 * and submit the jobs, the following job needs to be specified with the previous job id in order to run the job after the completion
 	 * of those previous jobs, just depend on the previous job id
 	 */
-	public void generateConfigurationFile(Properties props) {
-		PipelineConfiguration pipelineConfiguration = new PipelineConfiguration(props);
+	public void generateConfigurationFile() {
+		PipelineConfiguration pipelineConfiguration = new PipelineConfiguration(props, experimentPath);
 		
+		List<Integer> previousIDs = new ArrayList<Integer>();
 		for (String procedure : procedures) {
 			try {
-				Method method = pipelineConfiguration.getClass().getMethod(procedure, new Class[0]);
-				method.invoke(pipelineConfiguration, new Object[0]);
+				Method method = pipelineConfiguration.getClass().getMethod(procedure, previousIDs.getClass());
+				previousIDs = (List<Integer>) method.invoke(pipelineConfiguration, previousIDs);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 			
+		}
+	}
+	
+	/**
+	 * generate procedure sequence for the experiment
+	 * 
+	 */
+	public void generateProcedures() {
+		String experimentConfigurationPath = experimentPath + "/config.properties";
+		String[] propArgs = new String[]{"-props", experimentConfigurationPath};
+		props = StringUtils.argsToProperties(propArgs);
+		
+		String procedure = props.getProperty("procedures", DEFAULTPROCEDURE);
+		String[] steps = StringOperation.splitString(procedure, ",");
+		// add procedure the procedures
+		for (String step : steps) {
+			if (step.startsWith("dagger")) {
+				dagger(step);
+			} else {
+				addProcedure(step);
+			}
 		}
 	}
 	
@@ -104,7 +139,7 @@ public class Pipeline {
 			args[0] = "src/edu/oregonstate/server/pipeline.properties";
 		}
 		
-		Pipeline pipeline = new Pipeline();
+		Pipeline pipeline = new Pipeline("");
 		
 		String[] propArgs = new String[]{"-props", args[0]};
 		Properties props = StringUtils.argsToProperties(propArgs);
@@ -119,14 +154,6 @@ public class Pipeline {
 				pipeline.addProcedure(step);
 			}
 		}
-		
-		// get the procedures
-		List<String> procedures = pipeline.getProcedure();
-		for (String step : procedures) {
-			System.out.println(step);
-		}
-		
-		pipeline.generateConfigurationFile(props);
 	}
 
 }

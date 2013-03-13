@@ -93,7 +93,7 @@ public class Parameter {
 	 */
 	// return the average weight
 	public double[] generateWeightForTesting() {
-		boolean averageWeight = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.WEIGHT_PROP, "true"));
+		boolean averageWeight = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.SEARCH_WEIGHT, "true"));
 		Parameter finalPara = this.makeCopy();
 		double[] learnedWeight;
 		if (averageWeight) {
