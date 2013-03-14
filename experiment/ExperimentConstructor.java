@@ -17,7 +17,7 @@ import edu.stanford.nlp.stats.ClassicCounter;
  */
 public abstract class ExperimentConstructor {
 
-	// used for recording the information of the experiment
+	// used for recording the information of the whole experiment
 	public static String logFile;
 	
 	// experiment result folder
@@ -69,6 +69,8 @@ public abstract class ExperimentConstructor {
         // create the result folder
         resultPath = sb.toString().trim();
         Command.mkdir(resultPath);
+        
+        // create folder to store the CONLL results
         Command.mkdir(resultPath + "/conll");
         
         // specify the log file path
@@ -83,6 +85,7 @@ public abstract class ExperimentConstructor {
         verbSimilarityThesaurus = factory.loadSimilarityDictionary(corpusPath + "/simV.lsp");
         adjectiveSimilarityThesaurus = factory.loadSimilarityDictionary(corpusPath + "/simA.lsp");
         
+        // whether need to do post-process on predicted mentions
         boolean goldMentions = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP));
         postProcess = !goldMentions;
 	}

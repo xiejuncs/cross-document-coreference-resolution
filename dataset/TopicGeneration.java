@@ -55,7 +55,6 @@ public class TopicGeneration {
 				if (set.equals(EecbConstants.DATAGENERATION_TESTINGSET_PROP)) {
 					testingTopics = StringOperation.splitString(topicString, ",");
 				}
-				
 			}
 		}
 		

@@ -2,9 +2,10 @@ package edu.oregonstate.search;
 
 import java.util.Properties;
 
-import edu.oregonstate.experiment.ExperimentConstructor;
-import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.classifier.Parameter;
+import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.features.FeatureFactory;
+import edu.oregonstate.util.EecbConstants;
 
 /**
  * Search Entry point
@@ -34,14 +35,17 @@ public class SearchFactory extends ExperimentConstructor {
 	
 
 	/**
-	 * perform experiment
+	 * perform experiment through search
 	 * 
 	 */
 	public void performExperiment() {
+		int length = FeatureFactory.getFeatureTemplate().size();
 		if (experimentName.equals("searchtrueloss")) {
-			
+			double[] weight = new double[length];
+			Parameter para = new Parameter(weight);
 			
 		}
-		
 	}
+	
+	
 }

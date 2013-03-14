@@ -27,8 +27,8 @@ public class Parameter {
 	/* variance, used in the AROW algorithm */
 	private double[][] mVariance;
 
-	public Parameter(double[] weights, double[][] variance) {
-		this(weights, variance, new double[weights.length]);
+	public Parameter(double[] weights) {
+		this(weights, DoubleOperation.generateIdentityMatrix(weights.length), new double[weights.length]);
 	}
 
 	public Parameter(double[] weights, double[][] variance, double[] totalWeights) {

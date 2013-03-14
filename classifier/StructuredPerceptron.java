@@ -88,8 +88,7 @@ public class StructuredPerceptron implements IClassifier {
 		// model index
 		modelIndex = index;
 		double[] weight = new double[length];
-		double[][] variance = DoubleOperation.generateIdentityMatrix(length);
-		Parameter para = new Parameter(weight, variance);
+		Parameter para = new Parameter(weight);
 
 		// store the structured perceptron intermediate result
 		ResultOutput.writeTextFile(experimentFolder + "/classification-training.csv", "ANOTHER EXPERIMENT");

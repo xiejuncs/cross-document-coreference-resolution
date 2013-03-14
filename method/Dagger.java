@@ -90,8 +90,7 @@ public class Dagger implements IMethod {
 		int length = FeatureFactory.getFeatureTemplate().size();
 		List<Parameter> paras = new ArrayList<Parameter>();
 		double[] weight = new double[length];
-		double[][] variance = DoubleOperation.generateIdentityMatrix(length);
-		Parameter para = new Parameter(weight, variance);
+		Parameter para = new Parameter(weight);
 
 		// 0: the true loss function
 		// 1 - numberOfFunctions : the learned function
