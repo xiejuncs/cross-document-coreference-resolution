@@ -103,6 +103,9 @@ public class EecbConstants {
 	
 	// whether use all sieves or all sieves except Pronoun sieve
 	public static final String SIEVE_PROP = "sieve";
+	
+	// current phase
+	public static final String PHASE_PROP = "phase";
 
 	//
 	// datageneration settings
@@ -165,7 +168,6 @@ public class EecbConstants {
 	public static final String CLASSIFIER_TRAINING_PERCEPTRON_STARTRATE = "classifier.training.perceptron.startrate";
 	public static final String CLASSIFIER_TRAINING_PERCEPTRON_LEARINGRATE_CONSTANT = "classifier.training.perceptron.learningrate.constant";
 	// enable PA learning and its margin type
-	public static final String CLASSIFIER_TRAINING_PA = "classifier.training.pa";
 	public static final String CLASSIFIER_TRAINING_PA_RATE_LOSSSCORE = "classifier.training.pa.rate.lossscore";
 	public static final String CLASSIFIER_TRAINING_PA_DISCREPANCY = "classifier.training.pa.discrepancy";
 	public static final String CLASSIFIER_TRAINING_PA_MARGIN = "classifier.training.pa.margin";

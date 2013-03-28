@@ -66,14 +66,7 @@ public class Online extends ITraining {
 
 						// violated current constraint
 						if (goodCostScoreForUpdating <= badCostScoreForUpdating) {
-							double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
-							
-							if (enablePALearning) {
-								double loss = calculatePALoss(gLossScore, bLossScore, gNumericalFeatures, bNumericalFeatures, finalWeight);
-								double directionNorm = DoubleOperation.calculateTwoNorm(direction);
-								learningRate = loss / directionNorm;
-							}
-							
+							double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);							
 							double[] term = DoubleOperation.time(direction, learningRate);
 							finalWeight = DoubleOperation.add(finalWeight, term);
 							finalTotalWeight = DoubleOperation.add(finalTotalWeight, finalWeight);

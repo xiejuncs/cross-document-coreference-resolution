@@ -1,4 +1,4 @@
-package edu.oregonstate.experiment;
+package edu.oregonstate.server;
 
 import java.lang.reflect.Field;
 import java.text.DateFormat;
@@ -26,18 +26,10 @@ import edu.oregonstate.util.Command;
  */
 public class ExperimentGeneration {
 
-	private final String mFolderName;
-
+	// directory path
 	private final String mDirecotryPath;
-
-	public String[] GOLDMENTION_PROP = {"true", "false"};
-
-	public String[] METHOD_FUNCTION_NUMBER_PROP = {"1"};
-
-	public String[] FEATURE_ATOMIC_NAMES = {"F"};
-
+	
 	public ExperimentGeneration (String path, String folderName) {
-		mFolderName = folderName;
 		mDirecotryPath = path + "/" + folderName;
 	}
 
@@ -45,7 +37,8 @@ public class ExperimentGeneration {
 		// generate the main folder
 		generateMainFolder();
 
-		generateSubFolders();		
+		// generate experiment folders
+		generateSubFolders();
 	}
 
 	private void generateMainFolder() {
@@ -118,15 +111,9 @@ public class ExperimentGeneration {
 		}
 
 		for (int i = 0; i < combinations.size(); i++) {
-			String subFolderPath = mDirecotryPath + "/experiment" + i;
+			String subFolderPath = mDirecotryPath + "/" + i + "-experiment";
 			Command.mkdir(subFolderPath);
-			
 			generateConfigurationFile(subFolderPath, combinations.get(i));
-			String prefix = "experiment" + i;
-			
-			//generateRunFile(subFolderPath, prefix);
-
-			//generateSimpleFile(subFolderPath, prefix);
 		}
 		
 	}

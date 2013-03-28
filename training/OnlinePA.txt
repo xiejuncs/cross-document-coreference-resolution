@@ -1,0 +1,11 @@
+from https://cwiki.apache.org/confluence/display/MAHOUT/Online+Passive+Aggressive
+
+Data must be shuffled and normalized either between 0..1 or by mean and standard deviation.
+
+Technical details:
+
+The training approach taken is to minimize the ranking loss of the correct label vs the incorrect ones. We define this loss as hinge(1 - correct label score + wrong label score) where wrong label score is the score of the highest scoring label that is not the correct label. The hinge function is hinge = x if x > 0, 0 otherwise.
+
+Parameters:
+
+There is only one - learningRate. You set it to a larger number to converge faster, or a smaller number to be more cautious. The normal way to use it is via cross validation. Good values are (0.1, 1.0, 10.0).

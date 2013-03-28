@@ -401,7 +401,7 @@ public class ResultOutput {
 	 * @param logFile : log file used to store the intermediate result
 	 * @param goldCorefCluster : gold coref cluster file
 	 * @param predictedCorefCluster : predicted coref cluster file
-	 * @param phase : used to indicate which phase the current process is
+	 * @param phase : used to indicate which phase the current process is, just appear in the result instead of as part of the folder name
 	 */
 	public static double[] printCorpusResult(String logFile, String goldCorefCluster, String predictedCorefCluster, String phase) {
 		CoNLLScorerHelper conllScorerHelper = new CoNLLScorerHelper(logFile);

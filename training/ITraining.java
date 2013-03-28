@@ -20,31 +20,28 @@ import edu.oregonstate.util.EecbConstants;
  */
 public abstract class ITraining {
 
-	/* the length of the weight */
+	/** the length of the weight */
 	protected final int length;
 	
-	/* largest file reader */
+	/** largest file reader */
 	protected final LargetFileReading reader;
 	
-	/* whether incorporate the zero good state */
+	/** whether incorporate the zero good state */
 	protected final boolean incorporateZeroVector;
 	
-	/* hyperparameter for AROW */
+	/** hyper-parameter for AROW */
 	protected final double mHyperParameter;
 	
-	/* eanble PA learning */
-	protected final boolean enablePALearning;
-	
-	/* whether enable PA learning rate loss score */
+	/** whether enable PA learning rate loss score */
 	private final boolean enablePALearningRateLossScore;
 	
-	/* enable discrepancy */
+	/** enable discrepancy */
 	private final boolean enablePADiscrepancy;
 	
-	/* enable margin */
+	/** enable margin */
 	private final boolean enablePAMargin;
 	
-	/* enable normalize the weight */
+	/** enable normalize the weight */
 	protected final boolean enableNormalizeWeight;
 	
 	public ITraining() {
@@ -52,7 +49,6 @@ public abstract class ITraining {
 		length = FeatureFactory.getFeatureTemplate().size();
 		reader = new LargetFileReading();
 		incorporateZeroVector = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_INCORPORATE_ZERO_CASE, "true"));
-		enablePALearning = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA, "false"));
 		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_RATE_LOSSSCORE, "true"));
 		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_DISCREPANCY, "true"));
 		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_MARGIN, "true"));

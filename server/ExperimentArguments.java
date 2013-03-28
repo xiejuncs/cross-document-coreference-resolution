@@ -1,12 +1,13 @@
-package edu.oregonstate.experiment;
+package edu.oregonstate.server;
 
 import java.lang.reflect.Field;
 
 public class ExperimentArguments {
 	
-	public String[] PROCEDURES_PROP = {"datageneration, searchtrueloss"};
+	public String[] PROCEDURES_PROP = {"datageneration-0, searchtrueloss-0, learn-0, searchlearnedweightwithoutfeature-0, resultaggregation-0, dagger-5"}; // dagger-3, searchlearnedweightwithoutfeature-0,
+																													  // , tunemodel-6, " + "searchlearnedweightwithoutfeature-6, resultaggregation-6"
 
-	public String[] EXPERIMENT_PROP = {"datageneration.goldmention"};		// MUST
+	public String[] EXPERIMENT_PROP = {"datageneration.goldmention, feature.atomic.names"};		// MUST be included in every experiment config file
 
 	// corpus path
 	public String[] CORPUS_PROP = {"/nfs/guille/xfern/users/xie/Experiment/corpus"};		// MUST
@@ -29,21 +30,28 @@ public class ExperimentArguments {
 	public String[] DATAGENERATION_DATASET_PROP = {"true"};
 
 	// gold mention (true) or predicted mention (false)
-	public String[] DATAGENERATION_GOLDMENTION_PROP = {"true", "false"};		// MUST
+	public String[] DATAGENERATION_GOLDMENTION_PROP = {"true", "false"};		// MUST 
 
 	// GOLD cluster post process
-	public String[] DATAGENERATION_POSTPROCESS_GOLD_PROP = {"false"};
+	public String[] DATAGENERATION_POSTPROCESS_GOLD_PROP = {"true"};
 
 	// annotators used in the experiment
 	public String[] DATAGENERATION_ANNOTATORS_PROP = {"tokenize, ssplit, pos, lemma, ner, parse, dcoref"};		// MUST
 
 	// training set
-	public String[] DATAGENERATION_TRAININGSET_PROP = {"5, 6"};		// MUST
+	public String[] DATAGENERATION_TRAININGSET_PROP = {"5, 6, 8, 11, 16, 25, 30, 31, 37, 40, 43, 44"};		// MUST
 	//"5, 6, 8, 11, 16, 25, 30, 31, 37, 40, 43, 44"
 	// testing set
-	//public String[] DATAGENERATION_TESTINGSET_PROP = {"1"};		// MUST
+	public String[] DATAGENERATION_TESTINGSET_PROP = {"1, 2, 4, 7, 9, 10, 13, 14, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 32, 33, 34, 35, 36, 39, 41, 42, 45"};		// MUST
 	//"1, 2, 4, 7, 9, 10, 13, 14, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 32, 33, 34, 35, 36, 39, 41, 42, 45"
+	
+	//public String[] DATAGENERATION_DEVELOPMENTSET_PROP = {"3, 12, 38"};
 
+	//
+	// search
+	//
+	// public String[] SEARCH_TYPE = {"searchtrueloss"};
+	
 
 	//	// best state score 
 	//	public String[] BEST_STATE_PROP = {"true"};		// MUST
@@ -97,7 +105,7 @@ public class ExperimentArguments {
 	//	public String[] STATE_FEATURE = {"false"};
 	//
 	//	// Atomic features
-	//	public String[] FEATURE_ATOMIC_NAMES = {"F", "N"};
+	public String[] FEATURE_ATOMIC_NAMES = {"F", "N"}; // "N"
 
 	public static void main(String[] args) {
 		ExperimentArguments generator = new ExperimentArguments();

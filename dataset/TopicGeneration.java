@@ -13,7 +13,7 @@ import edu.oregonstate.util.EecbConstants;
  */
 public class TopicGeneration {
 
-	// training topics	
+	// training topics
 	private String[] trainingTopics;
 	
 	// testing topics
@@ -21,6 +21,9 @@ public class TopicGeneration {
 	
 	// development topics
 	private String[] developmentTopics;
+	
+	/** every experiment just one topic */
+	private String topic;
 	
 	// experiment properties
 	private final Properties experimentProps;
@@ -58,6 +61,27 @@ public class TopicGeneration {
 			}
 		}
 		
+	}
+	
+	/**
+	 * just one topic processed by the current job
+	 * 
+	 * @return a topic
+	 */
+	public String topic() {
+		if (trainingTopics != null) {
+			topic = trainingTopics[0] + "-trainingtopic";
+		}
+		
+		if (testingTopics != null) {
+			topic = testingTopics[0] + "-testingtopic";
+		}
+		
+		if (developmentTopics != null) {
+			topic = developmentTopics[0] + "-developmenttopic";
+		}
+		
+		return topic;
 	}
 	
 	// return training topic

@@ -1,4 +1,4 @@
-package edu.oregonstate.experiment;
+package edu.oregonstate.server;
 
 import java.lang.reflect.Field;
 
@@ -43,6 +43,11 @@ public class ExperimentProperties {
 	public String DATAGENERATION_TESTINGSET_PROP = "datageneration.testingset";		// MUST
 	// development set
 	public String DATAGENERATION_DEVELOPMENTSET_PROP = "datageneration.developmentset";		// MUST
+		
+	//
+	// seararch setting
+	//
+	// public String SEARCH_TYPE = "search.type";
 
 
 
@@ -126,7 +131,7 @@ public class ExperimentProperties {
 	//	public String EXPERIMENT_HYPERPARAMETER = "dcoref.experiment.hyperparameter";
 	//
 	//	// Atomic features
-	//	public String FEATURE_ATOMIC_NAMES = "dcoref.feature.atomic.names";
+	public String FEATURE_ATOMIC_NAMES = "feature.atomic.names";
 
 	public static void main(String[] args) {
 		ExperimentProperties arguments = new ExperimentProperties();

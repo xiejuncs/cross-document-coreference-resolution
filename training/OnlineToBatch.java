@@ -78,13 +78,6 @@ public class OnlineToBatch extends ITraining {
 							double[] direction = DoubleOperation.minus(gNumericalFeatures, bNumericalFeatures);
 							if (DoubleOperation.isAllZero(direction)) continue;
 							
-							// enable to calculate the learning rate according to the PA algorithm
-							if (enablePALearning) {
-								double loss = calculatePALoss(gLossScore, bLossScore, gNumericalFeatures, bNumericalFeatures, fixedWeight);
-								double directionNorm = DoubleOperation.calculateTwoNorm(direction);
-								learningRate = loss / directionNorm;
-							}
-							
 							//ResultOutput.writeTextFile(ExperimentConstructor.logFile, "learning rate : " + learningRate);
 							double[] term = DoubleOperation.time(direction, learningRate);
 							finalWeight = DoubleOperation.add(finalWeight, term);

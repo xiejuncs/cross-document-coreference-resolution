@@ -43,11 +43,11 @@ public class CorefSystem {
 	public CorefSystem(boolean enableParser) {
 		mExperimentProps = ExperimentConstructor.experimentProps;
 		String sieve = "";
-		if (mExperimentProps.getProperty(EecbConstants.SIEVE_PROP, "partial").equals("partial")) {
-			sieve = EecbConstants.PARTIAL_SIEVE_STRING;
-		} else {
-			sieve = EecbConstants.FULL_SIEVE_STRING;
-		}
+		//if (mExperimentProps.getProperty(EecbConstants.SIEVE_PROP, "partial").equals("partial")) {
+		sieve = EecbConstants.PARTIAL_SIEVE_STRING;
+		//} else {
+			//sieve = EecbConstants.FULL_SIEVE_STRING;
+		//}
 		
 		generateCorefSystem(sieve, enableParser);
 	}
@@ -65,7 +65,7 @@ public class CorefSystem {
 	
 	private Properties setProperties(String sieve) {
 		Properties props = new Properties();
-		props.setProperty("annotators", mExperimentProps.getProperty(EecbConstants.DATAGENERATION_ANNOTATORS_PROP));
+		props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 		
 		String corpusPath = ExperimentConstructor.corpusPath;
 		String dataPath = corpusPath + "/EECB1.0/data/";

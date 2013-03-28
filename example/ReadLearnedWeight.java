@@ -1,30 +1,14 @@
 package edu.oregonstate.example;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.List;
+import edu.oregonstate.util.Command;
 
 public class ReadLearnedWeight {
 
 	public static void main(String[] args) {
-		String path = "/nfs/guille/xfern/users/xie/Experiment/corpus/learnedweight.txt";
+		String path = "/nfs/guille/xfern/users/xie/Experiment/experiment/2013-03-19/experiment0/4-searchlearnedweightwithfeature-6-config.properties";
+		boolean exist = Command.fileExists(path);
+		System.out.println(exist);
 		
-		List<String> weights = new ArrayList<String>();
-		
-		try {
-			String sCurrentLine;
-			BufferedReader br = new BufferedReader(new FileReader(path));
-			while((sCurrentLine = br.readLine()) != null) {
-				weights.add(sCurrentLine);
-			}
-			
-			br.close();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		
-		System.out.println("done");
 	}
 	
 }

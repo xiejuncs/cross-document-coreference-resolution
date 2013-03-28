@@ -35,7 +35,7 @@ public class ClusterConnection {
 	private static final long COMMAND_TIME_INTERVAL = 1000;
 
 	public ClusterConnection() {
-		this("submit-em64t-01.hpc.engr.oregonstate.edu", "xie", "18fg$80");
+		this("submit-em64t-01.hpc.engr.oregonstate.edu", "xie", "88jx$85");
 	}
 
 	public ClusterConnection(String host, String user, String password) {
@@ -122,17 +122,13 @@ public class ClusterConnection {
 		return JobState.parseJobIds(stdout);
 	}
 
-	// @Deprecated
-	// public List<JobState> queryJobs() throws Exception {
-	// execCommand("qstat -u guan");
-	// return JobState.parseJobStates(stdout);
-	// }
-
 	public int submitJob(String scriptPath) throws Exception {
 		execCommand("qsub " + scriptPath);
+		System.out.println("qsub " + scriptPath);
 		String stdout = getStdout().trim();
 		if (!stdout.startsWith("Your job")
 				|| !stdout.endsWith("has been submitted")) {
+			System.out.println(stdout);
 			throw new Exception("Job cannot be submitted! script:" + scriptPath
 					+ "\nstdout:" + stdout + "\nstderr:" + stderr);
 		}

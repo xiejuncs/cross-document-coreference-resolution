@@ -88,7 +88,7 @@ public class Development {
 		serializeOutput = experimentResultFolder + "/document";
 		
 		mCurrentEpoch = currentEpoch;
-		searchMethod = mProps.getProperty(EecbConstants.SEARCH_METHOD);
+		searchMethod = mProps.getProperty(EecbConstants.SEARCH_METHOD, "BeamSearch");
 		mLearnedWeight = learnedWeight;
 		mStartNumber = startNumber;
 		mEndNumber = endNumber;
@@ -104,7 +104,7 @@ public class Development {
 	 */
 	public double tuning() {
 		double[] stoppingRates = DoubleOperation.createDescendingArray(mStartNumber, mEndNumber, mIterations);
-		boolean bestStateScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.SEARCH_BESTSTATE, "false"));
+		boolean bestStateScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.SEARCH_BESTSTATE, "true"));
 
 		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nBegin Tuning parameter for the model in the " + mCurrentEpoch + "th iteration\n");
 

@@ -1,7 +1,6 @@
 package edu.oregonstate.util;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import edu.oregonstate.search.State;
@@ -22,7 +21,8 @@ public class Command {
 	public static void mkdir(String path) {
 		File file = new File(path);
 		if (!file.exists()) {
-			file.mkdir();
+			String command = "mkdir " + path;
+			execCommand(command.split(" "));
 		}
 	}
 
@@ -51,13 +51,24 @@ public class Command {
 		File directory = new File(directoryName);
 
 		if (directory != null) {
-			ProcessBuilder ps = new ProcessBuilder("rm", "-rf", directoryName);
-			SystemUtils.run(ps);
+			String[] command = new String[] {"rm", "-rf", directoryName};
+			execCommand(command);
 		}
 
 		return;
 	}
 
+	/**
+	 * whether the file exists in the disk
+	 * 
+	 * @param filePath
+	 * @return
+	 */
+	public static boolean fileExists(String filePath) {
+		File file = new File(filePath);
+		return file.exists();
+	}
+	
 	/** 
 	 * count the total number of mentions
 	 * 

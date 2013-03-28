@@ -170,8 +170,7 @@ public class Dagger implements IMethod {
 		} else {
 
 			// use average model to collect more data
-			CoreferenceResolutionDecoding decoder = new CoreferenceResolutionDecoding(phase, trainingTopics, true, 0.0);
-			decoder.decode(para.generateWeightForTesting());
+			
 		}
 
 		// train the model using the specified classifier for several iterations, using small learning rate
@@ -249,8 +248,7 @@ public class Dagger implements IMethod {
 
 		// do testing on testing set
 		ResultOutput.writeTextFile(logFile, "\n\n(Dagger) testing on testing set\n\n");
-		CoreferenceResolutionDecoding decoder = new CoreferenceResolutionDecoding(phase, testingTopics, false, stoppingrate);
-		decoder.decode(weight);
+		
 	}
 	
 }

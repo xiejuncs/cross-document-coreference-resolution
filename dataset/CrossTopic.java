@@ -57,8 +57,6 @@ public class CrossTopic implements IDataSet {
 		Document document = new Document();
 
 		try{
-			String path = dataPath + topic + "/";
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, topic + " : " + path);
 			document = getDocument(topic, goldOnly);
 			ResultOutput.writeTextFile(statisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
 					document.corefClusters.size());

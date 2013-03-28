@@ -1,4 +1,4 @@
-package edu.oregonstate.experiment;
+package edu.oregonstate.server;
 
 import java.io.File;
 import java.text.DateFormat;

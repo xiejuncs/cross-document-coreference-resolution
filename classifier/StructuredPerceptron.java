@@ -5,13 +5,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import edu.oregonstate.dataset.TopicGeneration;
-import edu.oregonstate.experiment.ExperimentConfigurationFactory;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
-import edu.oregonstate.method.CoreferenceResolutionDecoding;
 import edu.oregonstate.training.ITraining;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
@@ -67,7 +64,7 @@ public class StructuredPerceptron implements IClassifier {
 		
 		logFile = ExperimentConstructor.logFile;
 		modelIndex = 0;
-		String trainingStyle = mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_METHOD, "OnlineTobatch");
+		String trainingStyle = mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_METHOD, "PAOnline");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
 		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		length = featureTemplate.size();
@@ -82,17 +79,14 @@ public class StructuredPerceptron implements IClassifier {
 	 * use zero vector to train the model
 	 */
 	public Parameter train(List<String> paths, int index) {
-		ResultOutput.writeTextFile(logFile, "\n Begin classification: ");
-		ResultOutput.writeTextFile(logFile, "\n Structured Perceptron with Iteration : " + mIterations);
+		ResultOutput.writeTextFile(logFile, "\nBegin to learn model : " + modelIndex);
+		ResultOutput.writeTextFile(logFile, "\nStructured Perceptron with Iteration : " + mIterations);
 		
 		// model index
 		modelIndex = index;
 		double[] weight = new double[length];
 		Parameter para = new Parameter(weight);
 
-		// store the structured perceptron intermediate result
-		ResultOutput.writeTextFile(experimentFolder + "/classification-training.csv", "ANOTHER EXPERIMENT");
-		ResultOutput.writeTextFile(experimentFolder + "/classification-testing.csv", "ANOTHER EXPERIMENT");
 		Parameter trainedPara = train(paths, para);
 		
 		return trainedPara;
@@ -113,7 +107,7 @@ public class StructuredPerceptron implements IClassifier {
 		for (int i = 0; i < mIterations; i++) {
 			double learningRate = learningRates[i];
 			weights.add(para.getWeight());
-			ResultOutput.writeTextFile(logFile, "the " + modelIndex + "'s model 's " + i + "iteration");
+			ResultOutput.writeTextFile(logFile, "the " + modelIndex + "'s model " + i + "iteration");
 			// ResultOutput.printParameter(para, logFile);
 			
 			// shuffle the path
@@ -125,31 +119,13 @@ public class StructuredPerceptron implements IClassifier {
 			
 			// print number of violated constraint
 			int afterviolation = para.getNoOfViolation();
-			ResultOutput.writeTextFile(experimentFolder + "/violation-" + modelIndex +".csv", (afterviolation - violations) + "\t" + para.getNumberOfInstance());
+			ResultOutput.writeTextFile(experimentFolder + "/violation/violation-" + modelIndex +".csv", (afterviolation - violations) + "\t" + para.getNumberOfInstance());
 			
-			//train the other models of Dagger
-			if (enablePrintIterationResult && (i % printIteartionGap == 0)) {
-				TopicGeneration topicGenerator = new TopicGeneration(mProps);
-				String[] trainingTopics = topicGenerator.trainingTopics();
-				String[] testingTopics = topicGenerator.testingTopics();
-				
-				double[] learnedWeight = para.generateWeightForTesting();
-				
-				double stoppingRate = ExperimentConfigurationFactory.tuneStoppingRate(learnedWeight, i);
-				
-				String trainingPhase = "training-" + modelIndex + "-" + i;
-				CoreferenceResolutionDecoding trainingDecoder = new CoreferenceResolutionDecoding(trainingPhase, trainingTopics, false, stoppingRate);
-				trainingDecoder.decode(learnedWeight);
-				
-				String testingPhase = "testing-" + modelIndex + "-" + i;
-				CoreferenceResolutionDecoding testingDecoder = new CoreferenceResolutionDecoding(testingPhase, testingTopics, false, stoppingRate);
-				testingDecoder.decode(learnedWeight);
-			}
 		}
 		
 		// calculate the weight difference between the previous iteration and the current iteration
-		DoubleOperation.calcualateWeightDifference(weights, experimentFolder + "/weight-difference-"+ modelIndex + ".csv");
-		DoubleOperation.printWeightNorm(weights, experimentFolder + "/weight-norm-"+ modelIndex + ".csv");
+		DoubleOperation.calcualateWeightDifference(weights, experimentFolder + "/weightdifference/weight-difference-"+ modelIndex + ".csv");
+		DoubleOperation.printWeightNorm(weights, experimentFolder + "/weightnorm/weight-norm-"+ modelIndex + ".csv");
 		
 		return para;
 	}

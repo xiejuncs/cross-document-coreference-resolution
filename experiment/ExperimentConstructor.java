@@ -4,7 +4,6 @@ import java.util.Map;
 
 import java.util.Properties;
 
-import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.Command;
 import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.stats.ClassicCounter;
@@ -73,9 +72,23 @@ public abstract class ExperimentConstructor {
         // create folder to store the CONLL results
         Command.mkdir(resultPath + "/conll");
         
+        // create folder to store the serialized results
+		Command.mkdir(resultPath + "/document");
+		
+		// create folder to store the model result
+		Command.mkdir(resultPath + "/model");
+		
+		// create folder to store the violation result
+		Command.mkdir(resultPath + "/violation");
+		
+		// create folder to store weight difference 
+		Command.mkdir(resultPath + "/weightdifference");
+		
+		// create folder to store weight norm
+		Command.mkdir(resultPath + "/weightnorm");
+			
         // specify the log file path
         logFile = sb.toString().trim() + "/experimentlog";
-        ResultOutput.printProperties(experimentProps, logFile);    // Print experiment configuration
 		
 		// configure the WORDNET
         factory.configureWordNet();

@@ -117,7 +117,7 @@ public class ExperimentConfigurationFactory {
 	public static double tuneStoppingRate(double[] weight, int j) {
 		double stoppingrate = 0.0;
 		
-		String stopping = ExperimentConstructor.experimentProps.getProperty(EecbConstants.SEARCH_STOPPINGCRITERION);
+		String stopping = ExperimentConstructor.experimentProps.getProperty(EecbConstants.SEARCH_STOPPINGCRITERION, "none");
 		if (stopping.equals("tuning")) {
 			Development development = new Development(j, weight, 1.0, 3.0, 10);
 			stoppingrate = development.tuning();
