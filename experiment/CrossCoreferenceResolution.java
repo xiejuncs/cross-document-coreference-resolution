@@ -42,7 +42,7 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 	 * perform the cross coreference resolution experiment
 	 */
 	public void performExperiment() {
-		String procedure = "datageneration-0, searchtrueloss-0, learn-0, resultaggregation-0, dagger-5";
+		String procedure = experimentProps.getProperty("procedures");
 		Pipeline pipeline = new Pipeline();
 		pipeline.generateProcedures(procedure);
 		List<String> procedures = pipeline.getProcedure();

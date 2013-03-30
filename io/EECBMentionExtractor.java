@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.List;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.featureExtractor.SRLAlignment;
 import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.EecbReader;
 import edu.stanford.nlp.dcoref.CoNLL2011DocumentReader;
@@ -315,8 +316,11 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		String corpusPath = ExperimentConstructor.corpusPath;
 		String srlPath = corpusPath + "/tokenoutput/";
 		
-		SrlResultIncorporation srlResult = new SrlResultIncorporation(srlPath + topic + ".output");
-		srlResult.alignSRL(predictedOrderedMentionsBySentence);
+		SRLAlignment aligner = new SRLAlignment(srlPath + topic + ".output");
+		aligner.alignMentions(predictedOrderedMentionsBySentence);
+		
+//		SrlResultIncorporation srlResult = new SrlResultIncorporation(srlPath + topic + ".output");
+//		srlResult.alignSRL(predictedOrderedMentionsBySentence);
 	}
 	
 }
