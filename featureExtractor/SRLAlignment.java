@@ -23,7 +23,7 @@ import edu.stanford.nlp.trees.semgraph.SemanticGraph;
  *
  */
 public class SRLAlignment {
-	
+
 	/** the index of each column is obtained by decrementing one from the original column number */
 	protected static final int WORD_NO = 0;
 	protected static final int WORD_FORM = 1;
@@ -35,7 +35,7 @@ public class SRLAlignment {
 
 	/** SRL document */
 	private final SRLDocument document;
-	
+
 	/** fixed roles considered in our experiment */
 	private final List<String> ROLES = Arrays.asList(new String[]{"A0", "A1", "A2", "AM-LOC"});
 
@@ -56,19 +56,23 @@ public class SRLAlignment {
 		int noOfSentence = predictedOrderedMentionsBySentence.size();
 		int mentionIDOffset = 0;
 		RuleBasedCorefMentionFinder headFinder = new RuleBasedCorefMentionFinder();
-		
+
 		// for each sentence
-		for (int index = 0; index < noOfSentence; index++) {			
+		for (int index = 0; index < noOfSentence; index++) {
 			List<Mention> mentions = predictedOrderedMentionsBySentence.get(index);
-			
+
 			// find the global annotation
 			List<CoreLabel> sentenceWords = mentions.get(0).sentenceWords;
+			int sentenceLength = sentenceWords.size();
+			
 			SemanticGraph dependency = mentions.get(0).dependency;
 			Tree tree = mentions.get(0).contextParseTree;
 			tree.indexSpans(0);
-			
+
 			Map<Span, Mention> detectedMentionSpan = new HashMap<Span, Mention>();
-			Map<Integer, Mention> detectedMentionHeadSpan = new HashMap<Integer, Mention>();
+			
+			// one head index may correspond to several mentions
+			Map<Integer, LinkedList<Mention>> detectedMentionHeadSpan = new HashMap<Integer, LinkedList<Mention>>();
 			// put the mention span into a map
 			for (Mention mention : mentions) {
 				int mentionStartIndex = mention.startIndex;
@@ -77,7 +81,11 @@ public class SRLAlignment {
 				detectedMentionSpan.put(mentionSpan, mention);
 
 				int mentionHeadIndex = mention.headIndex;
-				detectedMentionHeadSpan.put(mentionHeadIndex, mention);
+				if (!detectedMentionHeadSpan.containsKey(mentionHeadIndex)) {
+					detectedMentionHeadSpan.put(mentionHeadIndex, new LinkedList<Mention>());
+				}
+				
+				detectedMentionHeadSpan.get(mentionHeadIndex).add(mention);
 			}
 
 			// SRL annotation for that sentence
@@ -91,32 +99,40 @@ public class SRLAlignment {
 			}
 			// build the syntactic dependency tree
 			Map<Integer, Set<Integer>> graph = buildGraph(parents);
-			
+
 			// find predicate and its corresponding argument column, when find a predicate and its arguments,
 			// align with detected mentions
-			int predOffset = 1;
+			int predOffset = 0;
 			for (int row = 0; row < length; row++) {
 				String[] token = sentence.get(row);
 				String predicate = token[PRED];
 				if (!predicate.equals("_")) {
 					// find the predIndex and construct the Span
+					// two choices: align just using mention span and also using the mention head index
 					int predIndex = row;
-					Span predicateSpan = new Span(predIndex - 1, predIndex);
+					Span predicateSpan = new Span(predIndex, predIndex + 1);
 					boolean mentionContainPred = detectedMentionSpan.containsKey(predicateSpan);
 					Mention predMention = null;
 					if (mentionContainPred) {
 						predMention = detectedMentionSpan.get(predicateSpan);
-					} else {
-						boolean mentionHeadContainPred = detectedMentionHeadSpan.containsKey(predIndex);
-						if (mentionHeadContainPred) {
-							predMention = detectedMentionHeadSpan.get(predicateSpan);
-						}
 					}
-					
+					// use the mention head index
+					//					else {
+					//						boolean mentionHeadContainPred = detectedMentionHeadSpan.containsKey(predIndex);
+					//						if (mentionHeadContainPred) {
+					//							predMention = detectedMentionHeadSpan.get(predIndex);
+					//						}
+					//					}
+
+					// increment the offset
+					predOffset += 1;
+
 					// if can not find detected mention for the predicate, then move forward to 
 					// next predicate
-					if (predMention == null) continue;
-					
+					if (predMention == null) {
+						continue;
+					}
+
 					// align with the arguments
 					int argumentColumn = PRED + predOffset;
 					// find the arguments
@@ -127,39 +143,48 @@ public class SRLAlignment {
 						if (!annotation.equals("_") && ROLES.contains(annotation)) {
 							List<Integer> argumentYieldSpan = yield(argumentRow, graph);
 							int argumentStartIndex = argumentYieldSpan.get(0);
-							int argumentEndIndex = argumentYieldSpan.get(argumentYieldSpan.size() - 1);
+							int argumentEndIndex = argumentYieldSpan.get(argumentYieldSpan.size() - 1) + 1;
 							Span argumentSpan = new Span(argumentStartIndex, argumentEndIndex);
 							Mention argumentMention = null;
 							boolean mentionContainArgument = detectedMentionSpan.containsKey(argumentSpan);
+							// match the mention boundary
 							if (mentionContainArgument) {
-								argumentMention = detectedMentionSpan.get(argumentSpan);
+								argumentMention = detectedMentionSpan.get(argumentSpan);								
 								predMention.addArgument(annotation, argumentMention);
 								argumentMention.addPredicate(predMention, annotation);
 							} else {
 								// construct an mention
+								if (argumentStartIndex < 0) {
+									argumentStartIndex = 0;
+								}
+								if (argumentEndIndex > sentenceLength) {
+									argumentEndIndex = sentenceLength;
+								}
+								
 								Mention argumentMentionForHeadFinding = new Mention(mentionIDOffset, argumentStartIndex, argumentEndIndex, 
 										dependency, new ArrayList<CoreLabel>(sentenceWords.subList(argumentStartIndex, argumentEndIndex)));
 								Tree head = headFinder.findSyntacticHead(argumentMentionForHeadFinding, tree, sentenceWords);
 								int headIndex = ((CoreLabel) head.label()).get(IndexAnnotation.class)-1;
 								boolean mentionHeadContainArgument = detectedMentionHeadSpan.containsKey(headIndex);
 								if (mentionHeadContainArgument) {
-									argumentMention = detectedMentionHeadSpan.get(headIndex);
-									predMention.addArgument(annotation, argumentMention);
-									argumentMention.addPredicate(predMention, annotation);
+									argumentMention = detectedMentionHeadSpan.get(headIndex).poll();
+									// only noun phrase can be the argument of the predicate
+									if ((argumentMention != null) && (!argumentMention.isVerb)) {
+										predMention.addArgument(annotation, argumentMention);
+										argumentMention.addPredicate(predMention, annotation);
+									}
 								}
-										
+
 								mentionIDOffset += 1;
 							}
-							
+
 						}
 					}
 
-					// increment the offset
-					predOffset += 1;
 				}
 
 			}
-			
+
 		}
 
 	}

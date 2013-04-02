@@ -30,7 +30,7 @@ public class ExperimentArguments {
 	public String[] DATAGENERATION_DATASET_PROP = {"true"};
 
 	// gold mention (true) or predicted mention (false)
-	public String[] DATAGENERATION_GOLDMENTION_PROP = {"true", "false"};		// MUST 
+	public String[] DATAGENERATION_GOLDMENTION_PROP = {"false"};		// MUST 
 
 	// GOLD cluster post process
 	public String[] DATAGENERATION_POSTPROCESS_GOLD_PROP = {"true"};
@@ -105,7 +105,7 @@ public class ExperimentArguments {
 	//	public String[] STATE_FEATURE = {"false"};
 	//
 	//	// Atomic features
-	public String[] FEATURE_ATOMIC_NAMES = {"F", "N"}; // "N"
+	public String[] FEATURE_ATOMIC_NAMES = {"N"}; // "N"
 
 	public static void main(String[] args) {
 		ExperimentArguments generator = new ExperimentArguments();
