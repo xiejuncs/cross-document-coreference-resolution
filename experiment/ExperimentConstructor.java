@@ -17,16 +17,16 @@ import edu.stanford.nlp.stats.ClassicCounter;
 public abstract class ExperimentConstructor {
 
 	// used for recording the information of the whole experiment
-	public static String logFile;
+	public static String experimentLogFile;
 	
 	// experiment result folder
-	public static String resultPath;
+	public static String experimentFolder;
 	
 	// property file
 	public static Properties experimentProps;
 
 	// corpus path
-	public static String corpusPath;
+	public static String experimentCorpusPath;
 	
 	// debug Mode
 	public static boolean debugMode;
@@ -55,52 +55,55 @@ public abstract class ExperimentConstructor {
 		debugMode = Boolean.parseBoolean(props.getProperty(EecbConstants.DEBUG_PROP, "false"));
 		
 		// corpus folder, which stores the EECB corpus and TEMPORARY folder which is used for print the log file
-		corpusPath = props.getProperty(EecbConstants.CORPUS_PROP);
+		experimentCorpusPath = props.getProperty(EecbConstants.CORPUS_PROP);
 		 
 		StringBuilder sb = new StringBuilder();
 		//String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-").replaceAll(":", "-");
-        sb.append(corpusPath + "/TEMPORYRESUT/");
+        sb.append(experimentCorpusPath + "/TEMPORYRESUT/");
         
         ExperimentConfigurationFactory factory = new ExperimentConfigurationFactory(props);
         String name = factory.defineExperimentName();
         sb.append(name);
         
         // create the result folder
-        resultPath = sb.toString().trim();
-        Command.mkdir(resultPath);
+        experimentFolder = sb.toString().trim();
+        Command.mkdir(experimentFolder);
         
         // create folder to store the CONLL results
-        Command.mkdir(resultPath + "/conll");
+        Command.mkdir(experimentFolder + "/conll");
         
         // create folder to store the serialized results
-		Command.mkdir(resultPath + "/document");
+		Command.mkdir(experimentFolder + "/document");
 		
 		// create folder to store the model result
-		Command.mkdir(resultPath + "/model");
+		Command.mkdir(experimentFolder + "/model");
 		
 		// create folder to store the violation result
-		Command.mkdir(resultPath + "/violation");
+		Command.mkdir(experimentFolder + "/violation");
 		
 		// create folder to store weight difference 
-		Command.mkdir(resultPath + "/weightdifference");
+		Command.mkdir(experimentFolder + "/weightdifference");
 		
 		// create folder to store weight norm
-		Command.mkdir(resultPath + "/weightnorm");
+		Command.mkdir(experimentFolder + "/weightnorm");
 			
         // specify the log file path
-        logFile = sb.toString().trim() + "/experimentlog";
+        experimentLogFile = sb.toString().trim() + "/experimentlog";
 		
 		// configure the WORDNET
         factory.configureWordNet();
        
         // Dekang Lin's Similarity thesaurus respecitvely for noun, adjective and verb
-        nounSimilarityThesaurus = factory.loadSimilarityDictionary(corpusPath + "/simN.lsp");
-        verbSimilarityThesaurus = factory.loadSimilarityDictionary(corpusPath + "/simV.lsp");
-        adjectiveSimilarityThesaurus = factory.loadSimilarityDictionary(corpusPath + "/simA.lsp");
+        nounSimilarityThesaurus = factory.loadSimilarityDictionary(experimentCorpusPath + "/simN.lsp");
+        verbSimilarityThesaurus = factory.loadSimilarityDictionary(experimentCorpusPath + "/simV.lsp");
+        adjectiveSimilarityThesaurus = factory.loadSimilarityDictionary(experimentCorpusPath + "/simA.lsp");
         
         // whether need to do post-process on predicted mentions
-        boolean goldMentions = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP));
-        postProcess = !goldMentions;
+        // because gold mention also includes the singleton cluster,
+        // so no matter whether gold mention or predicted mention, 
+        // do post-process
+        // boolean goldMentions = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP));
+        postProcess = true;
 	}
 	
 	// perform the experiments

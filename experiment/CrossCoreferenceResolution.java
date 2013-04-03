@@ -110,8 +110,8 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		
 		Properties props = StringUtils.argsToProperties(propArgs);
 		ExperimentConstructor experiment = new CrossCoreferenceResolution(props, configFolder);
-		ResultOutput.printTime(logFile, "The start of the experiment: ");
+		ResultOutput.printTime(experimentLogFile, "The start of the experiment: ");
 		experiment.performExperiment();
-		ResultOutput.printTime(logFile, "The end of the experiment");
+		ResultOutput.printTime(experimentLogFile, "The end of the experiment");
 	}
 }

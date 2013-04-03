@@ -60,8 +60,8 @@ public class SearchFactory extends ExperimentConstructor {
 		TopicGeneration topicGenerator = new TopicGeneration(props);
 		topicInformation = topicGenerator.topic();
 		
-		serializeOutput = ExperimentConstructor.resultPath + "/document";
-		resultPath = ExperimentConstructor.resultPath;
+		serializeOutput = ExperimentConstructor.experimentFolder + "/document";
+		resultPath = ExperimentConstructor.experimentFolder;
 		
 		// create search
 		String searchMethod = props.getProperty(EecbConstants.SEARCH_METHOD, "BeamSearch");

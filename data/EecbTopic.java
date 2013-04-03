@@ -38,7 +38,7 @@ import edu.stanford.nlp.util.CoreMap;
 public class EecbTopic extends EecbElement {
 	
 	/** use topic id directly in order to show some information */
-	private String mPrefix;
+	private String mTopic;
 	
 	/**All entities*/
 	private HashMap<String, EecbEntity> mEntities;
@@ -81,11 +81,11 @@ public class EecbTopic extends EecbElement {
 	
 	static Logger mLog = Logger.getLogger(EecbTopic.class.getName());
 	
-	public EecbTopic(String id, List<String> files) {
-		super(id);
+	public EecbTopic(String topic, List<String> files) {
+		super(topic);
 		mFiles = files;
-		mPrefix = id;
-		baseID = 10000000 * Integer.parseInt(id);
+		mTopic = topic;
+		baseID = 10000000 * Integer.parseInt(topic);
 		
 		mEntities = new HashMap<String, EecbEntity>();
 		mEntityMentions = new HashMap<String, EecbEntityMention>();
@@ -205,7 +205,7 @@ public class EecbTopic extends EecbElement {
 			} catch (MatchException e) {
 				mLog.severe("READER ERROR: Failed to match entity mention extent: " + "[" + m.getExtent().getText() + ", "
 						+ m.getExtent().getByteStart() + ", " + m.getExtent().getByteEnd() + ", " + m.sentenceID() + "]");
-				System.out.println(mPrefix + "-" +sentencePositionDocument.get(m.sentenceID()));
+				System.out.println(mTopic + "-" +sentencePositionDocument.get(m.sentenceID()));
 				mLog.severe("Document tokens: " + tokensWithByteSpan(m.getExtent().getByteStart(), m.getExtent().getByteEnd()));
 				mLog.severe("Document prefix: " + mID);
 				System.exit(1);
@@ -237,8 +237,7 @@ public class EecbTopic extends EecbElement {
 			}
 		}
 	}
-	  
-	//TODO
+	
 	// The entry of the class
 	/**
 	 * read the eecb file, and I need to incorporate the SRL result here
@@ -494,7 +493,7 @@ public class EecbTopic extends EecbElement {
 		// put all documents into one document
 		for (String file : mFiles) {
 			try {
-				String dataPath = ExperimentConstructor.corpusPath + "/EECB1.0/data/";
+				String dataPath = ExperimentConstructor.experimentCorpusPath + "/EECB1.0/data/";
 				String filename = dataPath + mID + File.separator + file;
 				BufferedReader br = new BufferedReader(new FileReader(filename));
 				int i = 0;
@@ -531,7 +530,7 @@ public class EecbTopic extends EecbElement {
 	 * @return
 	 */
 	public List<List<EecbToken>> tokenizeAndSegmentSentences(String rawText) {
-		String tokenPath = ExperimentConstructor.resultPath + "/" + mPrefix + "/" + mPrefix + ".tokens";
+		String tokenPath = ExperimentConstructor.experimentFolder + "/" + mTopic + "/" + mTopic + ".tokens";
 		
 		StringBuilder sb = new StringBuilder();
 		List<List<EecbToken>> sentences = new ArrayList<List<EecbToken>>();
@@ -549,7 +548,7 @@ public class EecbTopic extends EecbElement {
 	    	pipeline.annotate(annotation);
 	    	List<CoreMap> annotatedSentences = annotation.get(SentencesAnnotation.class);
 	    	if (annotatedSentences.size() > 1) {
-	    		System.out.println("there is some problem with the raw text for " + mPrefix);
+	    		System.out.println("there is some problem with the raw text for " + mTopic);
 	    		System.out.println(rawSentence);
 	    		System.exit(1);
 	    	}
@@ -577,7 +576,6 @@ public class EecbTopic extends EecbElement {
 	    		sb.append("0\t");
 	    		sb.append("_");
 	    		sb.append("\n");
-	    		
 	    	}
 
 	    	sb.append("\n");
@@ -645,7 +643,7 @@ public class EecbTopic extends EecbElement {
 	 */
 	public static HashMap<String, ArrayList<String>> readAnnotation() {
 		HashMap<String, ArrayList<String>> annotation = new HashMap<String, ArrayList<String>>();
-		String mentionPath = ExperimentConstructor.corpusPath + "/mentions.txt";    // mentions.txt path
+		String mentionPath = ExperimentConstructor.experimentCorpusPath + "/EECB1.0/mentions.txt";    // mentions.txt path
 		
 		try {
 			BufferedReader entitiesBufferedReader = new BufferedReader(new FileReader(mentionPath));

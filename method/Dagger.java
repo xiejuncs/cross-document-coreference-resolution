@@ -68,8 +68,8 @@ public class Dagger implements IMethod {
 
 	public Dagger() {
 		mProps = ExperimentConstructor.experimentProps;
-		experimentResultFolder = ExperimentConstructor.resultPath;
-		logFile = ExperimentConstructor.logFile;
+		experimentResultFolder = ExperimentConstructor.experimentFolder;
+		logFile = ExperimentConstructor.experimentLogFile;
 		numberOfFunctions = Integer.parseInt(mProps.getProperty(EecbConstants.METHOD_FUNCTION_NUMBER_PROP, "3"));
 		
 		TopicGeneration topicGenerator = new TopicGeneration(mProps);

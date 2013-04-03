@@ -59,12 +59,12 @@ public class StructuredPerceptron implements IClassifier {
 	 */
 	public StructuredPerceptron() {
 		mProps = ExperimentConstructor.experimentProps;
-		experimentFolder = ExperimentConstructor.resultPath;
+		experimentFolder = ExperimentConstructor.experimentFolder;
 		mIterations = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "5"));
 		
-		logFile = ExperimentConstructor.logFile;
+		logFile = ExperimentConstructor.experimentLogFile;
 		modelIndex = 0;
-		String trainingStyle = mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_METHOD, "PAOnline");
+		String trainingStyle = mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_METHOD, "OnlineToBatch");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
 		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		length = featureTemplate.size();
@@ -112,14 +112,14 @@ public class StructuredPerceptron implements IClassifier {
 			
 			// shuffle the path
 			Collections.shuffle(paths);
-			int violations = para.getNoOfViolation();
+			int beforeViolation = para.getNoOfViolation();
 			
 			// do weight update
 			para = trainingModel.train(paths, para, learningRate);
 			
 			// print number of violated constraint
 			int afterviolation = para.getNoOfViolation();
-			ResultOutput.writeTextFile(experimentFolder + "/violation/violation-" + modelIndex +".csv", (afterviolation - violations) + "\t" + para.getNumberOfInstance());
+			ResultOutput.writeTextFile(experimentFolder + "/violation/violation-" + modelIndex +".csv", (afterviolation - beforeViolation) + "\t" + para.getNumberOfInstance());
 			
 		}
 		

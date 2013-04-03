@@ -84,7 +84,7 @@ public class BeamSearch implements ISearch {
     /** constructor */
     public BeamSearch() {
     	mProps = ExperimentConstructor.experimentProps;
-    	experimentResultFolder = ExperimentConstructor.resultPath;
+    	experimentResultFolder = ExperimentConstructor.experimentFolder;
     	
     	//
     	// set the configuration constant 

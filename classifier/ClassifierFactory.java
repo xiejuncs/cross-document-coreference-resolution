@@ -50,16 +50,16 @@ public class ClassifierFactory extends ExperimentConstructor {
 	public void performExperiment() {
 		List<String> paths = getPaths();
 		
-		ResultOutput.writeTextFile(resultPath + "/searchstep", "" + paths.size());
-		ResultOutput.writeTextFile(logFile, "the total number of training files : " + paths.size());
+		ResultOutput.writeTextFile(experimentFolder + "/searchstep", "" + paths.size());
+		ResultOutput.writeTextFile(experimentLogFile, "the total number of training files : " + paths.size());
 		
 		Parameter returnPara = classifier.train(paths, Integer.parseInt(phaseIndex));
-		ResultOutput.writeTextFile(logFile, "\n\nThe " + phaseIndex + "'s learned model \n");
-		ResultOutput.printParameter(returnPara, logFile);
+		ResultOutput.writeTextFile(experimentLogFile, "\n\nThe " + phaseIndex + "'s learned model \n");
+		ResultOutput.printParameter(returnPara, experimentLogFile);
 		
 		// output 
 		double[] averageWeight = returnPara.generateWeightForTesting();
-		String outputFile = resultPath + "/model/model" + phaseIndex;
+		String outputFile = experimentFolder + "/model/model" + phaseIndex;
 		String outputString = DoubleOperation.printArray(averageWeight);
 		ResultOutput.writeTextFile(outputFile, outputString);
 	}
@@ -88,7 +88,7 @@ public class ClassifierFactory extends ExperimentConstructor {
 		List<String> allfiles  = new ArrayList<String>();
 		for (String topic : topics) {
 			List<String> files = getDivisionPaths(topic);
-			String topicPath = resultPath + "/" + topic + "/data/";
+			String topicPath = experimentFolder + "/" + topic + "/data/";
 			List<String> filePaths = new ArrayList<String>();
 			for (String file : files) {
 				filePaths.add(topicPath + file);
@@ -102,7 +102,7 @@ public class ClassifierFactory extends ExperimentConstructor {
 
 	// get a sequence of data file, such as 1, 2, 3, 4, 5
 	private List<String> getDivisionPaths(String topic) {
-		String topicPath = resultPath + "/" + topic + "/data/";
+		String topicPath = experimentFolder + "/" + topic + "/data/";
 		List<String> files = new ArrayList<String>(Arrays.asList(new File(topicPath).list()));
 
 		return files;

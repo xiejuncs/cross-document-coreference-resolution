@@ -39,7 +39,7 @@ public class DatasetFactory extends ExperimentConstructor {
 	
 	public DatasetFactory(Properties props) {
 		super(props);
-		mExperimentResultFolder = ExperimentConstructor.resultPath;
+		mExperimentResultFolder = ExperimentConstructor.experimentFolder;
 		corpusStatisticsPath = mExperimentResultFolder + "/corpusStat";
 		
 		serializedOutput = mExperimentResultFolder + "/document";

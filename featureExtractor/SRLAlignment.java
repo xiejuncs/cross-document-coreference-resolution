@@ -60,7 +60,7 @@ public class SRLAlignment {
 		int mentionIDOffset = 0;
 		RuleBasedCorefMentionFinder headFinder = new RuleBasedCorefMentionFinder();
 		String sentenceAlignmentDebugInformation = document.getDocumentID() + " : " + document.getSentences().size() + "  " + noOfSentence; 
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, sentenceAlignmentDebugInformation);
+		ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, sentenceAlignmentDebugInformation);
 
 		// for each sentence
 		for (int index = 0; index < noOfSentence; index++) {
@@ -185,6 +185,7 @@ public class SRLAlignment {
 										}
 									}
 								} catch (Exception e) {
+									System.out.println(sentenceWords.toString());
 									System.out.println(predMention.toString() + " " + index + " " + argumentStartIndex + " " + argumentEndIndex + " " + sentenceLength);
 									throw new RuntimeException(e);
 								}

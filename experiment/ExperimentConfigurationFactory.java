@@ -30,7 +30,7 @@ public class ExperimentConfigurationFactory {
 	
 	public ExperimentConfigurationFactory(Properties properties) {
 		props = properties;
-		corpusPath = ExperimentConstructor.corpusPath;
+		corpusPath = ExperimentConstructor.experimentCorpusPath;
 	}
 	
 	// define the experiment name as the result folder name
@@ -121,7 +121,7 @@ public class ExperimentConfigurationFactory {
 		if (stopping.equals("tuning")) {
 			Development development = new Development(j, weight, 1.0, 3.0, 10);
 			stoppingrate = development.tuning();
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nthe stopping rate is : " + stoppingrate + " for " + j + "\n");
+			ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, "\nthe stopping rate is : " + stoppingrate + " for " + j + "\n");
 		}
 
 		return stoppingrate;

@@ -36,7 +36,7 @@ public class ResultAggregation extends ExperimentConstructor {
 		
 		phaseIndex = props.getProperty(EecbConstants.PHASE_PROP, "0");
 		
-		conllResultPath = resultPath + "/conll/" + phaseIndex;
+		conllResultPath = experimentFolder + "/conll/" + phaseIndex;
 	}
 	
 	/**
@@ -98,8 +98,8 @@ public class ResultAggregation extends ExperimentConstructor {
 		if (fileExist) {
 			String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + phaseIndex + "-" + set;
 			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + phaseIndex + "-" + set;
-			double[] finalScores = ResultOutput.printCorpusResult(logFile, goldCorefCluster, predictedCorefCluster, "the " + phaseIndex + "'s model 's performance on " + set);
-			ResultOutput.writeTextFile(resultPath + "/" + set + ".csv", finalScores[0] + "\t" + finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
+			double[] finalScores = ResultOutput.printCorpusResult(experimentLogFile, goldCorefCluster, predictedCorefCluster, "the " + phaseIndex + "'s model 's performance on " + set);
+			ResultOutput.writeTextFile(experimentFolder + "/" + set + ".csv", finalScores[0] + "\t" + finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 		}
 	}
 	

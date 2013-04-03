@@ -20,7 +20,7 @@ import edu.stanford.nlp.dcoref.CorefScorer.ScoreType;
  */
 public class CoreferenceResolutionDecoding extends Decoding {
 
-	// topics used for decoding, such as training topics
+	// topic used for decoding, such as one training topic
 	private final String topic;
 
 	// whether do post-process on predicted mentions
@@ -30,7 +30,7 @@ public class CoreferenceResolutionDecoding extends Decoding {
 	private final boolean featureOutput;
 
 	// stop criterion for decoding
-	private final double stopCriterion;
+	private final double mStoppingRate;
 
 	// conll result path
 	private final String conllResultPath;
@@ -48,22 +48,21 @@ public class CoreferenceResolutionDecoding extends Decoding {
 	private final ScoreType lossType;
 
 	// result path
-	private final String resultPath;
+	private final String experimentFolder;
 
 	public CoreferenceResolutionDecoding(String phase, String topic, boolean outputFeature, double stoppingRate, String phaseIndex) {
 		super(phase);
 		this.topic = topic;
 		featureOutput = outputFeature;
-		stopCriterion = stoppingRate;		
+		mStoppingRate = stoppingRate;		
 		postProcess = ExperimentConstructor.postProcess;
-		conllResultPath = ExperimentConstructor.resultPath + "/conll/" + phaseIndex;
-		logFile = ExperimentConstructor.resultPath + "/" + topic + "/logfile";
-		serializedPath = ExperimentConstructor.resultPath + "/document";
+		conllResultPath = ExperimentConstructor.experimentFolder + "/conll/" + phaseIndex;
+		logFile = ExperimentConstructor.experimentFolder + "/" + topic + "/logfile";
+		serializedPath = ExperimentConstructor.experimentFolder + "/document";
 		bestState = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.SEARCH_BESTSTATE, "true"));
 		String lossTypeString = ExperimentConstructor.experimentProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise");
 		lossType = ScoreType.valueOf(lossTypeString);
-		resultPath = ExperimentConstructor.resultPath;
-
+		experimentFolder = ExperimentConstructor.experimentFolder;
 	}
 
 	/**
@@ -76,13 +75,13 @@ public class CoreferenceResolutionDecoding extends Decoding {
 		String goldCorefCluster = conllResultPath + "/goldCorefCluster-" + decodingPhase;
 		String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-" + decodingPhase;
 
-		ResultOutput.writeTextFile(logFile, "\n\n(Dagger) Testing Iteration Epoch : " + decodingPhase + "; Document :" + topic + "\n\n");
+		ResultOutput.writeTextFile(logFile, "\n\nTesting Iteration Epoch : " + decodingPhase + "; Document :" + topic + "\n\n");
 
 		Document document = ResultOutput.deserialize(topic, serializedPath, false);
 		ResultOutput.printParameters(document, topic, logFile);
 
 		ISearch search = EecbConstructor.createSearchMethod("BeamSearch");
-		State<CorefCluster> bestLossState = search.testingBySearch(document, weight, decodingPhase, featureOutput, stopCriterion);
+		State<CorefCluster> bestLossState = search.testingBySearch(document, weight, decodingPhase, featureOutput, mStoppingRate);
 
 		// if enable best score
 		if (bestState) {
@@ -112,7 +111,6 @@ public class CoreferenceResolutionDecoding extends Decoding {
 		//ResultOutput.writeTextFile(logFile, "\npredicted clusters\n");
 		//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.corefClusters));
 
-		// add single document to the corpus
 		ResultOutput.printDocumentScore(document, lossType, logFile, "single " + decodingPhase + " document " + topic);
 		ResultOutput.printParameters(document, topic, logFile);
 
@@ -123,7 +121,7 @@ public class CoreferenceResolutionDecoding extends Decoding {
 
 		// CoNLL scoring
 		double[] finalScores = ResultOutput.printCorpusResult(logFile, goldCorefCluster, predictedCorefCluster, decodingPhase);
-		ResultOutput.writeTextFile(resultPath + "/" + topic + "/" + decodingPhase + ".csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
+		ResultOutput.writeTextFile(experimentFolder + "/" + topic + "/" + decodingPhase + ".csv", scoreInformation[0] + "\t" + finalScores[0] + "\t" + 
 				finalScores[1] + "\t" + finalScores[2] + "\t" + finalScores[3] + "\t" + finalScores[4]);
 	}
 

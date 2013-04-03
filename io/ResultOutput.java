@@ -78,7 +78,7 @@ public class ResultOutput {
 
 	/** get all the sub-directories under the specific directory */
 	public static String[] getTopics(String corpusPath) {
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, corpusPath);
+		ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, corpusPath);
 		File corpusDir = new File(corpusPath);
 		String[] directories = corpusDir.list();
 
@@ -209,8 +209,8 @@ public class ResultOutput {
 	/** print the current time in order to know the duration of the experiment */
 	public static void printTime() {
 		String timeStamp = Calendar.getInstance().getTime().toString().replaceAll("\\s", "-");
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, timeStamp);
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\n\n");
+		ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, timeStamp);
+		ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, "\n\n");
 	}
 
 	/** print the beam information, because beam is represented as priority queue, we just print the id */

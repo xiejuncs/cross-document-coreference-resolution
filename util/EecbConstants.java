@@ -37,50 +37,10 @@ public class EecbConstants {
 		"36", "39", "41", "42", "45"};
 
 	/** development topics */
-	//public static final String[] stanfordDevelopmentTopics = {"30", "31", "43"};
-	public static final String[] stanfordDevelopmentTopics = {"3", "12", "38"}; //,
-
-	/** the total topics */
-	public static final String[] totalTopics = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", 
-		"11", "12", "13", "14", "16", "18", "19", "20", "21", "22", 
-		"23", "24", "25", "26", "27", "28", "29", "30", "31", "32", 
-		"33", "34", "35", "36", "37", "38", "39", "40", "41", "42", 
-		"43", "44", "45"};
-
-	/** debug topics */
-
-	public static final String[] debugTopics = {"6", "16", "10", "20"};
-	//public static final String[] debugTopics = {"12", "22", "38"};
-	//	public static final String[] debugTopics = {"5", "6", "8", "11", "16", "25", "30", "31", "37", "40", "43", "44",     // training topics
-	//		"1", "2", "3", "4", "7", "9", "10", "13", "14", "18", "19", "20",        // testing topics
-	//		"21", "23", "24", "26", "27", "28", "29", "32", "33", "34", "35", 
-	//		"36", "39", "41", "42", "45"};
-
-	/** debug development topics */
-	public static final String[] debugDevelopmentTopics = {"3", "12", "38"}; //
+	public static final String[] stanfordDevelopmentTopics = {"3", "12", "38"};
 
 	/** score Types */
 	public static final String[] scoreTypes = {"Pairwise", "MUC", "Bcubed", "CEAF"};
-
-	// traditional features
-	public static String[] featuresName = {"Head-PROPER", "Head-NOMINAL", "Lemma", "Synonym", "Synonym-PROPER",
-		"Synonym-NOMINAL", "SrlAgreeCount", "SrlAgreeCount-PROPER", "SrlAgreeCount-NOMINAL", "SrlA0", 
-		"SrlA0-PROPER", "SrlA0-NOMINAL", "SrlA1", "SrlA1-PROPER", "SrlA1-NOMINAL", 
-		"SrlA2", "SrlA2-PROPER", "SrlA2-NOMINAL", "SrlAM-LOC", "SrlAM-LOC-PROPER", 
-		"SrlAM-LOC-NOMINAL", "SrlPA0-PROPER", "SrlPA0-NOMINAL", "SrlPA1-PROPER", "SrlPA1-NOMINAL",
-		"SrlPA2-PROPER", "SrlPA2-NOMINAL", "SrlPAM-LOC-PROPER", "SrlPAM-LOC-NOMINAL", "MentionWord-PROPER",
-		"MentionWord-NOMINAL", "NEType-PROPER", "Number-NOMINAL", "Animacy-PROPER", "Animacy-NOMINAL", 
-		"Gender-PROPER", "Gender-NOMINAL", "Number-PROPER", "NEType-NOMINAL"};
-
-	/** introduce the HALT feature */
-	public static String[] extendFeaturesName = {"HEAD-PROPER", "HEAD-NOMINAL", "LEMMA", "SYNONYM", "SYNONYM-PROPER",
-		"SYNONYM-NOMINAL", "SRLAGREECOUNT", "SRLAGREECOUNT-PROPER", "SRLAGREECOUNT-NOMINAL", "SRLROLES-A0", 
-		"SRLROLES-A0-PROPER", "SRLROLES-A0-NOMINAL", "SRLROLES-A1", "SRLROLES-A1-PROPER", "SRLROLES-A1-NOMINAL", 
-		"SRLROLES-A2", "SRLROLES-A2-PROPER", "SRLROLES-A2-NOMINAL", "SRLROLES-AM-LOC", "SRLROLES-AM-LOC-PROPER", 
-		"SRLROLES-AM-LOC-NOMINAL", "SRLPRED-A0-PROPER", "SRLPRED-A0-NOMINAL", "SRLPRED-A1-PROPER", "SRLPRED-A1-NOMINAL",
-		"SRLPRED-A2-PROPER", "SRLPRED-A2-NOMINAL", "SRLPRED-AM-LOC-PROPER", "SRLPRED-AM-LOC-NOMINAL", "MENTION_WORDS-PROPER",
-		"MENTION_WORDS-NOMINAL", "NETYPE-PROPER", "NUMBER-NOMINAL", "ANIMACY-PROPER", "ANIMACY-NOMINAL", 
-		"GENDER-PROPER", "GENDER-NOMINAL", "NUMBER-PROPER", "NETYPE-NOMINAL", "HALT"};
 
 	// experiment name component
 	// the vlaue for this property is shown as below:

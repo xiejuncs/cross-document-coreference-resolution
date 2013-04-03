@@ -46,7 +46,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		stanfordProcessor = loadStanfordProcessor(props);
 		baseID = 10000000 * Integer.parseInt(topic);
 		goldBaseID = 10000000 * Integer.parseInt(topic);
-		String dataPath = ExperimentConstructor.corpusPath + "/EECB1.0/data/";
+		String dataPath = ExperimentConstructor.experimentCorpusPath + "/EECB1.0/data/";
 		topicPath = dataPath + "" + topic + "/";
 		eecbReader = new EecbReader(stanfordProcessor, false);
 		eecbReader.setLoggerLevel(Level.INFO);
@@ -313,8 +313,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 	 * @param srlPath
 	 */
 	public static void srlIncorporation(String topic, List<List<Mention>> predictedOrderedMentionsBySentence) {
-		String corpusPath = ExperimentConstructor.corpusPath;
-		String srlPath = corpusPath + "/tokenoutput/";
+		String corpusPath = ExperimentConstructor.experimentCorpusPath;
+		String srlPath = corpusPath + "/EECB1.0/tokenoutput/";
 		
 		SRLAlignment aligner = new SRLAlignment(srlPath + topic + ".output");
 		aligner.alignMentions(predictedOrderedMentionsBySentence);

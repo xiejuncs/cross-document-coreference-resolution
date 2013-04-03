@@ -19,8 +19,7 @@ public class Command {
 
 	// create a directory given a path string
 	public static void mkdir(String path) {
-		File file = new File(path);
-		if (!file.exists()) {
+		if (!fileExists(path)) {
 			String command = "mkdir " + path;
 			execCommand(command.split(" "));
 		}

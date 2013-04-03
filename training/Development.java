@@ -83,7 +83,7 @@ public class Development {
 		mProps = ExperimentConstructor.experimentProps;
 		TopicGeneration topicGenerator = new TopicGeneration(ExperimentConstructor.experimentProps);
 		mDevelopmentTopics = topicGenerator.developmentTopics();
-		experimentResultFolder = ExperimentConstructor.resultPath;
+		experimentResultFolder = ExperimentConstructor.experimentFolder;
 		conllResultPath = experimentResultFolder + "/conll";
 		serializeOutput = experimentResultFolder + "/document";
 		
@@ -93,7 +93,7 @@ public class Development {
 		mStartNumber = startNumber;
 		mEndNumber = endNumber;
 		mIterations = iterations;
-		logFile = ExperimentConstructor.logFile;
+		logFile = ExperimentConstructor.experimentLogFile;
 		
 		postProcess = ExperimentConstructor.postProcess;
 		lossScoreType = ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
@@ -106,7 +106,7 @@ public class Development {
 		double[] stoppingRates = DoubleOperation.createDescendingArray(mStartNumber, mEndNumber, mIterations);
 		boolean bestStateScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.SEARCH_BESTSTATE, "true"));
 
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nBegin Tuning parameter for the model in the " + mCurrentEpoch + "th iteration\n");
+		ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, "\nBegin Tuning parameter for the model in the " + mCurrentEpoch + "th iteration\n");
 
 		double maximumScore = 0.0;
 		double optimizedStoppingRate = 0.0;
@@ -115,7 +115,7 @@ public class Development {
 			Document corpus = new Document();
 			corpus.goldCorefClusters = new HashMap<Integer, CorefCluster>();
 			
-			ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nstopping rate number : " + stoppingRate + " for the "  + mCurrentEpoch + "th iteration\n");
+			ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, "\nstopping rate number : " + stoppingRate + " for the "  + mCurrentEpoch + "th iteration\n");
 			
 			String goldCorefCluster = conllResultPath + "/goldCorefCluster-tuning-" + mCurrentEpoch + "-" + stoppingRate;
 			String predictedCorefCluster = conllResultPath + "/predictedCorefCluster-tuning-" + mCurrentEpoch + "-" + stoppingRate;
@@ -131,11 +131,11 @@ public class Development {
 			String phaseID = mCurrentEpoch + "-" + stoppingRate;
 
 			for (String topic : mDevelopmentTopics) {
-				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "\nStarting to tuning on " + topic + " with stpping rate " + stoppingRate + " for the " + mCurrentEpoch + "th iteration\n");
+				ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, "\nStarting to tuning on " + topic + " with stpping rate " + stoppingRate + " for the " + mCurrentEpoch + "th iteration\n");
 				Document document = ResultOutput.deserialize(topic, serializeOutput, false);
 
 				// before search : document parameters
-				ResultOutput.writeTextFile(ExperimentConstructor.logFile, "topic " + topic + "'s detail before search during tuning-" + mCurrentEpoch + "-" + stoppingRate);
+				ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, "topic " + topic + "'s detail before search during tuning-" + mCurrentEpoch + "-" + stoppingRate);
 				ResultOutput.printParameters(document, topic, logFile);
 
 				// configure dynamic file and folder path
@@ -191,7 +191,7 @@ public class Development {
 			}
 		}
 
-		ResultOutput.writeTextFile(ExperimentConstructor.logFile, "the stopping rate : " + optimizedStoppingRate);
+		ResultOutput.writeTextFile(ExperimentConstructor.experimentLogFile, "the stopping rate : " + optimizedStoppingRate);
 		return optimizedStoppingRate;
 	}
 	

@@ -67,7 +67,7 @@ public class CorefSystem {
 		Properties props = new Properties();
 		props.setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
 		
-		String corpusPath = ExperimentConstructor.corpusPath;
+		String corpusPath = ExperimentConstructor.experimentCorpusPath;
 		String dataPath = corpusPath + "/EECB1.0/data/";
 		props.setProperty("dcoref.eecb", dataPath);
 		props.setProperty("dcoref.score", "false");
