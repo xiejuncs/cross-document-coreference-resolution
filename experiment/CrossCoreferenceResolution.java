@@ -18,13 +18,17 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 	
 	private Map<String, String> methodToClasses = new HashMap<String, String>();
 	
+	private final String configFolder;
+	
 	/**
 	 * set experiment properties
 	 * 
 	 * @param props
 	 */
-	public CrossCoreferenceResolution(Properties props) {
+	public CrossCoreferenceResolution(Properties props, String configfolder) {
 		super(props);
+		
+		configFolder = configfolder;
 		
 		/**
 		 * map the procedure to the corresponding main class
@@ -48,7 +52,6 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		List<String> procedures = pipeline.getProcedure();
 		
 		//TODO
-		String configFolder = "/scratch/JavaFile/corpus/alignexperiment";
 		File experimentDirectory = new File(configFolder);
 		String[] experiments = experimentDirectory.list();
 		
@@ -96,16 +99,17 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
              System.exit(1);
 		}
 		
+		String configFolder = "../corpus/alignexperiment";
 		if (args.length == 0) {
 			// run the experiment in the local machine for debugging
 			args = new String[1];
-			args[0] = "/scratch/JavaFile/corpus/alignexperiment/config.properties";
+			args[0] = configFolder +  "/config.properties";
 		}
 		
 		String[] propArgs = new String[]{"-props", args[0]};
 		
 		Properties props = StringUtils.argsToProperties(propArgs);
-		ExperimentConstructor experiment = new CrossCoreferenceResolution(props);
+		ExperimentConstructor experiment = new CrossCoreferenceResolution(props, configFolder);
 		ResultOutput.printTime(logFile, "The start of the experiment: ");
 		experiment.performExperiment();
 		ResultOutput.printTime(logFile, "The end of the experiment");

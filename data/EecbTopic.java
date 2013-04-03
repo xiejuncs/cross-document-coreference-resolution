@@ -535,16 +535,26 @@ public class EecbTopic extends EecbElement {
 		
 		StringBuilder sb = new StringBuilder();
 		List<List<EecbToken>> sentences = new ArrayList<List<EecbToken>>();
+		String[] rawSentences = rawText.split("\n");
+		
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-	    Annotation annotation = new Annotation(rawText);
-	    pipeline.annotate(annotation);
-	    List<CoreMap>  annotatedSentences = annotation.get(SentencesAnnotation.class);
-	    for (int index = 0; index < annotatedSentences.size(); index ++) {
-	    	CoreMap annotatedSentence = annotatedSentences.get(index);
+	    
+	    for (int index = 0; index < rawSentences.length; index++)  {
 	    	List<EecbToken> sentence = new ArrayList<EecbToken>();
-
+	    	String rawSentence = rawSentences[index];
+	    	Annotation annotation = new Annotation(rawSentence);
+	    	
+	    	pipeline.annotate(annotation);
+	    	List<CoreMap> annotatedSentences = annotation.get(SentencesAnnotation.class);
+	    	if (annotatedSentences.size() > 1) {
+	    		System.out.println("there is some problem with the raw text for " + mPrefix);
+	    		System.out.println(rawSentence);
+	    		System.exit(1);
+	    	}
+	    	
+	    	CoreMap annotatedSentence = annotatedSentences.get(0);
 	    	for (int j = 0; j < annotatedSentence.get(TokensAnnotation.class).size(); j++) {
 	    		CoreLabel token = annotatedSentence.get(TokensAnnotation.class).get(j);
 	    		String word = token.getString(TextAnnotation.class);
