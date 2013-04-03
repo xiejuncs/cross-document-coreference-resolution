@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.io.ResultOutput;
 import edu.stanford.nlp.ie.machinereading.domains.ace.reader.MatchException;
 import edu.stanford.nlp.ling.CoreAnnotations.CharacterOffsetBeginAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -68,9 +69,6 @@ public class EecbTopic extends EecbElement {
 	
 	/** use a list of string to represent the raw text of a document, each string is a sentence */
 	private List<String> lRawText;
-	
-	/** In order to output the intermediate results to semantic role labeling software. Each line is separated by a new line except the last one */
-	private String nRawText;
 	
 	/** how many documents contained in this topic */
 	private List<String> mFiles;
@@ -524,7 +522,6 @@ public class EecbTopic extends EecbElement {
                 nsb.append(line + "\n\n");
         }
         mRawText = sb.toString().trim();
-        nRawText = nsb.toString().trim();
 	}
 	
 	/**
@@ -534,30 +531,51 @@ public class EecbTopic extends EecbElement {
 	 * @return
 	 */
 	public List<List<EecbToken>> tokenizeAndSegmentSentences(String rawText) {
+		String tokenPath = ExperimentConstructor.resultPath + "/" + mPrefix + "/" + mPrefix + ".tokens";
+		
+		StringBuilder sb = new StringBuilder();
 		List<List<EecbToken>> sentences = new ArrayList<List<EecbToken>>();
-		String[] sens = rawText.split("\n");
 		Properties props = new Properties();
 	    props.put("annotators", "tokenize, ssplit, pos, lemma");
 	    StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-		for (int i = 0; i < sens.length; i++) {
-			List<EecbToken> sentence = new ArrayList<EecbToken>();
-			String sen = sens[i];
-		    Annotation seAnno = new Annotation(sen);
-		    pipeline.annotate(seAnno);
-		    List<CoreMap> seSentences = seAnno.get(SentencesAnnotation.class);
-		    for(CoreMap ses : seSentences) {
-		    	for (int j = 0; j < ses.get(TokensAnnotation.class).size(); j++) {
-		    		CoreLabel token = ses.get(TokensAnnotation.class).get(j);
-		    		String word = token.getString(TextAnnotation.class);
-		    		int start = token.get(CharacterOffsetBeginAnnotation.class);
-		    		int end = token.get(CharacterOffsetEndAnnotation.class);
-		    		EecbToken eecbToken = new EecbToken(word, "", "", start, end, i);
-		    		sentence.add(eecbToken);
-		    	}
-		    }
-		    sentences.add(sentence);
-		}
+	    Annotation annotation = new Annotation(rawText);
+	    pipeline.annotate(annotation);
+	    List<CoreMap>  annotatedSentences = annotation.get(SentencesAnnotation.class);
+	    for (int index = 0; index < annotatedSentences.size(); index ++) {
+	    	CoreMap annotatedSentence = annotatedSentences.get(index);
+	    	List<EecbToken> sentence = new ArrayList<EecbToken>();
+
+	    	for (int j = 0; j < annotatedSentence.get(TokensAnnotation.class).size(); j++) {
+	    		CoreLabel token = annotatedSentence.get(TokensAnnotation.class).get(j);
+	    		String word = token.getString(TextAnnotation.class);
+	    		int start = token.get(CharacterOffsetBeginAnnotation.class);
+	    		int end = token.get(CharacterOffsetEndAnnotation.class);
+	    		EecbToken eecbToken = new EecbToken(word, "", "", start, end, index);
+	    		sentence.add(eecbToken);
+	    		
+	    		// form the CONLL format
+	    		sb.append((j + 1) + "\t");
+	    		sb.append(word + "\t");
+	    		String lemma = token.getString(LemmaAnnotation.class);
+	    		sb.append(lemma + "\t");
+	    		sb.append("_\t");
+	    		String pos = token.getString(PartOfSpeechAnnotation.class);
+	    		sb.append(pos + "\t");
+	    		sb.append(word + "\t");
+	    		sb.append(lemma + "\t");
+	    		sb.append(pos + "\t");
+	    		sb.append("0\t");
+	    		sb.append("_");
+	    		sb.append("\n");
+	    		
+	    	}
+
+	    	sb.append("\n");
+	    	sentences.add(sentence);
+	    }
 		
+	    ResultOutput.writeTextFilewithoutNewline(tokenPath, sb.toString());
+	    
 		return sentences;
 	}
 	

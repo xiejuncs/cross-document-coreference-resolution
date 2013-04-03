@@ -47,7 +47,8 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		pipeline.generateProcedures(procedure);
 		List<String> procedures = pipeline.getProcedure();
 		
-		String configFolder = "/scratch/JavaFile/corpus/experiment";
+		//TODO
+		String configFolder = "/scratch/JavaFile/corpus/alignexperiment";
 		File experimentDirectory = new File(configFolder);
 		String[] experiments = experimentDirectory.list();
 		
@@ -98,7 +99,7 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		if (args.length == 0) {
 			// run the experiment in the local machine for debugging
 			args = new String[1];
-			args[0] = "/scratch/JavaFile/corpus/experiment/config.properties";
+			args[0] = "/scratch/JavaFile/corpus/alignexperiment/config.properties";
 		}
 		
 		String[] propArgs = new String[]{"-props", args[0]};

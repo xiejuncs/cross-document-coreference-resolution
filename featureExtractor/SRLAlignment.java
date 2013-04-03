@@ -2,6 +2,9 @@ package edu.oregonstate.featureExtractor;
 
 import java.util.*;
 
+import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.io.ResultOutput;
+import edu.oregonstate.server.ResultAggregation;
 import edu.stanford.nlp.dcoref.Mention;
 import edu.stanford.nlp.dcoref.RuleBasedCorefMentionFinder;
 import edu.stanford.nlp.ie.machinereading.structure.Span;
@@ -56,10 +59,13 @@ public class SRLAlignment {
 		int noOfSentence = predictedOrderedMentionsBySentence.size();
 		int mentionIDOffset = 0;
 		RuleBasedCorefMentionFinder headFinder = new RuleBasedCorefMentionFinder();
+		String sentenceAlignmentDebugInformation = document.getDocumentID() + " : " + document.getSentences().size() + "  " + noOfSentence; 
+		ResultOutput.writeTextFile(ExperimentConstructor.logFile, sentenceAlignmentDebugInformation);
 
 		// for each sentence
 		for (int index = 0; index < noOfSentence; index++) {
 			List<Mention> mentions = predictedOrderedMentionsBySentence.get(index);
+			
 
 			// find the global annotation
 			List<CoreLabel> sentenceWords = mentions.get(0).sentenceWords;
@@ -142,6 +148,7 @@ public class SRLAlignment {
 						// focus on four roles : A0, A1, A2, AM-LOC
 						if (!annotation.equals("_") && ROLES.contains(annotation)) {
 							List<Integer> argumentYieldSpan = yield(argumentRow, graph);
+							
 							int argumentStartIndex = argumentYieldSpan.get(0);
 							int argumentEndIndex = argumentYieldSpan.get(argumentYieldSpan.size() - 1) + 1;
 							Span argumentSpan = new Span(argumentStartIndex, argumentEndIndex);
@@ -161,18 +168,25 @@ public class SRLAlignment {
 									argumentEndIndex = sentenceLength;
 								}
 								
-								Mention argumentMentionForHeadFinding = new Mention(mentionIDOffset, argumentStartIndex, argumentEndIndex, 
-										dependency, new ArrayList<CoreLabel>(sentenceWords.subList(argumentStartIndex, argumentEndIndex)));
-								Tree head = headFinder.findSyntacticHead(argumentMentionForHeadFinding, tree, sentenceWords);
-								int headIndex = ((CoreLabel) head.label()).get(IndexAnnotation.class)-1;
-								boolean mentionHeadContainArgument = detectedMentionHeadSpan.containsKey(headIndex);
-								if (mentionHeadContainArgument) {
-									argumentMention = detectedMentionHeadSpan.get(headIndex).poll();
-									// only noun phrase can be the argument of the predicate
-									if ((argumentMention != null) && (!argumentMention.isVerb)) {
-										predMention.addArgument(annotation, argumentMention);
-										argumentMention.addPredicate(predMention, annotation);
+								try {
+									Mention argumentMentionForHeadFinding = new Mention(mentionIDOffset, argumentStartIndex, argumentEndIndex, 
+											dependency, new ArrayList<CoreLabel>(sentenceWords.subList(argumentStartIndex, argumentEndIndex)));
+
+									Tree head = headFinder.findSyntacticHead(argumentMentionForHeadFinding, tree, sentenceWords);
+
+									int headIndex = ((CoreLabel) head.label()).get(IndexAnnotation.class)-1;
+									boolean mentionHeadContainArgument = detectedMentionHeadSpan.containsKey(headIndex);
+									if (mentionHeadContainArgument) {
+										argumentMention = detectedMentionHeadSpan.get(headIndex).poll();
+										// only noun phrase can be the argument of the predicate
+										if ((argumentMention != null) && (!argumentMention.isVerb)) {
+											predMention.addArgument(annotation, argumentMention);
+											argumentMention.addPredicate(predMention, annotation);
+										}
 									}
+								} catch (Exception e) {
+									System.out.println(predMention.toString() + " " + index + " " + argumentStartIndex + " " + argumentEndIndex + " " + sentenceLength);
+									throw new RuntimeException(e);
 								}
 
 								mentionIDOffset += 1;

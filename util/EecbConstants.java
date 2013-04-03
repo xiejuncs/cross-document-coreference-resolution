@@ -206,5 +206,8 @@ public class EecbConstants {
 
 	// use binary to write and read
 	public static final String IO_BINARY_PROP = "dcoref.io.binary";
+	
+	// CONLL 2008 format for generating SRL result
+	public static final boolean ENABLE_CONLL_FORMAT = true;
 
 }

@@ -383,7 +383,7 @@ public class ResultOutput {
 		}
 
 		SieveCoreferenceSystem.printConllOutput(document, writerPredicted, false, postProcess);
-		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.DATAGENERATION_POSTPROCESS_GOLD_PROP, "false"));
+		boolean postProcessGold = Boolean.parseBoolean(ExperimentConstructor.experimentProps.getProperty(EecbConstants.DATAGENERATION_POSTPROCESS_GOLD_PROP, "true"));
 		if (postProcessGold) {
 			SieveCoreferenceSystem.printConllOutput(document, writerGold, true, postProcess);
 		} else {
