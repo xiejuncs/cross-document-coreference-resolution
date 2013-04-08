@@ -11,6 +11,11 @@ import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
+/**
+ * 
+ * @author Yonglei Zheng
+ *
+ */
 public class ClusterConnection {
 
 	// print log information
@@ -89,11 +94,11 @@ public class ClusterConnection {
 			}
 		}
 		channel.disconnect();
-		log.info("==========================================");
-		log.info("Command '" + cmd + "' executed");
-		log.info("stdout:\n" + (stdout.isEmpty() ? "[EMPTY]" : stdout));
-		log.info("stderr:\n" + (stderr.isEmpty() ? "[EMPTY]" : stderr));
-		log.info("exit-status: " + exitStatus);
+		System.out.println("==========================================");
+		System.out.println("Command '" + cmd + "' executed");
+		System.out.println("stdout:\n" + (stdout.isEmpty() ? "[EMPTY]" : stdout));
+		System.out.println("stderr:\n" + (stderr.isEmpty() ? "[EMPTY]" : stderr));
+		System.out.println("exit-status: " + exitStatus);
 		Thread.sleep(COMMAND_TIME_INTERVAL);
 	}
 
@@ -124,14 +129,14 @@ public class ClusterConnection {
 
 	public int submitJob(String scriptPath) throws Exception {
 		execCommand("qsub " + scriptPath);
-		System.out.println("qsub " + scriptPath);
 		String stdout = getStdout().trim();
 		if (!stdout.startsWith("Your job")
 				|| !stdout.endsWith("has been submitted")) {
-			System.out.println(stdout);
+			
 			throw new Exception("Job cannot be submitted! script:" + scriptPath
 					+ "\nstdout:" + stdout + "\nstderr:" + stderr);
 		}
+		
 		stdout = stdout.replaceAll("Your job", "").trim();
 		int jobId = Integer.valueOf(stdout.split("\\s+")[0]);
 		log.info("jobId is " + jobId);

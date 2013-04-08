@@ -103,6 +103,23 @@ public class SearchFactory extends ExperimentConstructor {
 			String weightString = para.get(0);
 			double[] weight = DoubleOperation.transformString(weightString, ",");
 			
+			//
+			// make those NSrl features be less than or equal to 0
+			//
+			String featureType = experimentProps.getProperty(EecbConstants.FEATURE_ATOMIC_NAMES);
+			if (featureType.equals("N")) {
+				List<String> features = FeatureFactory.getFeatureTemplate();
+				for (int index = 0; index < features.size(); index++) {
+					String feature =features.get(index);
+					if (feature.startsWith("NSrl")) {
+						double value = weight[index];
+						if (value > 0) {
+							weight[index] = 0.0;
+						}
+					}
+				}
+			}
+			
 			// print the weight out
 			ResultOutput.writeTextFile(topicLogFile, "the length of the weight : " + weight.length);
 			ResultOutput.writeTextFile(topicLogFile, DoubleOperation.printArray(weight));

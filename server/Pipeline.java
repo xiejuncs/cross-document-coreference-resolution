@@ -128,7 +128,7 @@ public class Pipeline {
 				boolean halt = true;
 				while (halt) {
 					// sleep for a minute
-					Thread.sleep(60000);
+					Thread.sleep(6000);
 
 					ClusterConnection connection = new ClusterConnection();
 					connection.connect();

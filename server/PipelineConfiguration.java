@@ -364,36 +364,40 @@ public class PipelineConfiguration {
 		List<Integer> jobIDs = new ArrayList<Integer>();
 
 		String[] topics = StringOperation.splitString(set, ",");
-		for (String topic : topics) {
-			String topicConfiguration = key + " = " + topic;
-			String configuration = constantconfiguration + topicConfiguration;
+		ClusterConnection connection = new ClusterConnection();
+		try {
+			connection.connect();
+			for (String topic : topics) {
+				Thread.sleep(3000);
+				String topicConfiguration = key + " = " + topic;
+				String configuration = constantconfiguration + topicConfiguration;
 
-			String jobConfigPrefix = mExperimentPath + "/" + phaseIndex + "-" + procedure + "-" + topic;
-			String jobConfigName = jobConfigPrefix + "-config.properties";
+				String jobConfigPrefix = mExperimentPath + "/" + phaseIndex + "-" + procedure + "-" + topic;
+				String jobConfigName = jobConfigPrefix + "-config.properties";
 
-			// create config file
-			ResultOutput.writeTextFile(jobConfigName, configuration);
+				// create config file
+				ResultOutput.writeTextFile(jobConfigName, configuration);
 
-			// create run file
-			generateRunFile(jobConfigPrefix, mainClass);
+				// create run file
+				generateRunFile(jobConfigPrefix, mainClass);
 
-			// create simple file
-			generateSimpleFile(jobConfigPrefix, procedure, topic, phaseIndex);
+				// create simple file
+				generateSimpleFile(jobConfigPrefix, procedure, topic, phaseIndex);
 
-			Command.chmod(mExperimentPath);
+				Command.chmod(mExperimentPath);
 
-			ClusterConnection connection = new ClusterConnection();
-			try {
-				connection.connect();
 				String jobSimpleName = previousIDString + jobConfigPrefix + "-simple.sh";
 
 				int jobID = connection.submitJob(jobSimpleName);
-				connection.disconnect();
+
 				jobIDs.add(jobID);
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(1);
+
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		} finally {
+			connection.disconnect();
 		}
 
 		return jobIDs;
@@ -450,7 +454,7 @@ public class PipelineConfiguration {
 
 		sb.append("# specify the hardware platform to run the job on.\n");
 		sb.append("# options are: amd64, em64t, i386, volumejob (use i386 if you don't care)\n");
-		sb.append("#$ -q eecs,eecs1,eecs2,share\n\n");
+		sb.append("#$ -q eecs,eecs1,eecs2\n\n");
 
 		sb.append("# Commands\n");
 		sb.append(jobConfigPrefix + "-run.sh");

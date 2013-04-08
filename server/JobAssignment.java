@@ -137,7 +137,7 @@ public class JobAssignment {
 
 		sb.append("# specify the hardware platform to run the job on.\n");
 		sb.append("# options are: amd64, em64t, i386, volumejob (use i386 if you don't care)\n");
-		sb.append("#$ -q eecs,eecs1,eecs2,share\n\n");
+		sb.append("#$ -q eecs,eecs1,eecs2\n\n");
 
 		sb.append("# Commands\n");
 		sb.append(jobConfigPrefix + "-run.sh");

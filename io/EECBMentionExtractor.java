@@ -254,7 +254,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 				Mention mention = orderedMentions.get(j);
 
 				// just focus on event mentions
-				if (!mention.isVerb) continue;
+				// if the size of the arguments is zero, then this mentions is not event mention
+				if (mention.getArguments().size() == 0) continue;
 
 				if (j == 0) {
 					mention.closetLeft = null;
