@@ -96,7 +96,24 @@ public class SRLAlignment {
 				detectedMentionSpan.put(mentionSpan, mention);
 
 				int mentionHeadIndex = mention.headIndex;
-				detectedMentionHeadSpan.put(mentionHeadIndex, mention);
+				
+				// keep the shorter mention for the same head
+				boolean contain = detectedMentionHeadSpan.containsKey(mentionHeadIndex);
+				if (contain) {
+					Mention sameHeadMention = detectedMentionHeadSpan.get(mentionHeadIndex);
+					int mentionLength = mentionEndIndex - mentionStartIndex;
+					int sameHeadMentionLength = sameHeadMention.originalSpan.size();
+					
+					// if the mention's length is smaller than the length of the sameHeadMention, then 
+					// substitute the sameHeadMention with mention
+					if (mentionLength < sameHeadMentionLength) {
+						detectedMentionHeadSpan.put(mentionHeadIndex, mention);
+					}
+					
+				} else {
+					detectedMentionHeadSpan.put(mentionHeadIndex, mention);
+				}
+		
 			}
 			
 			ResultOutput.writeTextFile(topicLogFile, "sentence " + index + " : mentionspan " + detectedMentionSpan.size() 
