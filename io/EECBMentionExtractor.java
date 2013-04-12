@@ -12,7 +12,6 @@ import java.util.List;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.featureExtractor.SRLAlignment;
-import edu.oregonstate.featureExtractor.SrlResultIncorporation;
 import edu.oregonstate.io.EecbReader;
 import edu.stanford.nlp.dcoref.CoNLL2011DocumentReader;
 import edu.stanford.nlp.dcoref.Dictionaries;
@@ -129,20 +128,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 			deleteSameAnnotation(allGoldMentions);
 
 			// Gold Mention or predicted Mentions
-			if (goldOnly) { 	
-//				allPredictedMentions = new ArrayList<List<Mention>>();
-//				for (int i = 0; i < allGoldMentions.size(); i++) {
-//					List<Mention> sentence = new ArrayList<Mention>();
-//					for (int j = 0; j < allGoldMentions.get(i).size(); j++) {
-//						Mention mention = allGoldMentions.get(i).get(j);
-//						ResultOutput.serialize(mention, mention.mentionID, mentionRepositoryPath);
-//						Mention copyMention = ResultOutput.deserialize(Integer.toString(mention.mentionID), mentionRepositoryPath, true);
-//						copyMention.goldCorefClusterID = -1;
-//						sentence.add(copyMention);
-//
-//					}
-//					allPredictedMentions.add(sentence);
-//				}
+			if (goldOnly) {
 				allPredictedMentions = makeCopy(allGoldMentions);
 			} else {
 				// set the mention id here
@@ -254,28 +240,26 @@ public class EECBMentionExtractor extends EmentionExtractor {
 				Mention mention = orderedMentions.get(j);
 
 				// just focus on event mentions
-				// if the size of the arguments is zero, then this mentions is not event mention
-				if (mention.getArguments().size() == 0) continue;
+				// verb mentions
+				if (!mention.isVerb) continue;
 
 				if (j == 0) {
-					mention.closetLeft = null;
 					int k = 1;
 					while (k < orderedMentions.size()) {
 						Mention rightMention = orderedMentions.get(k);
 						if (!rightMention.isVerb) {
-							mention.closetRight = rightMention;
+							mention.addArgument("Right", rightMention);
 							break;
 						}
 						k++;
 					}
 
 				} else if (j == (orderedMentions.size() - 1)) {
-					mention.closetRight = null;
 					int k = j - 1;
 					while (k >= 0) {
 						Mention leftMention = orderedMentions.get(k);
 						if (!leftMention.isVerb) {
-							mention.closetLeft = leftMention;
+							mention.addArgument("Left", leftMention);
 							break;
 						}
 						k--;
@@ -287,7 +271,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 					while (right < orderedMentions.size()) {
 						Mention rightMention = orderedMentions.get(right);
 						if (!rightMention.isVerb) {
-							mention.closetRight = rightMention;
+							mention.addArgument("Right", rightMention);
 							break;
 						}
 						right++;
@@ -296,7 +280,7 @@ public class EECBMentionExtractor extends EmentionExtractor {
 					while (left >= 0) {
 						Mention leftMention = orderedMentions.get(left);
 						if (!leftMention.isVerb) {
-							mention.closetLeft = leftMention;
+							mention.addArgument("Left", leftMention);
 							break;
 						}
 						left--;
@@ -319,9 +303,6 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		
 		SRLAlignment aligner = new SRLAlignment(srlPath + topic + ".output");
 		aligner.alignMentions(predictedOrderedMentionsBySentence);
-		
-//		SrlResultIncorporation srlResult = new SrlResultIncorporation(srlPath + topic + ".output");
-//		srlResult.alignSRL(predictedOrderedMentionsBySentence);
 	}
 	
 }

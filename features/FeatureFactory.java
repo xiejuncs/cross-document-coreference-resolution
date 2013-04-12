@@ -37,6 +37,14 @@ public class FeatureFactory {
 	public void Lemma() {
 		mFeatureNames.add("Lemma");
 	}
+	
+	public void SrlLeft() {
+		mFeatureNames.add("SrlLeft");
+	}
+	
+	public void SrlRight() {
+		mFeatureNames.add("SrlRight");
+	}
 
 	public void Synonym() {
 		String atomFeature = "Synonym";

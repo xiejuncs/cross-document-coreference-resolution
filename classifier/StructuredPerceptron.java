@@ -39,19 +39,19 @@ public class StructuredPerceptron implements IClassifier {
 	/* the weight used for keeping track of the progress */
 	private List<double[]> weights;
 	
-	/* the length of the features */
+	/** the length of the features */
 	private final int length;
 	
-	/* training model */
+	/** training model */
 	private final ITraining trainingModel;
 	
-	/* learning rate constant or not */
+	/** learning rate constant or not */
 	private final boolean learningRateConstant;
 	
-	/* enable print the result of each iteration during training */
+	/** enable print the result of each iteration during training */
 	private final boolean enablePrintIterationResult;
 	
-	/* print the result of the iteration for how many gap */
+	/** print the result of the iteration for how many gap */
 	private final int printIteartionGap;
 	
 	/**

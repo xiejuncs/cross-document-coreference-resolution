@@ -172,6 +172,10 @@ public class SRLAlignment {
 						String annotation = annotations[argumentRow];
 						// focus on four roles : A0, A1, A2, AM-LOC
 						if (!annotation.equals("_") && ROLES.contains(annotation)) {
+							// for nominal event's predicate, in the Stanford paper, they just used a single 
+							// heuristic: the possessor of a nominal event's predicate is maked as its arg0
+							if (!predMention.isVerb && !annotation.equals("A0")) continue;
+							
 							List<Integer> argumentYieldSpan = yield(argumentRow, graph);
 							
 							int argumentStartIndex = argumentYieldSpan.get(0);

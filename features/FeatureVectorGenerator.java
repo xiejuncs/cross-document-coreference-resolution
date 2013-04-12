@@ -50,6 +50,9 @@ public class FeatureVectorGenerator {
 			former = c2;
 			latter = c1;
 		}
+		
+		// Action Type : Verb or Noun
+		boolean isVerb = isVerb(former, latter);
 
 		// Action Type: verb or noun
 		String mentionType = getMentionType(former, latter);
@@ -68,11 +71,29 @@ public class FeatureVectorGenerator {
 			}
 		}
 		
+		// remove the Left and Right according to basic rule
+		boolean noLeft = false;
+		boolean noRight = false;
+		String left = "";
+		String right = "";
+		
+		for (String feature : features.keySet()) {
+			if (isVerb) {
+				if (feature.startsWith("SrlA0")) noLeft = true;
+				if (feature.startsWith("SrlA1") || feature.startsWith("SrlPA0")) noRight = true;
+				if (feature.contains("Left")) left = feature;
+				if (feature.contains("Right")) right = feature;
+			}
+		}
+		
+		if (noLeft) features.remove(left);
+		if (noRight) features.remove(right);
+		
 		return features;
 	}
 	
 	/**
-	 * because dash is allowed in the class name, so need to transform the feature 
+	 * because dash is allowed in the class name, so need to transform the feature
 	 * if necessary
 	 * 
 	 * @param feature
@@ -112,6 +133,21 @@ public class FeatureVectorGenerator {
 		
 		String[] featureNames = StringOperation.splitString(atomicFeatureNames, ",");
 		return featureNames;
+	}
+	
+	/**
+	 * the action type, verb or noun
+	 * 
+	 * @param former
+	 * @param latter
+	 * @return
+	 */
+	public static boolean isVerb(CorefCluster former, CorefCluster latter) {
+		Mention formerRep = former.getRepresentativeMention();
+		Mention latterRep = latter.getRepresentativeMention();
+		boolean isVerb = latterRep.isVerb || formerRep.isVerb;
+		
+		return isVerb;
 	}
 	
 	// get mention type 

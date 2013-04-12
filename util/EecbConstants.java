@@ -18,9 +18,9 @@ public class EecbConstants {
 	/** full sieve, including Pronoun Sieve */
 	public static final String FULL_SIEVE_STRING = "MarkRole, DiscourseMatch, ExactStringMatch, RelaxedExactStringMatch, PreciseConstructs, StrictHeadMatch1, StrictHeadMatch2, StrictHeadMatch3, StrictHeadMatch4, RelaxedHeadMatch, PronounMatch";
 
-	public static final String FEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlPA0, SrlPA1, SrlPA2, SrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
+	public static final String FEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlPA0, SrlLeft, SrlRight, SrlPA1, SrlPA2, SrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
 
-	public static final String NFEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlPA0, SrlPA1, SrlPA2, SrlPAMLoc, NSrlAgreeCount, " +
+	public static final String NFEATURE_NAMES = "Head, Lemma, Synonym, SrlAgreeCount, SrlA0, SrlA1, SrlA2, SrlAMLoc, SrlLeft, SrlRight, SrlPA0, SrlPA1, SrlPA2, SrlPAMLoc, NSrlAgreeCount, " +
 			"NSrlA0, NSrlA1, NSrlA2, NSrlAMLoc, NSrlPA0, NSrlPA1, NSrlPA2, NSrlPAMLoc, MentionWord, NEType, Animacy, Gender, Number";
 
 	/** the topics used in the Stanford experiments

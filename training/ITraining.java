@@ -52,7 +52,7 @@ public abstract class ITraining {
 		enablePALearningRateLossScore = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_RATE_LOSSSCORE, "true"));
 		enablePADiscrepancy = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_DISCREPANCY, "true"));
 		enablePAMargin = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_PA_MARGIN, "true"));
-		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_NORMALIZE_WEIGHT, "false"));
+		enableNormalizeWeight = Boolean.parseBoolean(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_NORMALIZE_WEIGHT, "true"));
 		mHyperParameter = Double.parseDouble(mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_HYPERPARAMETER, "1.0"));
 	}
 	
