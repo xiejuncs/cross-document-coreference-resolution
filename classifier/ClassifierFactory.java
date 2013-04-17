@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import edu.oregonstate.dataset.TopicGeneration;
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.EecbConstants;
@@ -60,7 +61,7 @@ public class ClassifierFactory extends ExperimentConstructor {
 		// output 
 		double[] averageWeight = returnPara.generateWeightForTesting();
 		String outputFile = experimentFolder + "/model/model" + phaseIndex;
-		String outputString = DoubleOperation.printArray(averageWeight);
+		String outputString = ResultOutput.printStructredModel(averageWeight, FeatureFactory.getFeatureTemplate());
 		ResultOutput.writeTextFile(outputFile, outputString);
 	}
 	

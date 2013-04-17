@@ -81,7 +81,6 @@ public class EecbTopic extends EecbElement {
 	
 	static Logger mLog = Logger.getLogger(EecbTopic.class.getName());
 	
-	
 	public EecbTopic(String topic, List<String> files) {
 		super(topic);
 		mFiles = files;

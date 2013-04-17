@@ -60,11 +60,11 @@ public class StructuredPerceptron implements IClassifier {
 	public StructuredPerceptron() {
 		mProps = ExperimentConstructor.experimentProps;
 		experimentFolder = ExperimentConstructor.experimentFolder;
-		mIterations = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "5"));
+		mIterations = Integer.parseInt(mProps.getProperty(EecbConstants.CLASSIFIER_EPOCH_PROP, "50"));
 		
 		logFile = ExperimentConstructor.experimentLogFile;
 		modelIndex = 0;
-		String trainingStyle = mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_METHOD, "PAOnlineToBatch");
+		String trainingStyle = mProps.getProperty(EecbConstants.CLASSIFIER_TRAINING_METHOD, "Batch");
 		trainingModel = EecbConstructor.createTrainingModel(trainingStyle);
 		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
 		length = featureTemplate.size();

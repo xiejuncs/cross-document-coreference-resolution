@@ -70,10 +70,14 @@ public class ResultAggregation extends ExperimentConstructor {
 		// whether the output file exist in the disk
 		boolean fileExist = true;
 		
+		String appendPhaseIndex = "";
+		if (!phaseIndex.equals("0")) {
+			appendPhaseIndex = phaseIndex + "-";
+		}
 		for (String resultType : COREFCLUSTER) {
 			String outputPath = conllResultPath + "/" + resultType + "-" + phaseIndex + "-" + set;
 			for (String topic : topics) {
-				String topicPath = conllResultPath + "/" + resultType + "-" + phaseIndex + "-" + set + "-" + topic;
+				String topicPath = conllResultPath + "/" + resultType + "-" + appendPhaseIndex + "" + set + "-" + topic;
 				
 				if (!Command.fileExists(topicPath)) {
 					fileExist = false;
@@ -112,7 +116,7 @@ public class ResultAggregation extends ExperimentConstructor {
 		if (args.length == 0) {
 			// run the experiment in the local machine for debugging
 			args = new String[1];
-			args[0] = "../corpus/config.properties";
+			args[0] = "/nfs/guille/xfern/users/xie/Experiment/experiment/2013-04-13/0-experiment/0-resultaggregation-config.properties";
 		}
 		
 		String[] propArgs = new String[]{"-props", args[0]};

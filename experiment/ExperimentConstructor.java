@@ -86,6 +86,9 @@ public abstract class ExperimentConstructor {
 		
 		// create folder to store weight norm
 		Command.mkdir(experimentFolder + "/weightnorm");
+		
+		// create folder to store the constraints, the name of the file is just the topic name
+		Command.mkdir(experimentFolder + "/constraints");
 			
         // specify the log file path
         experimentLogFile = sb.toString().trim() + "/experimentlog";

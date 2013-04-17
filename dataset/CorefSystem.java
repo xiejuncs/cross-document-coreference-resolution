@@ -43,11 +43,7 @@ public class CorefSystem {
 	public CorefSystem(boolean enableParser) {
 		mExperimentProps = ExperimentConstructor.experimentProps;
 		String sieve = "";
-		//if (mExperimentProps.getProperty(EecbConstants.SIEVE_PROP, "partial").equals("partial")) {
 		sieve = EecbConstants.PARTIAL_SIEVE_STRING;
-		//} else {
-			//sieve = EecbConstants.FULL_SIEVE_STRING;
-		//}
 		
 		generateCorefSystem(sieve, enableParser);
 	}

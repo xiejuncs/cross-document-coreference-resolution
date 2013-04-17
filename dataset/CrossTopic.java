@@ -1,13 +1,19 @@
 package edu.oregonstate.dataset;
 
-import java.util.Properties;
+import java.util.*;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
+import edu.oregonstate.features.FeatureVectorGenerator;
+import edu.oregonstate.general.Counter;
+import edu.oregonstate.general.SetOperation;
 import edu.oregonstate.dataset.IDataSet;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.EecbConstants;
 import edu.stanford.nlp.dcoref.CorefCluster;
+import edu.stanford.nlp.dcoref.Dictionaries;
 import edu.stanford.nlp.dcoref.Document;
+import edu.stanford.nlp.dcoref.Mention;
+import edu.stanford.nlp.stats.ClassicCounter;
 
 /**
  * Based on the topic Document object, incorporate the SRL predicate and their arguments 
@@ -16,7 +22,6 @@ import edu.stanford.nlp.dcoref.Document;
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
-
 public class CrossTopic implements IDataSet {
 
 	/** corpus path */
@@ -36,6 +41,9 @@ public class CrossTopic implements IDataSet {
 	
 	/* enable Stanford pre-process step during data generation */
 	private final boolean enableStanfordPreprocessStep;
+	
+	/** whether do sieve */
+	private final boolean useSieve;
 
 	/** used for scoring */
 	//private static final Logger logger = Logger.getLogger(WithinCross.class.getName());
@@ -47,6 +55,9 @@ public class CrossTopic implements IDataSet {
 		corpusPath = ExperimentConstructor.experimentCorpusPath;
 		dataPath = corpusPath + "/EECB1.0/data/";
 		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DATAGENERATION_STANFORD_PREPROCESSING, "true"));
+		
+		// generate constraint for training a binary classifier
+		useSieve = false;
 	}
 
 	@Override
@@ -65,10 +76,7 @@ public class CrossTopic implements IDataSet {
 			document.fill();                                // incorporate SYNONYM
 
 			// generate feature for each cluster
-			for (Integer id : document.corefClusters.keySet()) {
-				CorefCluster cluster = document.corefClusters.get(id);
-				cluster.regenerateFeature();
-			}
+			FeatureVectorGenerator.generateCentroid(document);
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -78,16 +86,23 @@ public class CrossTopic implements IDataSet {
 	}
 	
 	/** treat the topic as a whole */
-	private Document getDocument(String path, boolean goldOnly) {
+	private Document getDocument(String topic, boolean goldOnly) {
 		CorefSystem cs = new CorefSystem();
 		Document document = new Document();
+		
 		try {
-			document = cs.getDocument(path, goldOnly);
+			document = cs.getDocument(topic, goldOnly);
 			
 			// whether enable stanford pre-process step during data generation
 			if (enableStanfordPreprocessStep) {
 				cs.getCorefSystem().coref(document);
 			}
+			
+			// whether sieve to do lemma matching for verb or verb with entity
+			if (useSieve) {
+				lemmaSieve(document);
+			}
+			
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -95,4 +110,176 @@ public class CrossTopic implements IDataSet {
 		return document;
 	}
 	
+	/**
+	 * do Lemma match on entity and event mentions
+	 * 
+	 * @param document
+	 */
+	private void lemmaSieve(Document document) {
+		boolean continueWhile = true;
+		
+		while (continueWhile) {
+			// generate the predicted centroid
+			FeatureVectorGenerator.generateCentroid(document);
+			Map<Integer, CorefCluster> corefClusters = document.corefClusters;
+			List<CorefCluster> clusters =new ArrayList<CorefCluster>();
+
+			for (Integer key : corefClusters.keySet()) {
+				clusters.add(corefClusters.get(key));
+			}
+
+			int preSize = corefClusters.size();
+
+			boolean continueFor = true;
+			// do Lemma matching
+			for (int i = 0; i < preSize; i++) {
+				CorefCluster icluster = clusters.get(i);
+				if (icluster.corefMentions.size() == 1 && icluster.representative.isPronominal()) {
+					continue;
+				}
+				ClassicCounter<String> iLemma = icluster.predictedCentroid.get("Lemma");
+				boolean iVerb = isVerbCluster(icluster);
+
+				for (int j = 0; j < i; j++) {
+					CorefCluster jcluster = clusters.get(j);
+
+					// if the two clusters have been assigned to one cluster, then continue
+					if (icluster.clusterID == jcluster.clusterID) continue;
+
+					if (jcluster.corefMentions.size() == 1 && jcluster.representative.isPronominal()) {
+						continue;
+					}
+
+					ClassicCounter<String> jLemma = jcluster.predictedCentroid.get("Lemma");
+					boolean jVerb = isVerbCluster(jcluster);
+					
+					// just focus on event pair
+					boolean eventPair = (iVerb || jVerb);
+					
+					Set<String> intersection = SetOperation.intersection(iLemma, jLemma);
+					if (intersection.size() > 0 && eventPair && !containSay(intersection)) {
+						int removeID = jcluster.clusterID;
+						CorefCluster.mergeClusters(document, icluster, jcluster, new Dictionaries());
+						corefClusters.remove(removeID);
+						continueFor = false;
+						break;
+					}
+				}
+				
+				if (!continueFor) {
+					break;
+				}
+			}
+			
+			int postSize = corefClusters.size();
+			// if there is no merge occured in this iteration, then break out the while loop
+			if (postSize == preSize) {
+				continueWhile = false;
+			}
+			
+		}
+		
+	}
+	
+	/**
+	 * whether the cluster is a verb cluster
+	 * @param cluster
+	 * @return
+	 */
+	private boolean isVerbCluster(CorefCluster cluster) {
+		boolean isVerbCluster = false;
+		for (Mention mention : cluster.corefMentions) {
+			if (mention.isVerb) {
+				isVerbCluster = true;
+				break;
+			}
+		}
+	
+		return isVerbCluster;
+	}
+	
+	/**
+	 * whether set of string contain say
+	 * 
+	 * @param intersection
+	 * @return
+	 */
+	private boolean containSay(Set<String> intersection) {
+		boolean contain = false;
+		
+		for (String element : intersection) {
+			if (element.equals("say") || element.equals("Say")){
+				contain = true;
+				break;
+			}
+		}
+		
+		return contain;
+	}
+	
 }
+
+//generate constraints here
+			// not in the same cluster, then get +1, in the same cluster, get -1
+//String pruneFile = experimentResultFolder + "/" + topic + "/prune";
+//ConstraintGeneration constraintGenerator = new ConstraintGeneration(pruneFile);
+//if (generateConstraints) {
+//	// generate feature for each cluster
+//	int mentionSize = document.allPredictedMentions.size();
+//	System.out.println("the number of pairs " + ((mentionSize * (mentionSize - 1)) / 2.0));
+//	Map<Integer, CorefCluster> clusters = document.corefClusters;
+//	Map<Integer, Mention> goldMentions = document.allGoldMentions;
+//
+//	for (Integer id : document.corefClusters.keySet()) {
+//		CorefCluster cluster = clusters.get(id);
+//		cluster.regenerateFeature();
+//	}
+//
+//	// get the number of clusters
+//	List<Integer> keys = new ArrayList<Integer>();
+//	for (Integer key : clusters.keySet()) {
+//		keys.add(key);
+//	}
+//	int size = keys.size();
+//
+//	for (int i = 0; i < size; i++) {
+//		Integer iID = keys.get(i);
+//		CorefCluster icluster = clusters.get(iID);
+//		// do not consider the pronominal case
+//		if (icluster.firstMention.isPronominal()) {
+//			continue;
+//		}
+//
+//		for (int j = 0; j < i; j++) {
+//			Integer jID = keys.get(j);
+//			CorefCluster jcluster = clusters.get(jID);
+//			if (jcluster.firstMention.isPronominal()) {
+//				continue;
+//			}
+//
+//			boolean existInSameCluster = false;
+//
+//			// find whether the two mentions have the same gold cluster
+//			if (goldMentions.containsKey(iID) && goldMentions.containsKey(jID)) {
+//				int iClusterID = goldMentions.get(iID).goldCorefClusterID;
+//				int jClusterID = goldMentions.get(jID).goldCorefClusterID;
+//				if (iClusterID == jClusterID) {
+//					existInSameCluster = true;
+//				}
+//			}
+//
+//			Counter<String> features = FeatureVectorGenerator.getFeatures(document, icluster, jcluster);
+//			int label = -1;
+//			if (existInSameCluster == false) {
+//				label = 1;
+//			}
+//
+//			String featureString = constraintGenerator.buildString(features);
+//			if (featureString.length() > 0) {
+//				String finalString = label + " " + featureString;
+//				ResultOutput.writeTextFile(pruneFile, finalString);
+//			}
+//		}
+//	}
+//
+//}

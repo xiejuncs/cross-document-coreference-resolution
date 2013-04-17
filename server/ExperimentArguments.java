@@ -4,9 +4,9 @@ import java.lang.reflect.Field;
 
 public class ExperimentArguments {
 	
-	public String[] PROCEDURES_PROP = {"datageneration-0, searchtrueloss-0, learn-0, searchlearnedweightwithoutfeature-0, resultaggregation-0, dagger-5"}; // dagger-3, searchlearnedweightwithoutfeature-0,
+	public String[] PROCEDURES_PROP = {"datageneration-0, resultaggregation-0, searchtrueloss-1, learn-1, searchlearnedweightwithoutfeature-1, resultaggregation-1"}; // dagger-3, searchlearnedweightwithoutfeature-0,
 																													  // , tunemodel-6, " + "searchlearnedweightwithoutfeature-6, resultaggregation-6"
-	
+	//public String[] PROCEDURES_PROP = {"datageneration-0, searchtrueloss-0, learn-0, searchlearnedweightwithoutfeature-0, resultaggregation-0, dagger-5"}; 
 	public String[] EXPERIMENT_PROP = {"datageneration.goldmention, feature.atomic.names"};		// MUST be included in every experiment config file
 
 	// corpus path

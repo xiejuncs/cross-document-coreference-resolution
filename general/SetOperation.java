@@ -22,8 +22,14 @@ public class SetOperation {
 	 */
 	public static Set<String> intersection(Counter<String> formerVector, Counter<String> latterVector) {
 		Set<String> commonElementSet = new HashSet<String>();
-		commonElementSet.addAll(formerVector.keySet());
-		commonElementSet.retainAll(latterVector.keySet());
+		
+		// get the lower case of the set
+		Set<String> formerSet = StringOperation.lowercase(formerVector.keySet());
+		Set<String> latterSet = StringOperation.lowercase(latterVector.keySet());
+		
+		commonElementSet.addAll(formerSet);
+		commonElementSet.retainAll(latterSet);
+		
 		return commonElementSet;
 	}
 	

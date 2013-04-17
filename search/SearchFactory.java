@@ -100,8 +100,13 @@ public class SearchFactory extends ExperimentConstructor {
 			
 			String path = resultPath + "/model/model" + modelIndex;
 			List<String> para = IOUtils.linesFromFile(path);
-			String weightString = para.get(0);
-			double[] weight = DoubleOperation.transformString(weightString, ",");
+			double[] weight = new double[para.size()];
+			for (int index = 0; index < para.size(); index++) {
+				String featureWeight = para.get(index);
+				String[] featureElements = featureWeight.split("\t");
+				double value = Double.parseDouble(featureElements[1]);
+				weight[index] = value;
+			}
 			
 			//
 			// make those NSrl features be less than or equal to 0

@@ -106,12 +106,12 @@ public class ResultOutput {
 		return sb.toString();
 	}
 
-	public static String printStructredModel(double[] model, String[] featureName) {
+	public static String printStructredModel(double[] model, List<String> featureName) {
 		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < featureName.length; i++) {
-			sb.append(featureName[i] + " weight: " + model[i] + "\n");
+		for (int i = 0; i < featureName.size(); i++) {
+			sb.append(featureName.get(i) + "\t" + model[i] + "\n");
 		}
-		return sb.toString();
+		return sb.toString().trim();
 	}
 
 	/** print the JAMA matrix */

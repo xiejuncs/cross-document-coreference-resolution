@@ -194,7 +194,6 @@ public class EmentionExtractor {
 	    if(gold) logger.fine("New DOC: (GOLD MENTIONS) ==================================================");
 	    else logger.fine("New DOC: (Predicted Mentions) ==================================================");
 	    logger.fine(doc.toString());
-	    //System.out.println(doc.toString());
 	  }
 	
 	/**
@@ -258,9 +257,21 @@ public class EmentionExtractor {
 	    	}
 	    }
 	    
+	    // for event mentions
 	    if (goldEventMentionList != null) {
 	    	if(!goldEventMentionList.isEmpty()){
 	    		for(EventMention e : goldEventMentionList){
+	    			
+	    			String[] parseCorefID = e.getObjectId().split("-");
+	    			String corefID = parseCorefID[1];
+	    			int length = corefID.length();
+	    			String CorefClusterID = corefID.substring(1, length);
+	    			if (CorefClusterID.endsWith("*")) {
+	    				// CorefClusterID = CorefClusterID.substring(0, CorefClusterID.length()-1);
+	    				// CorefClusterID += "000";
+	    				continue;
+	    			}
+	    			
 	    			Mention men = new Mention();
 	    			men.dependency = s.get(CollapsedDependenciesAnnotation.class);
 	    			men.startIndex = e.getExtentTokenStart();
@@ -270,15 +281,7 @@ public class EmentionExtractor {
 	    			String[] parseID = e.getObjectId().split("-");
 	    			//men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
 	    			men.mentionID = Integer.parseInt(parseID[parseID.length-1]);
-	    			String[] parseCorefID = e.getObjectId().split("-");
-	    			String corefID = parseCorefID[1];
-	    			int length = corefID.length();
-	    			String CorefClusterID = corefID.substring(1, length);
-	    			if (CorefClusterID.endsWith("*")) {
-	    				CorefClusterID = CorefClusterID.substring(0, CorefClusterID.length()-1);
-	    				CorefClusterID += "000";
-	    			}
-
+	    			
 	    			men.goldCorefClusterID = Integer.parseInt(CorefClusterID) + goldBaseID;
 	    			men.originalRef = -1;
 

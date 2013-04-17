@@ -152,6 +152,8 @@ public class EECBMentionExtractor extends EmentionExtractor {
 		return document;
 	}
 	
+	// for a mention whose first word 
+	
 	// make a copy of gold mentions
 	public List<List<Mention>> makeCopy(List<List<Mention>> mentions) {
 	    List<List<Mention>> copy = new ArrayList<List<Mention>>(mentions.size());

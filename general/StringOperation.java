@@ -1,5 +1,7 @@
 package edu.oregonstate.general;
 
+import java.util.*;
+
 /**
  * String Operation
  * 
@@ -29,6 +31,22 @@ public class StringOperation {
 		}
 		
 		return trimdElements;
+	}
+	
+	/**
+	 * convert the set of string to a set of lower case string
+	 * 
+	 * @param set
+	 * @return
+	 */
+	public static Set<String> lowercase(Set<String> set) {
+		Set<String> result = new HashSet<String>();
+		
+		for (String element : set) {
+			result.add(element.toLowerCase());
+		}
+		
+		return result;
 	}
 	
 }

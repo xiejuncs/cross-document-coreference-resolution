@@ -21,6 +21,18 @@ import edu.stanford.nlp.stats.Counter;
 public class FeatureVectorGenerator {
 
 	/**
+	 * generate centroids for each cluster after merge two clusters
+	 * 
+	 * @param document
+	 */
+	public static void generateCentroid(Document document) {
+		for (Integer id : document.corefClusters.keySet()) {
+			CorefCluster cluster = document.corefClusters.get(id);
+			cluster.regenerateFeature();
+		}
+	}
+	
+	/**
 	 * 
 	 * generate features for cluster pair
 	 * <b>NOTE</b>

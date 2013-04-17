@@ -5,6 +5,7 @@ import java.util.Properties;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.Command;
+import edu.oregonstate.util.DocumentAlignment;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;
 import edu.stanford.nlp.dcoref.Document;
@@ -37,6 +38,9 @@ public class DatasetFactory extends ExperimentConstructor {
 	/** conll result path */
 	private final String conllResultPath;
 	
+	/** print the result with baseline 1 */
+	private final boolean printResult;
+	
 	public DatasetFactory(Properties props) {
 		super(props);
 		mExperimentResultFolder = ExperimentConstructor.experimentFolder;
@@ -51,6 +55,8 @@ public class DatasetFactory extends ExperimentConstructor {
 		// store into the phaseIndex folder
 		conllResultPath = mExperimentResultFolder + "/conll/" + phaseIndex;
 		Command.mkdir(conllResultPath);
+		
+		printResult = true;
 	}
 	
 	/**
@@ -99,9 +105,22 @@ public class DatasetFactory extends ExperimentConstructor {
 		
 		IDataSet mDatasetMode = createDataSetMode();
 		Document document = mDatasetMode.getData(topic, goldOnly);
+		ResultOutput.serialize(document, topic, serializedOutput);
+		
+		// print result
+		if (printResult) {
+			// do pronoun coreference resolution
+			CorefSystem cs = new CorefSystem();
+			cs.applyPronounSieve(document);
+
+			// whether post-process the document
+			if (postProcess) {
+				DocumentAlignment.postProcessDocument(document);
+			}
+		}
 		
 		ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster);
-		
+//		
 		// do scoring
 		String[] scoreInformation = ResultOutput.printDocumentScore(document, lossType, experimentLogFile, "single");
 		double[] finalScores = ResultOutput.printCorpusResult(experimentLogFile, goldCorefCluster, predictedCorefCluster, "data generation");
@@ -113,9 +132,8 @@ public class DatasetFactory extends ExperimentConstructor {
 		ResultOutput.writeTextFile(experimentLogFile, "number of predicted mentions : " + document.allPredictedMentions.size());
 		ResultOutput.writeTextFile(corpusStatisticsPath, topic + " " + document.allGoldMentions.size() + " " + document.goldCorefClusters.size() + " " + document.allPredictedMentions.size() + " " +
 				document.corefClusters.size());
-		ResultOutput.serialize(document, topic, serializedOutput);
-		ResultOutput.writeTextFile(experimentLogFile, "\n");
 		
+		ResultOutput.writeTextFile(experimentLogFile, "\n");
 	}
 
 	/* whether put all documents of a topic together, true CrossTopic, false WithinCross */
