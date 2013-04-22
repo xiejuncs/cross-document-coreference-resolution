@@ -42,6 +42,9 @@ public abstract class ExperimentConstructor {
 	
 	// post-process the corpus for predicted mentions
 	public static boolean postProcess;
+	
+	/** whether the experiment is gold mentions or predicted mentions */
+	public static boolean goldMentions;
 
 	/**
 	 * configure the experiment
@@ -105,7 +108,7 @@ public abstract class ExperimentConstructor {
         // because gold mention also includes the singleton cluster,
         // so no matter whether gold mention or predicted mention, 
         // do post-process
-        // boolean goldMentions = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP));
+        goldMentions = Boolean.parseBoolean(experimentProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP));
         postProcess = true;
 	}
 	

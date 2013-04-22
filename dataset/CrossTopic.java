@@ -4,7 +4,6 @@ import java.util.*;
 
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.FeatureVectorGenerator;
-import edu.oregonstate.general.Counter;
 import edu.oregonstate.general.SetOperation;
 import edu.oregonstate.dataset.IDataSet;
 import edu.oregonstate.io.ResultOutput;
@@ -54,7 +53,9 @@ public class CrossTopic implements IDataSet {
 		experimentResultFolder = ExperimentConstructor.experimentFolder;
 		corpusPath = ExperimentConstructor.experimentCorpusPath;
 		dataPath = corpusPath + "/EECB1.0/data/";
-		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DATAGENERATION_STANFORD_PREPROCESSING, "true"));
+		
+		// disable the Stanford Preprocess
+		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DATAGENERATION_STANFORD_PREPROCESSING, "false"));
 		
 		// generate constraint for training a binary classifier
 		useSieve = false;
@@ -93,7 +94,7 @@ public class CrossTopic implements IDataSet {
 		try {
 			document = cs.getDocument(topic, goldOnly);
 			
-			// whether enable stanford pre-process step during data generation
+			// whether enable Stanford pre-process step during data generation
 			if (enableStanfordPreprocessStep) {
 				cs.getCorefSystem().coref(document);
 			}

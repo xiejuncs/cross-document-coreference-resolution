@@ -9,7 +9,6 @@ import java.util.Properties;
 import edu.oregonstate.dataset.TopicGeneration;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.FeatureFactory;
-import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.io.ResultOutput;
 import edu.oregonstate.util.EecbConstants;
 import edu.oregonstate.util.EecbConstructor;

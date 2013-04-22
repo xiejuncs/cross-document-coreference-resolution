@@ -120,7 +120,7 @@ public class DatasetFactory extends ExperimentConstructor {
 		}
 		
 		ResultOutput.printDocumentResultToFile(document, goldCorefCluster, predictedCorefCluster);
-//		
+		
 		// do scoring
 		String[] scoreInformation = ResultOutput.printDocumentScore(document, lossType, experimentLogFile, "single");
 		double[] finalScores = ResultOutput.printCorpusResult(experimentLogFile, goldCorefCluster, predictedCorefCluster, "data generation");

@@ -24,8 +24,11 @@ public class SetOperation {
 		Set<String> commonElementSet = new HashSet<String>();
 		
 		// get the lower case of the set
-		Set<String> formerSet = StringOperation.lowercase(formerVector.keySet());
-		Set<String> latterSet = StringOperation.lowercase(latterVector.keySet());
+//		Set<String> formerSet = StringOperation.lowercase(formerVector.keySet());
+//		Set<String> latterSet = StringOperation.lowercase(latterVector.keySet());
+		
+		Set<String> formerSet = formerVector.keySet();
+		Set<String> latterSet = latterVector.keySet();
 		
 		commonElementSet.addAll(formerSet);
 		commonElementSet.retainAll(latterSet);
