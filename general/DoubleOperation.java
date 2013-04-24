@@ -25,6 +25,22 @@ public class DoubleOperation {
 	}
 	
 	/**
+	 * create an constant non-zero vector
+	 * 
+	 * @param length
+	 * @param constant
+	 * @return
+	 */
+	public static double[] constantVector(int length, double constant) {
+		double[] weight = new double[length];
+		for (int i = 0; i < length; i++) {
+			weight[i] = constant;
+		}
+		
+		return weight;
+	}
+	
+	/**
 	 * normalize a double array
 	 * 
 	 * @param vector

@@ -13,7 +13,7 @@ import edu.stanford.nlp.dcoref.Document;
 public class NSrlPAMLoc extends NumericFeature {
 
 	public NSrlPAMLoc() {
-		featureName = "NSrlPAM-LOC";
+		featureName = this.getClass().getSimpleName();
 	}
 	
 	@Override

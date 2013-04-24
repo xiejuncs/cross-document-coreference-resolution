@@ -175,6 +175,9 @@ public class SRLAlignment {
 							// for nominal event's predicate, in the Stanford paper, they just used a single 
 							// heuristic: the possessor of a nominal event's predicate is maked as its arg0
 							// if (!predMention.isVerb && !annotation.equals("A0")) continue;
+							if (annotation.equals("AM-LOC")) {
+								annotation = "AMLoc";
+							}
 							
 							List<Integer> argumentYieldSpan = yield(argumentRow, graph);
 							

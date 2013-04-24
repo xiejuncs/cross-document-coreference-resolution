@@ -39,6 +39,7 @@ public class CrossCoreferenceResolution extends ExperimentConstructor {
 		methodToClasses.put("searchlearnedweightwithoutfeature", "edu.oregonstate.search.SearchFactory");
 		methodToClasses.put("resultaggregation", "edu.oregonstate.server.ResultAggregation");
 		methodToClasses.put("searchlearnedweightwithfeature", "edu.oregonstate.search.SearchFactory");
+		methodToClasses.put("lasso", "edu.oregonstate.search.SearchFactory");
 		
 	}
 

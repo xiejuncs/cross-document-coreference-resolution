@@ -13,6 +13,7 @@ import edu.oregonstate.costfunction.ICostFunction;
 import edu.oregonstate.experiment.ExperimentConstructor;
 import edu.oregonstate.features.FeatureFactory;
 import edu.oregonstate.features.FeatureVectorGenerator;
+import edu.oregonstate.general.DoubleOperation;
 import edu.oregonstate.general.FixedSizePriorityQueue;
 import edu.oregonstate.io.LargeFileWriting;
 import edu.oregonstate.io.ResultOutput;
@@ -31,6 +32,7 @@ import edu.stanford.nlp.dcoref.Dictionaries.Gender;
 import edu.stanford.nlp.dcoref.Dictionaries.Number;
 import edu.stanford.nlp.stats.ClassicCounter;
 import edu.stanford.nlp.stats.Counter;
+import edu.stanford.nlp.util.IntPair;
 
 /**
  * rank them first, go through whether they introduce bad links
@@ -48,7 +50,7 @@ import edu.stanford.nlp.stats.Counter;
  * 
  * Print the beam information and cost information in order to trace the rightness of the program
  * Feature should have function allows evaluation of the state, pass the state and return the global feature
- *  
+ * 
  * @author Jun Xie (xie@eecs.oregonstate.edu)
  *
  */
@@ -81,6 +83,15 @@ public class BeamSearch implements ISearch {
     /* enable state feature or just action feature */
     private final boolean enableStateFeature;
     
+    /** online or offline training */
+    private boolean onlineTraining;
+    
+    /** include the pronoun links */
+    private final boolean includePronounGoldLink;
+    
+    /** learning rate */
+    private final double learningRate;
+    
     /** constructor */
     public BeamSearch() {
     	mProps = ExperimentConstructor.experimentProps;
@@ -96,9 +107,20 @@ public class BeamSearch implements ISearch {
         costFunction = EecbConstructor.createCostFunction(mProps.getProperty(EecbConstants.COSTFUNCTION_METHOD, "LinearCostFunction"));
         enableStateFeature = Boolean.parseBoolean(mProps.getProperty(EecbConstants.FEATURE_STATE, "false"));
         
+        // experiment name
+     	String experimentName = mProps.getProperty(EecbConstants.SEARCH_TYPE, "searchtrueloss");
+     	if (experimentName.equals("lasso")) {
+     		onlineTraining = true;
+     	} else {
+     		onlineTraining = false;
+     	}
+        
         // debug mode
         //mDebug = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DEBUG_PROP, "true"));
         mDebug = false;
+        
+        includePronounGoldLink = false;
+        learningRate = 1;
     }
     
     /**
@@ -155,6 +177,50 @@ public class BeamSearch implements ISearch {
         ResultOutput.writeTextFile(logfile, "the number of candidate sets : " + actions.size());
         return actions;
     }
+    
+    // generate the true links according to the gold truth to distinguish the good and bad actions
+    private Set<IntPair> generateLinks(Map<Integer, CorefCluster> clusters) {
+    	Set<IntPair> links = new HashSet<IntPair>();
+    	
+    	for (Integer key : clusters.keySet()) {
+    		CorefCluster cluster = clusters.get(key);
+    		Set<Mention> mentions = cluster.corefMentions;
+    		if (mentions.size() < 2) continue;	// if there is just one mention contained in this link
+    		
+    		// add the mention into the arraylist
+    		List<Mention> mems = new ArrayList<Mention>();
+    		for (Mention mention : mentions) {
+    			mems.add(mention);
+    		}
+    		
+    		int size = mems.size();
+    		
+    		// do not include the pronoun link
+    		for (int i = 0; i < size; i++) {
+                Mention iMention = mems.get(i);
+                if (!includePronounGoldLink && iMention.isPronominal()) {
+                	continue;
+                }
+                
+                for (int j = 0; j < i; j++) {
+                    Mention jMention = mems.get(j);
+                    if (!includePronounGoldLink && jMention.isPronominal()) {
+                     	continue;
+                    }
+                    
+                    int minID = Math.min(iMention.mentionID, jMention.mentionID);
+                    int maxID = Math.max(iMention.mentionID, jMention.mentionID);
+                    
+                    // add to the links
+                    links.add(new IntPair(minID, maxID));
+                }
+            }
+    		
+    	}
+    	
+    	return links;
+    }
+    
     
     // merge two clusters
     private void mergeClusters(CorefCluster to, CorefCluster from) {
@@ -244,6 +310,17 @@ public class BeamSearch implements ISearch {
     		cluster.regenerateFeature();
     	}
     }
+    
+    /**
+     * 
+     * @param initial
+     * @param action
+     * @param document
+     * @param para
+     */
+    private void calculateCostScore(State<CorefCluster> initial, String action, Document document, Parameter para){
+    	calculateCostScore(initial, action, document, para.getWeight());
+    }
 	
 	/** 
 	 * calculate cost score according to the weight and feature.
@@ -303,9 +380,8 @@ public class BeamSearch implements ISearch {
 	 * do not need to define a function to check whether the current state is the goal state
 	 * 
 	 */
-	public void trainingBySearch(Document document, Parameter para, String phaseID) {
+	public Parameter trainingBySearch(Document document, Parameter para, String phaseID) {
 		Double globalScore = 0.0;
-		double[] weight = para.getWeight();
 		String trainingDataPath = experimentResultFolder + "/" + document.getID() + "/data";
 		String logfile = experimentResultFolder + "/" + document.getID() + "/logfile";
 		
@@ -316,6 +392,7 @@ public class BeamSearch implements ISearch {
 		initialState.setScore(localScores);
 		beam.add(initialState, localScores[0]);
 		List<String> featureTemplate = FeatureFactory.getFeatureTemplate();
+		Set<IntPair> goldLinks = generateLinks(document.goldCorefClusters);
 		
 		// the best output y^{*}_{i} uncovered so far evaluated by the loss function
 		State<CorefCluster> bestState = new State<CorefCluster>();
@@ -353,47 +430,64 @@ public class BeamSearch implements ISearch {
 					
 					if (action.equals("HALT")) {
 						// HALT action
-						initial.setID("HALT");
-						initial.setScore(stateScore);
-						initial.setCostScore(weight[featureTemplate.size() - 1]);
-						Counter<String> features = buildHaltFeature();
-						initial.setFeatures(features);
+//						initial.setID("HALT");
+//						initial.setScore(stateScore);
+//						initial.setCostScore(weight[featureTemplate.size() - 1]);
+//						Counter<String> features = buildHaltFeature();
+//						initial.setFeatures(features);
 					} else {
 						// NOT HALT ACTION
 						for (Integer key : state.getState().keySet()) {
 							initial.add(key, state.getState().get(key));
 						}
 
-						calculateCostScore(initial, action, document, weight);
+						calculateCostScore(initial, action, document, para);
 						stateScore = lossFunction.calculateLossFunction(document, initial);
 						initial.setScore(stateScore);
 					}
 					
-					beam.add(initial, initial.getScore()[0]);
+					// if do online training, then the state in the beam should be the highest heuristic value
+					// if not, then the state in the beam should be the highest loss score
+					if (onlineTraining) {
+						beam.add(initial, initial.getCostScore());
+					} else {
+						beam.add(initial, initial.getScore()[0]);
+					}
+					
 					states.put(action, initial);
 				}
 				
-				State<CorefCluster> stateinBeam = beam.peek();
-				double priority = beam.getPriority();
-				if (priority >= globalScore) {
-					globalScore = priority;
-					previousBestState = bestState;
-					bestState = stateinBeam;
-				}
-				
-				// stopping criterion
-				if ((globalScore == 1.0) || (globalScore > priority) || (stateinBeam.getID().equals("HALT")) ) {
-					ResultOutput.writeTextFile(logfile, "search stop with the loss score : " + globalScore);
-					generateStateDocument(document, bestState);
+				// online or offline training
+				if (!onlineTraining) {
+					State<CorefCluster> stateinBeam = beam.peek();
+					double priority = beam.getPriority();
+					if (priority >= globalScore) {
+						globalScore = priority;
+						previousBestState = bestState;
+						bestState = stateinBeam;
+					}
 					
-					//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
-					break;
+					// stopping criterion
+					if ((globalScore == 1.0) || (globalScore > priority) || (stateinBeam.getID().equals("HALT")) ) {
+						ResultOutput.writeTextFile(logfile, "search stop with the loss score : " + globalScore);
+						generateStateDocument(document, bestState);
+						
+						//ResultOutput.writeTextFile(logFile, ResultOutput.printCluster(document.goldCorefClusters));
+						break;
+					}
+					
+					// output constraints
+					String path = trainingDataPath + "/" + phaseID;
+					ConstraintGeneration constraintGenerator = new ConstraintGeneration(path);
+					constraintGenerator.generateConstraints(states, beam, previousBestState, bestState);
+				} else {
+					if (beam.size() == 0) {
+						regenerateFeatures(document, state);
+						break;
+					}
+					
+					para = onlineTrain(goldLinks, states, beam, para);
 				}
-				
-				// output constraints
-				String path = trainingDataPath + "/" + phaseID;
-				ConstraintGeneration constraintGenerator = new ConstraintGeneration(path);
-				constraintGenerator.generateConstraints(states, beam, previousBestState, bestState);
 				
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -403,6 +497,104 @@ public class BeamSearch implements ISearch {
 			msearchStep++;
 		}
 	
+		return para;
+	}
+	
+	/**
+	 * there are three steps : first distinguish the good states and bad states
+	 * then if there is violated constraint, then update the weight according to the lasso
+	 * update the beam with one good state with the largest score
+	 * @return
+	 */
+	private Parameter onlineTrain(Set<IntPair> goldLinks, Map<String, State<CorefCluster>> states, 
+			FixedSizePriorityQueue<State<CorefCluster>> beam, Parameter para){
+		int numberOfInstance = para.getNumberOfInstance();
+		int violatedConstraint = para.getNoOfViolation();
+		double[] weight = para.getWeight();
+		double[] totalWeight = para.getTotalWeight();
+		
+		numberOfInstance += 1;
+		
+		// first distinguish the good states and bad states
+		List<State> goodStates = new ArrayList<State>();
+		List<String> goodStateIDs = new ArrayList<String>();
+		List<State> badStates = new ArrayList<State>();
+		List<String> badStateIDs = new ArrayList<String>();
+		for (String key : states.keySet()) {
+			State<CorefCluster> state = states.get(key);
+			boolean good = distinguishState(goldLinks, state);
+			if (good) {
+				goodStates.add(state);
+				goodStateIDs.add(state.getID());
+			} else {
+				badStates.add(state);
+				badStateIDs.add(state.getID());
+			}
+		}
+		
+		String beamStateID = beam.peek().getID();
+		// exist mistake, update the weight
+		if (badStateIDs.contains(beamStateID)) {
+			// pop the state out
+			beam.next();
+
+			if( (goodStateIDs.size() != 0)) {
+				violatedConstraint += 1;
+
+				double[] goodWeightSum = sumWeight(goodStates, weight.length);
+				double[] badWeightSum = sumWeight(badStates, weight.length);
+
+				double[] averageGoodWeight = DoubleOperation.divide(goodWeightSum, goodStates.size());
+				double[] averageBadWeight = DoubleOperation.divide(badWeightSum, badStates.size());
+				double[] difference = DoubleOperation.minus(averageGoodWeight, averageBadWeight);
+				double[] weightedDifference = DoubleOperation.time(difference, learningRate);
+				weight = DoubleOperation.add(weight, weightedDifference);
+				totalWeight = DoubleOperation.add(totalWeight, weight);
+
+				// update the beam with the highest heuristic value
+				for (State state : goodStates) {
+					double[] feature = state.getNumericalFeatures();
+					double heuristicValue = DoubleOperation.time(weight, feature);
+					beam.add(state, heuristicValue);
+				}
+			}
+		}
+		
+		return new Parameter(weight, null, totalWeight, violatedConstraint, numberOfInstance);
+	}
+	
+	// sum the weight out
+	private double[] sumWeight(List<State> states, int length) {
+		double[] sum = new double[length];
+		
+		for (State state : states) {
+			double[] feature = state.getNumericalFeatures();
+			sum = DoubleOperation.add(sum, feature);
+		}
+		
+		return sum;
+	}
+	
+	/**
+	 * distinguish the good state and bad state
+	 * @param goldLinks
+	 * @param state
+	 * @return
+	 */
+	private boolean distinguishState(Set<IntPair> goldLinks, State<CorefCluster> state) {
+		boolean good = false;
+		
+		Map<Integer, CorefCluster> cluster = state.getState();
+		Set<IntPair> clusterLinks = generateLinks(cluster);
+		Set<IntPair> intersection = new HashSet<IntPair>();
+		intersection.addAll(goldLinks);
+		intersection.retainAll(clusterLinks);
+		
+		if (intersection.size() == clusterLinks.size()) {
+			good = true;
+		}
+		
+		return good;
 	}
 	
 	// apply the weight to guide the search
@@ -492,7 +684,7 @@ public class BeamSearch implements ISearch {
 
 						calculateCostScore(initial, action, document, weight);
 
-						/* the best loss score uncovered during search*/
+						/** the best loss score uncovered during search*/
 						double[] stateScore = lossFunction.calculateLossFunction(document, initial);
 						initial.setScore(stateScore);
 						if (stateScore[0] > bestLossScore) {

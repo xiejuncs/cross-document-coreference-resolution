@@ -72,7 +72,7 @@ public class FeatureFactory {
 	}
 
 	public void SrlAMLoc() {
-		String atomFeature = "SrlAM-LOC";
+		String atomFeature = "SrlAMLoc";
 		addFeature(atomFeature, true, true, true);
 	}
 
@@ -92,7 +92,7 @@ public class FeatureFactory {
 	}
 
 	public void SrlPAMLoc() {
-		String atomFeature = "SrlPAM-LOC";
+		String atomFeature = "SrlPAMLoc";
 		addFeature(atomFeature, false, true, true);
 	}
 
@@ -117,7 +117,7 @@ public class FeatureFactory {
 	}
 
 	public void NSrlAMLoc() {
-		String atomFeature = "NSrlAM-LOC";
+		String atomFeature = "NSrlAMLoc";
 		addFeature(atomFeature, true, true, true);
 	}
 
@@ -137,7 +137,7 @@ public class FeatureFactory {
 	}
 
 	public void NSrlPAMLoc() {
-		String atomFeature = "NSrlPAM-LOC";
+		String atomFeature = "NSrlPAMLoc";
 		addFeature(atomFeature, false, true, true);
 	}
 

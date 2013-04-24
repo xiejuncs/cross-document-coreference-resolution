@@ -23,8 +23,8 @@ public class SrlAgreeCount extends NumericFeature {
 	@Override
 	public double generateFeatureValue(Document document, CorefCluster former, CorefCluster latter, String mentionType) {
 		double totalAgreement = 0.0;
-		String[] verbElements = {"SrlA0", "SrlA1", "SrlA2", "SrlAM-LOC", "SrlLeft", "SrlRight"};
-		String[] nounElements = {"SrlPA0", "SrlPA1", "SrlPA2", "SrlPAM-LOC"};
+		String[] verbElements = {"SrlA0", "SrlA1", "SrlA2", "SrlAMLoc", "SrlLeft", "SrlRight"};
+		String[] nounElements = {"SrlPA0", "SrlPA1", "SrlPA2", "SrlPAMLoc"};
 		
 		List<String> verbRoles = Arrays.asList(verbElements);
 		List<String> nounRoles = Arrays.asList(nounElements);

@@ -75,10 +75,10 @@ public class FeatureVectorGenerator {
 			try {
 				Feature individualFeature = (Feature) Class.forName("edu.oregonstate.features.individualfeature."+feature).getConstructor().newInstance();
 				double value = individualFeature.generateFeatureValue(document, former, latter, mentionType);
-				feature = transformFeature(feature);
 				
 				features.incrementCount(feature + mentionType, value);
 			} catch (Exception e) {
+				System.out.println(feature);
 				e.printStackTrace();
 			}
 		}
@@ -102,33 +102,6 @@ public class FeatureVectorGenerator {
 		if (noRight) features.remove(right);
 		
 		return features;
-	}
-	
-	/**
-	 * because dash is allowed in the class name, so need to transform the feature
-	 * if necessary
-	 * 
-	 * @param feature
-	 * @return
-	 */
-	public static String transformFeature(String feature) {
-		if (feature.equals("SrlAMLoc")) {
-			feature = "SrlAM-LOC";
-		}
-		
-		if (feature.equals("SrlPAMLoc")) {
-			feature = "SrlPAM-LOC";
-		}
-		
-		if (feature.equals("NSrlAMLoc")) {
-			feature = "NSrlAM-LOC";
-		}
-		
-		if (feature.equals("NSrlPAMLoc")) {
-			feature = "NSrlPAM-LOC";
-		}
-		
-		return feature;		
 	}
 	
 	// get Atomic Feature Name

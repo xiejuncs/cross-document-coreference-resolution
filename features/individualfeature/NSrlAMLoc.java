@@ -13,7 +13,7 @@ import edu.stanford.nlp.dcoref.Document;
 public class NSrlAMLoc extends NumericFeature {
 
 	public NSrlAMLoc() {
-		featureName = "NSrlAM-LOC";
+		featureName = this.getClass().getSimpleName();
 	}
 	
 	@Override

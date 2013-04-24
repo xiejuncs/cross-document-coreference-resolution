@@ -56,7 +56,7 @@ public class DatasetFactory extends ExperimentConstructor {
 		conllResultPath = mExperimentResultFolder + "/conll/" + phaseIndex;
 		Command.mkdir(conllResultPath);
 		
-		printResult = true;
+		printResult = false;
 	}
 	
 	/**

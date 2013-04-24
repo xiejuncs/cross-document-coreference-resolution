@@ -1,5 +1,6 @@
 package edu.oregonstate.search;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -50,6 +51,12 @@ public class SearchFactory extends ExperimentConstructor {
 	/** conll folder */
 	private final String conllResultPath;
 	
+	/** lasso iteration */
+	private final int lassoIteration;
+	
+	/** training topics */
+	private final String[] trainingTopics;
+	
 	public SearchFactory(Properties props) {
 		super(props);
 		
@@ -59,6 +66,7 @@ public class SearchFactory extends ExperimentConstructor {
 		
 		TopicGeneration topicGenerator = new TopicGeneration(props);
 		topicInformation = topicGenerator.topic();
+		trainingTopics = topicGenerator.trainingTopics();
 		
 		serializeOutput = ExperimentConstructor.experimentFolder + "/document";
 		resultPath = ExperimentConstructor.experimentFolder;
@@ -71,6 +79,8 @@ public class SearchFactory extends ExperimentConstructor {
 		
 		conllResultPath = resultPath + "/conll/" + phaseIndex;
 		Command.mkdir(conllResultPath);
+		
+		lassoIteration = 3;
 	}
 	
 
@@ -89,6 +99,38 @@ public class SearchFactory extends ExperimentConstructor {
 		if (experimentName.equals("searchtrueloss")) {
 			Document document = ResultOutput.deserialize(topic, serializeOutput, false);
 			searchwithTrueLoss(document, phase, length);
+			
+		} else if (experimentName.equals("lasso")) {
+			// do the online training, random access later
+			List<String> mTrainingTopics = Arrays.asList(trainingTopics);
+			double[] weight = DoubleOperation.constantVector(length, 1.0);
+			Parameter para = new Parameter(weight);
+			ResultOutput.writeTextFile(experimentLogFile, "start do lasso training........................");
+			for (int index = 0; index < lassoIteration; index++) {
+				
+				int beforeConstraint = para.getNoOfViolation();
+				int beforeInstance = para.getNumberOfInstance();
+				
+				// train the file
+				for (String trainingTopic : mTrainingTopics) {
+					Document document = ResultOutput.deserialize(trainingTopic, serializeOutput, false);
+					phase = phaseIndex + "-training-" + trainingTopic;
+					ResultOutput.writeTextFile(experimentLogFile, "\n" + phase + "\n");
+					para = search.trainingBySearch(document, para, phase);
+				}
+				
+				int afterConstraint = para.getNoOfViolation();
+				int afterInstance = para.getNumberOfInstance();
+				
+				ResultOutput.writeTextFile(experimentFolder + "/violation/violation.csv", (afterConstraint - beforeConstraint) + "\t" + (afterInstance - beforeInstance));
+			}
+			
+			ResultOutput.writeTextFile(experimentLogFile, "end do lasso training........................");
+			// output the final weight, use the average weight
+			double[] averageWeight = DoubleOperation.divide(para.getTotalWeight(), para.getNoOfViolation());
+			String outputFile = experimentFolder + "/model/model" + phaseIndex;
+			String outputString = ResultOutput.printStructredModel(averageWeight, FeatureFactory.getFeatureTemplate());
+			ResultOutput.writeTextFile(outputFile, outputString);
 			
 		} else {
 			boolean outputFeature = false;

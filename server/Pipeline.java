@@ -128,7 +128,12 @@ public class Pipeline {
 				boolean halt = true;
 				while (halt) {
 					// sleep for a minute
-					Thread.sleep(6000);
+					if (!procedure.equals("lasso")) {
+						Thread.sleep(6000);
+					} else {
+						Thread.sleep(600000);
+					}
+					
 
 					ClusterConnection connection = new ClusterConnection();
 					connection.connect();

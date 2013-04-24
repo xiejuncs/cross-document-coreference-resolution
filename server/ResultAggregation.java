@@ -116,7 +116,7 @@ public class ResultAggregation extends ExperimentConstructor {
 		if (args.length == 0) {
 			// run the experiment in the local machine for debugging
 			args = new String[1];
-			args[0] = "/nfs/guille/xfern/users/xie/Experiment/experiment/2013-04-13/0-experiment/0-resultaggregation-config.properties";
+			args[0] = "/nfs/guille/xfern/users/xie/Experiment/experiment/2013-04-23/0-experiment/0-resultaggregation-config.properties";
 		}
 		
 		String[] propArgs = new String[]{"-props", args[0]};

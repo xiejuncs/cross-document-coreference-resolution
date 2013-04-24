@@ -55,7 +55,8 @@ public class CrossTopic implements IDataSet {
 		dataPath = corpusPath + "/EECB1.0/data/";
 		
 		// disable the Stanford Preprocess
-		enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DATAGENERATION_STANFORD_PREPROCESSING, "false"));
+		// enableStanfordPreprocessStep = Boolean.parseBoolean(mProps.getProperty(EecbConstants.DATAGENERATION_STANFORD_PREPROCESSING, "false"));
+		enableStanfordPreprocessStep = true;
 		
 		// generate constraint for training a binary classifier
 		useSieve = false;

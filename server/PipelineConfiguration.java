@@ -256,6 +256,63 @@ public class PipelineConfiguration {
 		return jobIDs;
 	}
 	
+	/**
+	 * generate the Lasso scripts
+	 * 
+	 * @param previousIDs
+	 * @param phaseIndex
+	 * @return
+	 */
+	public List<Integer> lasso(ArrayList<Integer> previousIDs, String phaseIndex) {
+		List<Integer> jobIDs = new ArrayList<Integer>();
+		
+		String previousIDString = buildPreviousIDString(previousIDs);
+		String searchtype = "lasso";
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("phase = " + phaseIndex + "\n");
+		sb.append("search.type = " + searchtype + "\n");
+		
+		// different sets, including training, testing and development
+		String training = mProps.getProperty(EecbConstants.DATAGENERATION_TRAININGSET_PROP, "");
+		if (!training.equals("")) {
+			sb.append(EecbConstants.DATAGENERATION_TRAININGSET_PROP + " = " + training + "\n");
+		}
+		String searchConstantProperties = constantProperties + sb.toString();
+		String procedure = "lasso";
+		String mainClass = "edu.oregonstate.search.SearchFactory";
+		
+		// generate properties
+		String jobConfigPrefix = mExperimentPath + "/" + phaseIndex + "-" + procedure;
+		String jobConfigName = jobConfigPrefix + "-config.properties";
+
+		// create config file
+		ResultOutput.writeTextFile(jobConfigName, searchConstantProperties);
+
+		// create run file
+		generateRunFile(jobConfigPrefix, mainClass);
+
+		// create simple file
+		generateSimpleFile(jobConfigPrefix, procedure, "a", phaseIndex);
+
+		Command.chmod(mExperimentPath);
+
+		ClusterConnection connection = new ClusterConnection();
+		try {
+			connection.connect();
+			String jobSimpleName = previousIDString + jobConfigPrefix + "-simple.sh";
+
+			int jobID = connection.submitJob(jobSimpleName);
+			connection.disconnect();
+			jobIDs.add(jobID);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+		return jobIDs;
+
+	}
 	
 	/**
 	 * aggregate the result according to the coref cluster

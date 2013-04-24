@@ -20,8 +20,8 @@ public class NSrlAgreeCount extends NumericFeature {
 	@Override
 	public double generateFeatureValue(Document document, CorefCluster former, CorefCluster latter, String mentionType) {
 		double totalNonAgreement = 0.0;
-		String[] verbElements = {"NSrlA0", "NSrlA1", "NSrlA2", "NSrlAM-LOC"};
-		String[] nounElements = {"NSrlPA0", "NSrlPA1", "NSrlPA2", "NSrlPAM-LOC"};
+		String[] verbElements = {"NSrlA0", "NSrlA1", "NSrlA2", "NSrlAMLoc"};
+		String[] nounElements = {"NSrlPA0", "NSrlPA1", "NSrlPA2", "NSrlPAMLoc"};
 		
 		if (mentionType.equals("")) {
 			for (String feature : verbElements) {

@@ -113,6 +113,7 @@ public class State<T> implements Serializable {
 		for (int i = 0; i < features.size(); i++) {
 			String feature = features.get(i);
 			double value = mfeatures.getCount(feature);
+			numericalFeatures[i] = value;
 			if (value != 0) {
 				if (i == features.size() - 1) {
 					sb.append(feature + " : " + value);
