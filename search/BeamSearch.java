@@ -100,7 +100,7 @@ public class BeamSearch implements ISearch {
     	//
     	// set the configuration constant 
     	//
-    	mBeamWidth = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_METHOD_BEAMWIDTH, "1"));
+    	mBeamWidth = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_METHOD_BEAMWIDTH, "2"));
     	maximumSearch = Integer.parseInt(mProps.getProperty(EecbConstants.SEARCH_METHOD_MAXIMUMSTEP, "600"));
     	type = CorefScorer.ScoreType.valueOf(mProps.getProperty(EecbConstants.LOSSFUNCTION_SCORE_PROP, "Pairwise"));
         lossFunction = EecbConstructor.createLossFunction(mProps.getProperty(EecbConstants.LOSSFUNCTION_METHOD, "MetricLossFunction"));

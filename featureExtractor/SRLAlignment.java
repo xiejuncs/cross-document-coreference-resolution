@@ -320,6 +320,6 @@ public class SRLAlignment {
 		}
 
 		return graph;
-	}
+	} 
 
 }

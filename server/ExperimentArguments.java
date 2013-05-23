@@ -31,19 +31,19 @@ public class ExperimentArguments {
 	public String[] DATAGENERATION_DATASET_PROP = {"true"};
 
 	// gold mention (true) or predicted mention (false)
-	public String[] DATAGENERATION_GOLDMENTION_PROP = {"false"};		// MUST
+	public String[] DATAGENERATION_GOLDMENTION_PROP = { "true", "false"};		// MUST
 
 	// GOLD cluster post process
-	public String[] DATAGENERATION_POSTPROCESS_GOLD_PROP = {"true"};
+	public String[] DATAGENERATION_POSTPROCESS_GOLD_PROP = {"false"};
 
 	// annotators used in the experiment
 	public String[] DATAGENERATION_ANNOTATORS_PROP = {"tokenize, ssplit, pos, lemma, ner, parse, dcoref"};		// MUST
 
 	// training set
-	public String[] DATAGENERATION_TRAININGSET_PROP = {"5, 6, 8, 11, 16, 25, 30, 31, 37, 40, 43, 44"};		// MUST 43,
+	public String[] DATAGENERATION_TRAININGSET_PROP = {"5, 6"};		// MUST 43,
 	//"5, 6, 8, 11, 16, 25, 30, 31, 37, 40, 43, 44"
 	// testing set
-	public String[] DATAGENERATION_TESTINGSET_PROP = {"1, 2, 4, 7, 9, 10, 13, 14, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 32, 33, 34, 35, 36, 39, 41, 42, 45"};		// MUST
+	public String[] DATAGENERATION_TESTINGSET_PROP = {"10, 14"};
 	//"1, 2, 4, 7, 9, 10, 13, 14, 18, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 32, 33, 34, 35, 36, 39, 41, 42, 45"
 	
 	//public String[] DATAGENERATION_DEVELOPMENTSET_PROP = {"3, 12, 38"};

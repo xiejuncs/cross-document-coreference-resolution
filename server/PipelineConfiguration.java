@@ -70,7 +70,7 @@ public class PipelineConfiguration {
 
 		String dataset = mProps.getProperty(EecbConstants.DATAGENERATION_DATASET_PROP, "true");
 		String goldMention = mProps.getProperty(EecbConstants.DATAGENERATION_GOLDMENTION_PROP, "true");
-		String postprocessGold = mProps.getProperty(EecbConstants.DATAGENERATION_POSTPROCESS_GOLD_PROP, "true");
+		String postprocessGold = mProps.getProperty(EecbConstants.DATAGENERATION_POSTPROCESS_GOLD_PROP, "false");
 		String annotators = mProps.getProperty(EecbConstants.DATAGENERATION_ANNOTATORS_PROP);
 
 		StringBuilder sb = new StringBuilder();
